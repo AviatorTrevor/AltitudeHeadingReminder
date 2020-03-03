@@ -1,3 +1,4 @@
+
 /*
 Author: Trevor Bartlett
 Email: aviatortrevor@gmail.com
@@ -65,7 +66,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cTryToRecover                  false
 
 //EEPROM
-#define         cEepromWriteDelay              5000  //milliseconds
+#define         cEepromWriteDelay      10000  //milliseconds
 volatile bool   gNeedToWriteToEeprom;
 
 //Main program variables
@@ -77,17 +78,17 @@ volatile int    gSelectedHeadingInt = 360; //degrees
 
 //Buzzer
 #define            cInitialSelectedAltitudeTimeout 5000 //determine initial selection altitude within 5 seconds, or give up and allow it to stay at 0 because pressure sensor failed
-#define            cAlarm200ToGo                   200
-#define            cAlarm1000ToGo                  1000
+#define            cAlarm200ToGo                   200  //ft
+#define            cAlarm1000ToGo                  1000 //ft
 #define            cBuzzPin                        6
-#define            cBuzzFrequencyA                 4100 //Hz frequency for the Musical Note B-7 is 3951 (which is what Garmin uses??). 4000Hz seems to resonate better with this speaker
-#define            cBuzzFrequencyB                 4200
+#define            cBuzzFrequencyA                 4100 //Hz frequency for the Musical Note B-7 is 3951 (which is what Garmin uses??). 4000 & 4100Hz seems to resonate better with this speaker
+#define            cBuzzFrequencyB                 2400 //Hz
 #define            cLongBuzzDuration               1000
-#define            cShortBuzzOnFreqADuration       80
-#define            cShortBuzzOnFreqBDuration       80
-#define            cUrgentBuzzNumberOfBeeps        8
+#define            cShortBuzzOnFreqADuration       150
+#define            cShortBuzzOnFreqBDuration       150
+#define            cUrgentBuzzNumberOfBeeps        7
 #define            cDisableAlarmKnobMovementTime   1200
-enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, BeepingAlarm, AlarmDisabled, DetermineAlarmState};
+enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 BuzzAlarmMode      gNextAlarmModeEnum; //only used to get out of a multiple-beep alarm state
 int                gBuzzCountInt; //always a value between [0, cUrgentBuzzNumberOfBeeps]
@@ -217,12 +218,9 @@ void initializeValuesFromEeprom() {
   if (gCalibratedAltitudeOffsetInt < cCalibrationOffsetMin || gCalibratedAltitudeOffsetInt > cCalibrationOffsetMax)
     gCalibratedAltitudeOffsetInt = 0;
   
-  
+  //sensor - on/off
   //units - feet, meters
   //pressure units - inHg, millibars??? Pascals???
-  //pressure sensor type
-  //rotary encoder type
-  //display type
   //1000ft alert tone
   //200ft alert tone
   //departing altitude by 200ft alert tone
@@ -529,7 +527,9 @@ void handleLeftRotaryShortPress() {
     }
   }
   else if (gDisplayPage == DisplayPageSettings) {
-    //TODO
+    if (gCursor == CursorSelectOffset) {
+      //gCursor = CursorSelectDim; //TODO
+    }
   }
 }
 
@@ -626,7 +626,7 @@ void handleBuzzer() {
     
     case Climbing200ToGo:
       if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm200ToGo) {
-        gAlarmModeEnum = BeepingAlarm;
+        gAlarmModeEnum = UrgentAlarm;
         gNextAlarmModeEnum = AltitudeDeviate;
         gNextBuzzTs = millis(); //next buzz time is now
       }
@@ -644,7 +644,7 @@ void handleBuzzer() {
       
     case Descending200ToGo:
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm200ToGo) {
-        gAlarmModeEnum = BeepingAlarm;
+        gAlarmModeEnum = UrgentAlarm;
         gNextAlarmModeEnum = AltitudeDeviate;
         gNextBuzzTs = millis(); //next buzz time is now
       }
@@ -655,7 +655,7 @@ void handleBuzzer() {
     
     case AltitudeDeviate: //We're looking to sound the alarm if pilot deviates from his altitude he already reached
       if (gTrueAltitudeDouble > gSelectedAltitudeLong + cAlarm200ToGo || gTrueAltitudeDouble < gSelectedAltitudeLong - cAlarm200ToGo) {
-        gAlarmModeEnum = BeepingAlarm; //initiate beeping the alarm on the next pass
+        gAlarmModeEnum = UrgentAlarm; //initiate beeping the alarm on the next pass
         gNextBuzzTs = millis(); //next buzz time is now
         if (gTrueAltitudeDouble > gSelectedAltitudeLong + cAlarm200ToGo) {
           gNextAlarmModeEnum = Descending200ToGo;
@@ -666,22 +666,21 @@ void handleBuzzer() {
       }
       break;
       
-    case BeepingAlarm:
+    case UrgentAlarm:
       if (gBuzzCountInt == 0) {
-        gBuzzCountInt = cUrgentBuzzNumberOfBeeps;
+        gBuzzCountInt = cUrgentBuzzNumberOfBeeps + 1;
       }
       if (millis() >= gNextBuzzTs) {
-        if (gBuzzCountInt % 2 == 0) { //every other cycle, change frequency
+        gBuzzCountInt--;
+        if (gBuzzCountInt != 0 && gBuzzCountInt % 2 == 0) { //every other cycle, change frequency
+          tone(cBuzzPin, cBuzzFrequencyB);
+          gNextBuzzTs = millis() + cShortBuzzOnFreqBDuration;
+        }
+        else if (gBuzzCountInt % 2 == 1) {
           tone(cBuzzPin, cBuzzFrequencyA);
           gNextBuzzTs = millis() + cShortBuzzOnFreqADuration;
         }
         else {
-          tone(cBuzzPin, cBuzzFrequencyB);
-          gNextBuzzTs = millis() + cShortBuzzOnFreqBDuration;
-        }
-        
-        gBuzzCountInt--;
-        if (gBuzzCountInt == 0) {
           gAlarmModeEnum = gNextAlarmModeEnum;
           noTone(cBuzzPin);
         }
@@ -740,28 +739,50 @@ void handleDisplay() {
     if (eDisplayError) //if we're still having trouble, return
       return;
   }
-  
-  if (gDisplayPage == DisplayPageMain) { //normal display more, display the altitude
-    handleDisplayOfMainPage();
-  }
-  else if (gDisplayPage == DisplayPageSettings) { //settings display
-    handleDisplayOfSettingsPage();
-  }
-}
 
-//////////////////////////////////////////////////////////////////////////
-void handleDisplayOfMainPage() {
+
+
+
   gDisplay.invertDisplay(false); //TODO remove?
   gDisplay.clearDisplay();
   gDisplay.setTextSize(1);
 
-  //show the altimeter top-left...
+  //show the parameter name top-left and the associated value bottom-left
   gDisplay.setCursor(0, 0);
-  if (gCursor == CursorSelectAltimeter) {
-    gDisplay.println(">" + String(gAltimeterSettingDouble) + "\"");
-  }
-  else {
-    gDisplay.println(" " + String(gAltimeterSettingDouble) + "\"");
+  gDisplay.setTextSize(1);
+  switch (gCursor) {
+    case CursorSelectHeading: //Display Selected Heading
+      gDisplay.println("Heading");
+      gDisplay.setCursor(0, 15);
+      int tempSelectedHeading = gSelectedHeadingInt;
+      char heading[4];
+      sprintf(heading, "%03d%c", tempSelectedHeading, (char)(247)); //247 == degree symbol
+      gDisplay.println(String(heading));
+      break;
+
+    case CursorSelectAltimeter:
+      gDisplay.println("Altimeter");
+      gDisplay.setCursor(0, 15);
+      gDisplay.println(String(gAltimeterSettingDouble) + "\"");
+      break;
+
+    case CursorSelectOffset:
+      gDisplay.println("Offset");
+      gDisplay.setCursor(0, 15);
+      if (gCalibratedAltitudeOffsetInt > 0) {
+        gDisplay.println("Offset +" + String(gCalibratedAltitudeOffsetInt) + cFtLabel);
+      }
+      else {
+        gDisplay.println("Offset "  + String(gCalibratedAltitudeOffsetInt) + cFtLabel);
+      }
+      break;
+
+    case CursorSelectSensor:
+      gDisplay.println("Sensor");
+      gDisplay.setCursor(0,15);
+      gDisplay.println("ON"); //TODO
+      //TODO gSensorOff = true/false;
+      break;
   }
 
   //show the sensor true altitude
@@ -769,7 +790,7 @@ void handleDisplayOfMainPage() {
       gDisplay.setCursor(62, 0);
     gDisplay.println("SENSOR FAIL"); //TODO: in the future, write the error code to EEPROM
   }
-  else if (gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
+  else if (gSensorOff || gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
     gDisplay.setCursor(68, 0);
     gDisplay.println("SENSOR OFF");
   }
@@ -784,40 +805,6 @@ void handleDisplayOfMainPage() {
   long temporarySelectedAltitude = gSelectedAltitudeLong;
   gDisplay.println(displayNumber(temporarySelectedAltitude) + cFtLabel);
 
-  //Display Selected Heading
-  gDisplay.setTextSize(1);
-  gDisplay.setCursor(0, 15);
-  int tempSelectedHeading = gSelectedHeadingInt;
-  char heading[6];
-  sprintf(heading, "%c%03d%c", gCursor == CursorSelectHeading ? '>' : ' ', tempSelectedHeading, (char)(247));
-  gDisplay.println(String(heading));
-
-  gDisplay.display();
-}
-
-//////////////////////////////////////////////////////////////////////////
-void handleDisplayOfSettingsPage() {
-  gDisplay.invertDisplay(false); //TODO remove?
-  gDisplay.clearDisplay();
-  gDisplay.setTextSize(1);
-  gDisplay.setCursor(0, 0);
-  
-  if (gCursor == CursorSelectOffset) {
-    if (gCalibratedAltitudeOffsetInt > 0) {
-      gDisplay.println("> Offset +" + String(gCalibratedAltitudeOffsetInt) + cFtLabel);
-    }
-    else {
-      gDisplay.println("> Offset " + String(gCalibratedAltitudeOffsetInt) + cFtLabel);
-    }
-  }
-  else {
-     if (gCalibratedAltitudeOffsetInt > 0) {
-      gDisplay.println("  Offset +" + String(gCalibratedAltitudeOffsetInt) + cFtLabel);
-    }
-    else {
-      gDisplay.println("  Offset " + String(gCalibratedAltitudeOffsetInt) + cFtLabel);
-    }
-  }
   gDisplay.display();
 }
 
