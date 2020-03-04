@@ -8,7 +8,6 @@ Hardware device to remind pilots of assigned headings & altitudes. Also has buzz
 to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
-*implement screen brightness control
 *flash screen for alerts
 *add settings to disable 200ft and 1000ft alarms
 *test after 20 seconds of inactivity, reset the page and cursor to the main screen
@@ -40,7 +39,6 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 #define DEBUG
 
-#define cAppVersion                    "1.0.0"
 #define cOneSecond                     1000 //1000 milliseconds = 1 second
 #define cOneSecondBeforeOverflow       (unsigned long)(pow(2, sizeof(unsigned long) * 8) - cOneSecond)
 #define cTwentySeconds                 20 * cOneSecond
@@ -122,7 +120,7 @@ volatile unsigned long gLastRotaryActionTs;
 #define cScreenHeight             32  // OLED display height, in pixels
 #define cOledReset                4   // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 gDisplay(cScreenWidth, cScreenHeight, &Wire, cOledReset);
-volatile int gScreenBrightnessInt = cScreenBrightnessSettings; //initialize to brightest setting
+volatile int gScreenBrightness = cScreenBrightnessSettings - 1; //initialize to brightest setting
 
 //Cursor control
 enum Cursor {CursorSelectHeading, CursorSelectAltimeter, CursorSelectOffset, CursorSelectBrightness, CursorSelectSensor, CursorSelectAltitudeUnits, CursorSelectPressureUnits, CursorViewSoftwareVersion, CursorViewBatteryLevel, cNumberOfCursorModes} gCursor = CursorSelectHeading;
@@ -212,50 +210,30 @@ void initializeValuesFromEeprom() {
   int tempInt;
   
   //Last Altimeter Setting
+  tempDouble = gAltimeterSettingDouble; //this silences a compiler warning
   EEPROM.get(eepromIndex, tempDouble);
   gAltimeterSettingDouble = tempDouble;
-  if (gAltimeterSettingDouble < cAltimeterSettingMin || gAltimeterSettingDouble > cAltimeterSettingMax) {
+  if (gAltimeterSettingDouble < cAltimeterSettingMin || gAltimeterSettingDouble > cAltimeterSettingMax)
     gAltimeterSettingDouble = cSeaLevelPressureInHg;
-  }
-  eepromIndex += sizeof(double);
+  eepromIndex += sizeof(gAltimeterSettingDouble);
   
   
   //Last altitude offset
+  tempInt = gCalibratedAltitudeOffsetInt; //this silences a compiler warning
   EEPROM.get(eepromIndex, tempInt);
   gCalibratedAltitudeOffsetInt = tempInt;
-  if (gCalibratedAltitudeOffsetInt < cCalibrationOffsetMin || gCalibratedAltitudeOffsetInt > cCalibrationOffsetMax) {
+  if (gCalibratedAltitudeOffsetInt < cCalibrationOffsetMin || gCalibratedAltitudeOffsetInt > cCalibrationOffsetMax)
     gCalibratedAltitudeOffsetInt = 0;
-  }
-  eepromIndex += sizeof(int);
-
-  //Last Screen Brightness
-  EEPROM.get(eepromIndex, tempInt);
-  gScreenBrightnessInt = tempInt;
-  constrain(gScreenBrightnessInt, 1, cScreenBrightnessSettings);
-  eepromIndex += sizeof(int);
-
-  //Sensor Mode - On/Show, On/Hide, Off
-  EEPROM.get(eepromIndex, tempInt);
-  constrain(tempInt, 0, cNumberOfSensorModes);
-  gSensorMode = static_cast<SensorMode>(tempInt);
-  eepromIndex += sizeof(int);
-
-  //Altitude Units
-  EEPROM.get(eepromIndex, tempInt);
-  constrain(tempInt, 0, cNumberOfAltitudeUnits);
-  gAltitudeUnits = static_cast<AltitudeUnits>(tempInt);
-  eepromIndex += sizeof(int);
-
-  //Pressure Units
-  EEPROM.get(eepromIndex, tempInt);
-  constrain(tempInt, 0, cNumberOfPressureUnits);
-  gPressureUnits = static_cast<PressureUnits>(tempInt);
-  eepromIndex += sizeof(int);
 
   //TODO
+  //sensor - on/off
+  //screen brightness
+  //units - feet, meters
+  //pressure units - inHg, millibars??? Pascals???
   //1000ft alert tone
   //200ft alert tone
   //departing altitude by 200ft alert tone
+  //device version [MajorVersion.HardwareBuildVersion.SoftwareVersion]
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -537,28 +515,25 @@ void handleLeftRotaryMovement(int increment) {
       break;
 
     case CursorSelectBrightness:
-      gScreenBrightnessInt = (gScreenBrightnessInt + increment + cScreenBrightnessSettings - 1) % cScreenBrightnessSettings + 1;
+      gScreenBrightness = (gScreenBrightness + increment + cScreenBrightnessSettings - 1) % cScreenBrightnessSettings + 1;
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
       
     case CursorSelectSensor:
-      gSensorMode = static_cast<SensorMode>((gSensorMode + increment + cNumberOfSensorModes) % cNumberOfSensorModes);
-      if (gSensorMode == SensorModeOff) {
-        gAlarmModeEnum = AlarmDisabled;
-      }
+      gSensorMode = (gSensorMode + increment + cNumberOfSensorModes) % cNumberOfSensorModes;
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
       
     case CursorSelectAltitudeUnits:
-      gAltitudeUnits = static_cast<AltitudeUnits>((gAltitudeUnits + increment + cNumberOfAltitudeUnits) % cNumberOfAltitudeUnits);
+      gAltitudeUnits = (gAltitudeUnits + increment + cNumberOfAltitudeUnits) % cNumberOfAltitudeUnits;
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
 
     case CursorSelectPressureUnits:
-      gPressureUnits = static_cast<PressureUnits>((gPressureUnits + increment + cNumberOfPressureUnits) % cNumberOfPressureUnits);
+      gPressureUnits = (gPressureUnits + increment + cNumberOfPressureUnits) % cNumberOfPressureUnits;
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
@@ -574,7 +549,7 @@ void handleLeftRotaryMovement(int increment) {
 
 //////////////////////////////////////////////////////////////////////////
 void handleLeftRotaryShortPress() {
-  gCursor = static_cast<Cursor>((gCursor + 1 + cNumberOfCursorModes) % cNumberOfCursorModes);
+  gCursor = (gCursor + 1 + cNumberOfCursorModes) % cNumberOfCursorModes;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -733,7 +708,7 @@ void handleBuzzer() {
           gSelectedAltitudeLong = roundNumber(initialAltitudeSelection + cAltitudeSelectIncrement * 5, cAltitudeSelectIncrement * 5);
         }
       }
-      else if (gSensorMode != SensorModeOff || gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastAltitudeSelectChangeTs >= cDisableAlarmKnobMovementTime) {
+      else if (gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastAltitudeSelectChangeTs >= cDisableAlarmKnobMovementTime) {
         gAlarmModeEnum = DetermineAlarmState;
       }
       break;
@@ -741,7 +716,7 @@ void handleBuzzer() {
     default: //default case
     case DetermineAlarmState:
       long diffBetweenSelectionAndTrueAltitude = gSelectedAltitudeLong - gTrueAltitudeDouble;
-      if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || eBMP180Failed || eDisplayError) {
+      if (gSelectedAltitudeLong > cHighestAltitudeAlert || eBMP180Failed || eDisplayError) {
         gAlarmModeEnum = AlarmDisabled;
       }
       else if (diffBetweenSelectionAndTrueAltitude > cAlarm1000ToGo) {
@@ -783,7 +758,6 @@ void handleDisplay() {
   gDisplay.setTextSize(1);
   switch (gCursor) {
     case CursorSelectHeading: //Display Selected Heading
-    {
       gDisplay.println("Heading");
       gDisplay.setCursor(0, 15);
       int tempSelectedHeading = gSelectedHeadingInt;
@@ -791,7 +765,6 @@ void handleDisplay() {
       sprintf(heading, "%03d%c", tempSelectedHeading, (char)(247)); //247 == degree symbol
       gDisplay.println(String(heading));
       break;
-    }
 
     case CursorSelectAltimeter:
       gDisplay.println("Altimeter");
@@ -803,22 +776,16 @@ void handleDisplay() {
       gDisplay.println("Offset");
       gDisplay.setCursor(0, 15);
       if (gCalibratedAltitudeOffsetInt > 0) {
-        gDisplay.println("+" + String(gCalibratedAltitudeOffsetInt) + cFtLabel);
+        gDisplay.println("Offset +" + String(gCalibratedAltitudeOffsetInt) + cFtLabel);
       }
       else {
-        gDisplay.println(String(gCalibratedAltitudeOffsetInt) + cFtLabel);
+        gDisplay.println("Offset "  + String(gCalibratedAltitudeOffsetInt) + cFtLabel);
       }
-      break;
-
-    case CursorSelectBrightness:
-      gDisplay.println("Brightness");
-      gDisplay.setCursor(0, 15);
-      gDisplay.println(String(gScreenBrightnessInt));
       break;
 
     case CursorSelectSensor:
       gDisplay.println("Sensor");
-      gDisplay.setCursor(0, 15);
+      gDisplay.setCursor(0,15);
       if (gSensorMode == SensorModeOnShow) {
         gDisplay.println("ON/SHOW");
       }
@@ -829,44 +796,9 @@ void handleDisplay() {
         gDisplay.println("OFF");
       }
       break;
-
-    case CursorSelectAltitudeUnits:
-      gDisplay.println("Alt Units");
-      gDisplay.setCursor(0, 15);
-      if (gAltitudeUnits == AltitudeUnitsFeet) {
-        gDisplay.println("Ft");
-      }
-      else { //(gAltitudeUnits == AltitudeUnitsMeters) {
-        gDisplay.println("Meters");
-      }
-      break;
-
-    case CursorSelectPressureUnits:
-      gDisplay.println("Press Units");
-      gDisplay.setCursor(0, 15);
-      if (gPressureUnits == PressureUnitsInHg) {
-        gDisplay.println("\"Hg");
-      }
-      else if (gPressureUnits == PressureUnitsHPa) {
-        gDisplay.println("hPa");
-      }
-      else { //(gPressureUnits == PressureUnitsMb) {
-        gDisplay.println("mb");
-      }
-      break;
-
-    case CursorViewSoftwareVersion:
-      gDisplay.println("Version");
-      gDisplay.setCursor(0, 15);
-      gDisplay.println(cAppVersion);
-      break;
-
-    case CursorViewBatteryLevel:
-      gDisplay.println("Battery");
-      gDisplay.setCursor(0, 15);
-      gDisplay.println("??%");
-      break;
   }
+
+//{CursorSelectHeading, CursorSelectAltimeter, CursorSelectOffset, CursorSelectBrightness, CursorSelectSensor, CursorSelectAltitudeUnits, CursorSelectPressureUnits, CursorViewSoftwareVersion, CursorViewBatteryLevel}
 
 
 
@@ -879,7 +811,7 @@ void handleDisplay() {
     gDisplay.setCursor(68, 0);
     gDisplay.println("SENSOR OFF");
   }
-  else if (gSensorMode == SensorModeOnShow) { //...show the current altitude top-right
+  else { //...show the current altitude top-right
     gDisplay.setCursor(80, 0);
     gDisplay.println(displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearest)) + cFtLabel);
   }
@@ -940,7 +872,7 @@ void writeValuesToEeprom() {
     altimeterSetting = gAltimeterSettingDouble; //this silences a compiler warning
     EEPROM.put(eepromIndex, altimeterSetting);
   }
-  eepromIndex += sizeof(double);
+  eepromIndex += sizeof(gAltimeterSettingDouble);
 
   //Last altitude offset
   int altitudeOffset;
@@ -949,43 +881,7 @@ void writeValuesToEeprom() {
     altitudeOffset = gCalibratedAltitudeOffsetInt; //this silences a compiler warning
     EEPROM.put(eepromIndex, altitudeOffset);
   }
-  eepromIndex += sizeof(int);
-
-  //Last Screen Brightness
-  int brightness;
-  EEPROM.get(eepromIndex, brightness);
-  if (brightness != gScreenBrightnessInt) {
-    brightness = gScreenBrightnessInt; //this silence a compiler warning
-    EEPROM.put(eepromIndex, brightness);
-  }
-  eepromIndex += sizeof(int);
-
-  //Sensor Mode - On/Show, On/Hide, Off
-  int sensorMode;
-  EEPROM.get(eepromIndex, sensorMode);
-  if (sensorMode != static_cast<int>(gSensorMode)) {
-    sensorMode = static_cast<int>(gSensorMode);
-    EEPROM.put(eepromIndex, sensorMode);
-  }
-  eepromIndex += sizeof(int);
-
-  //Altitude Units
-  int altitudeUnits;
-  EEPROM.get(eepromIndex, altitudeUnits);
-  if (altitudeUnits != static_cast<int>(gAltitudeUnits)) {
-    altitudeUnits = static_cast<int>(gAltitudeUnits);
-    EEPROM.put(eepromIndex, altitudeUnits);
-  }
-  eepromIndex += sizeof(int);
-
-  //Pressure Units
-  int pressureUnits;
-  EEPROM.get(eepromIndex, pressureUnits);
-  if (pressureUnits != static_cast<int>(gPressureUnits)) {
-    pressureUnits = static_cast<int>(gPressureUnits);
-    EEPROM.put(eepromIndex, pressureUnits);
-  }
-  eepromIndex += sizeof(int);
+  //TODO eepromIndex += sizeof(gCalibratedAltitudeOffsetInt);
 }
 
 //////////////////////////////////////////////////////////////////////////
