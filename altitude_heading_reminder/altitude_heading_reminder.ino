@@ -8,6 +8,7 @@ Hardware device to remind pilots of assigned headings & altitudes. Also has buzz
 to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
+*setting to invert orientation of display
 *implement screen brightness control
 *flash screen for alerts
 *add settings to disable 200ft and 1000ft alarms
@@ -31,10 +32,10 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 */
 #include <EEPROM.h>
 #include <SFE_BMP180.h> //TODO implement your own BMP180 pressure sensor library so that we can have a slim version to cut down on program storage space
-#include <SPI.h>
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h> //TODO implement your own graphics libraries so that we can have a slim version to cut down on program storage space
+#include <LiquidCrystal_I2C.h>
+//TODO #include <Adafruit_GFX.h>
+//TODO #include <Adafruit_SSD1306.h> //TODO implement your own graphics libraries so that we can have a slim version to cut down on program storage space
 #include <util/atomic.h> //TODO: remove?
 #include <avr/sleep.h>
 
@@ -117,11 +118,12 @@ volatile unsigned long gLastRotaryActionTs;
 #define cSplashScreenDelay        cOneSecond
 #define cMaxScreenRefreshRate     30 //30Hz //TODO
 #define cMaxScreenRefreshPeriod   (cOneSecond / cMaxScreenRefreshRate)
-#define cDisplayAddr              0x3C
+#define cDisplayAddr              0x27//TODO small display address is 0x3C
 #define cScreenWidth              128 // OLED display width, in pixels
 #define cScreenHeight             32  // OLED display height, in pixels
 #define cOledReset                4   // Reset pin # (or -1 if sharing Arduino reset pin)
-Adafruit_SSD1306 gDisplay(cScreenWidth, cScreenHeight, &Wire, cOledReset);
+//TODO small OLED display Adafruit_SSD1306 gDisplay(cScreenWidth, cScreenHeight, &Wire, cOledReset);
+LiquidCrystal_I2C gDisplay(cDisplayAddr, 16, 2); //16x2 character display
 volatile int gScreenBrightnessInt = cScreenBrightnessSettings; //initialize to brightest setting
 
 //Cursor control
@@ -268,7 +270,7 @@ void initializeBmp180Sensor() {
 
 //////////////////////////////////////////////////////////////////////////
 void initializeDisplayDevice() {
-  if(eDisplayError = !gDisplay.begin(SSD1306_SWITCHCAPVCC, cDisplayAddr)) {
+  /*if(eDisplayError = !gDisplay.begin(SSD1306_SWITCHCAPVCC, cDisplayAddr)) {
     eErrorCode = cDisplayInitFail;
   }
   else {
@@ -281,7 +283,12 @@ void initializeDisplayDevice() {
     gDisplay.println(F("POWER ON"));
     gDisplay.display();
     delay(cSplashScreenDelay);
-  }
+  }TODO OLED display*/
+
+  gDisplay.init();
+  gDisplay.backlight();
+  gDisplay.setCursor(4, 0);
+  gDisplay.print("POWER ON");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -765,8 +772,142 @@ void handleBuzzer() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleDisplay() {
+  //gDisplay.clear();
+  gDisplay.leftToRight();
+
+  //show the parameter name top-left and the associated value bottom-left
+  gDisplay.setCursor(0, 0);
+  switch (gCursor) {
+    case CursorSelectHeading: //Display Selected Heading
+    {
+      gDisplay.print("Hdg");
+      gDisplay.setCursor(0, 1);
+      int tempSelectedHeading = gSelectedHeadingInt;
+      char heading[4];
+      sprintf(heading, "%03d%c", tempSelectedHeading, (char)(223)); //223 == degree symbol
+      gDisplay.print(String(heading));
+      break;
+    }
+
+    case CursorSelectAltimeter:
+      gDisplay.print("Altmtr");
+      gDisplay.setCursor(0, 1);
+      gDisplay.print(String(gAltimeterSettingDouble) + cInHgLabel);
+      break;
+
+    case CursorSelectOffset:
+      gDisplay.print("Offset");
+      gDisplay.setCursor(0, 1);
+      if (gCalibratedAltitudeOffsetInt > 0) {
+        gDisplay.print("+" + String(gCalibratedAltitudeOffsetInt) + cFtLabel);
+      }
+      else {
+        gDisplay.print(String(gCalibratedAltitudeOffsetInt) + cFtLabel);
+      }
+      break;
+
+    case CursorSelectBrightness:
+      gDisplay.print("Brtness");
+      gDisplay.setCursor(0, 1);
+      gDisplay.print(String(gScreenBrightnessInt));
+      break;
+
+    case CursorSelectSensor:
+      gDisplay.print("Sensor");
+      gDisplay.setCursor(0, 1);
+      if (gSensorMode == SensorModeOnShow) {
+        gDisplay.print("ON/SHOW");
+      }
+      else if (gSensorMode == SensorModeOnHide) {
+        gDisplay.print("ON/HIDE");
+      }
+      else {
+        gDisplay.print("OFF");
+      }
+      break;
+
+    case CursorSelectAltitudeUnits:
+      gDisplay.print("A Units");
+      gDisplay.setCursor(0, 1);
+      if (gAltitudeUnits == AltitudeUnitsFeet) {
+        gDisplay.print("Ft");
+      }
+      else { //(gAltitudeUnits == AltitudeUnitsMeters) {
+        gDisplay.print("Meters");
+      }
+      break;
+
+    case CursorSelectPressureUnits:
+      gDisplay.print("P Units");
+      gDisplay.setCursor(0, 1);
+      if (gPressureUnits == PressureUnitsInHg) {
+        gDisplay.print("\"Hg");
+      }
+      else if (gPressureUnits == PressureUnitsHPa) {
+        gDisplay.print("hPa");
+      }
+      else { //(gPressureUnits == PressureUnitsMb) {
+        gDisplay.print("mb");
+      }
+      break;
+
+    case CursorViewSoftwareVersion:
+      gDisplay.print("Ver");
+      gDisplay.setCursor(0, 1);
+      gDisplay.print(cAppVersion);
+      break;
+
+    case CursorViewBatteryLevel:
+      gDisplay.print("Batt");
+      gDisplay.setCursor(0, 1);
+      gDisplay.print("100%");
+      break;
+  }
+
+
+  //show the sensor true altitude
+  if (eBMP180Failed) { //if there's a sensor error, the top line should be the error message
+    gDisplay.setCursor(12, 0);
+    gDisplay.print("FAIL"); //TODO: in the future, write the error code to EEPROM
+  }
+  else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
+    gDisplay.setCursor(13, 0);
+    gDisplay.print("OFF");
+  }
+  else if (gSensorMode == SensorModeOnShow) { //...show the current altitude top-right
+    gDisplay.setCursor(8, 0);
+    gDisplay.print(displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearest)) + cFtLabel);
+  }
+
+  //...Display Selected Altitude
+  gDisplay.setCursor(8, 1);
+  long temporarySelectedAltitude = gSelectedAltitudeLong;
+  gDisplay.print(displayNumber(temporarySelectedAltitude) + cFtLabel);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  //TODO: smaller OLED display code
   //If we're having display issues, try to recover
-  if (eDisplayError && cTryToRecover) {
+  /*if (eDisplayError && cTryToRecover) {
     initializeDisplayDevice();
     if (eDisplayError) { //if we're still having trouble, return
       return;
@@ -872,7 +1013,7 @@ void handleDisplay() {
 
   //show the sensor true altitude
   if (eBMP180Failed) { //if there's a sensor error, the top line should be the error message
-      gDisplay.setCursor(62, 0);
+    gDisplay.setCursor(62, 0);
     gDisplay.println("SENSOR FAIL"); //TODO: in the future, write the error code to EEPROM
   }
   else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
@@ -890,7 +1031,7 @@ void handleDisplay() {
   long temporarySelectedAltitude = gSelectedAltitudeLong;
   gDisplay.println(displayNumber(temporarySelectedAltitude) + cFtLabel);
 
-  gDisplay.display();
+  gDisplay.display();*/
 }
 
 
@@ -939,6 +1080,7 @@ void writeValuesToEeprom() {
   if (altimeterSetting != gAltimeterSettingDouble) {
     altimeterSetting = gAltimeterSettingDouble; //this silences a compiler warning
     EEPROM.put(eepromIndex, altimeterSetting);
+    println("Saving Altimeter Setting");
   }
   eepromIndex += sizeof(double);
 
@@ -948,6 +1090,7 @@ void writeValuesToEeprom() {
   if (altitudeOffset != gCalibratedAltitudeOffsetInt) {
     altitudeOffset = gCalibratedAltitudeOffsetInt; //this silences a compiler warning
     EEPROM.put(eepromIndex, altitudeOffset);
+    println("Saving Altitude Offset");
   }
   eepromIndex += sizeof(int);
 
@@ -957,6 +1100,7 @@ void writeValuesToEeprom() {
   if (brightness != gScreenBrightnessInt) {
     brightness = gScreenBrightnessInt; //this silence a compiler warning
     EEPROM.put(eepromIndex, brightness);
+    println("Saving Brightness");
   }
   eepromIndex += sizeof(int);
 
@@ -966,6 +1110,7 @@ void writeValuesToEeprom() {
   if (sensorMode != static_cast<int>(gSensorMode)) {
     sensorMode = static_cast<int>(gSensorMode);
     EEPROM.put(eepromIndex, sensorMode);
+    println("Saving Sensor Mode");
   }
   eepromIndex += sizeof(int);
 
@@ -975,6 +1120,7 @@ void writeValuesToEeprom() {
   if (altitudeUnits != static_cast<int>(gAltitudeUnits)) {
     altitudeUnits = static_cast<int>(gAltitudeUnits);
     EEPROM.put(eepromIndex, altitudeUnits);
+    println("Saving Altitude Units");
   }
   eepromIndex += sizeof(int);
 
@@ -984,6 +1130,7 @@ void writeValuesToEeprom() {
   if (pressureUnits != static_cast<int>(gPressureUnits)) {
     pressureUnits = static_cast<int>(gPressureUnits);
     EEPROM.put(eepromIndex, pressureUnits);
+    println("Saving Pressure Units");
   }
   eepromIndex += sizeof(int);
 }
