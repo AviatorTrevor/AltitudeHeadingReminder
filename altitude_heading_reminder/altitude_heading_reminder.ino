@@ -44,12 +44,12 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cAppVersion                    "1.0.0"
 #define cOneSecond                     1000 //1000 milliseconds = 1 second
 #define cOneSecondBeforeOverflow       (unsigned long)(pow(2, sizeof(unsigned long) * 8) - cOneSecond)
-#define cTwentySeconds                 20 * cOneSecond
+#define cTenSeconds                    10 * cOneSecond
 #define cFeetInMeters                  3.28084
 #define cSeaLevelPressureMb            1013.25 //standard sea level pressure in millibars
 #define cSeaLevelPressureInHg          29.92
 #define cFtLabel                       "ft"
-#define cInHgLabel                     "\""
+#define cInLabel                     "\""
 #define cAltitudeSelectIncrement       100   //ft
 #define cAltitudeFineSelectIncrement   10    //ft
 #define cInitialSelectedAltitudeOffset 2000  //ft
@@ -287,8 +287,10 @@ void initializeDisplayDevice() {
 
   gDisplay.init();
   gDisplay.backlight();
+  gDisplay.clear();
   gDisplay.setCursor(4, 0);
   gDisplay.print("POWER ON");
+  delay(1500);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -380,12 +382,12 @@ void loop() {
     handleBmp180Sensor();
   }
 
+  //check & handle long-press of left rotary knob
   if (gLeftButtonPossibleLongPress && millis() - gLeftButtonPressedTs >= cLongButtonPress) {
     handleLeftRotaryLongPress();
-    gLeftButtonPossibleLongPress = false;
   }
 
-  if (gCursor != CursorSelectHeading && millis() - gLastRotaryActionTs >= cTwentySeconds) {
+  if (gCursor != CursorSelectHeading && gCursor != CursorSelectAltimeter && millis() - gLastRotaryActionTs >= cTenSeconds) {
     gCursor = CursorSelectHeading;
   }
 
@@ -586,6 +588,7 @@ void handleLeftRotaryShortPress() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleLeftRotaryLongPress() {
+  gLeftButtonPossibleLongPress = false;
   gDisableLeftRotaryProcessing = true;
   gLeftRotaryFineTuningPress = false;
   gCursor = CursorSelectHeading;
@@ -772,118 +775,114 @@ void handleBuzzer() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleDisplay() {
-  //gDisplay.clear();
-  gDisplay.leftToRight();
-
   //show the parameter name top-left and the associated value bottom-left
-  gDisplay.setCursor(0, 0);
+  char topLeftContent[8];
+  char bottomLeftContent[8];
+  char topRightContent[9];
+  char bottomRightContent[9];
+  
   switch (gCursor) {
     case CursorSelectHeading: //Display Selected Heading
     {
-      gDisplay.print("Hdg");
-      gDisplay.setCursor(0, 1);
-      int tempSelectedHeading = gSelectedHeadingInt;
-      char heading[4];
-      sprintf(heading, "%03d%c", tempSelectedHeading, (char)(223)); //223 == degree symbol
-      gDisplay.print(String(heading));
+      sprintf(topLeftContent, "%s", "Hdg");
+      sprintf(bottomLeftContent, "%03d%c", gSelectedHeadingInt, (char)(223)); //223 == degree symbol
       break;
     }
 
     case CursorSelectAltimeter:
-      gDisplay.print("Altmtr");
-      gDisplay.setCursor(0, 1);
-      gDisplay.print(String(gAltimeterSettingDouble) + cInHgLabel);
+      sprintf(topLeftContent, "%-s", "Altmtr");
+      println(String(gAltimeterSettingDouble));
+      sprintf(bottomLeftContent, "%s%s", String(gAltimeterSettingDouble).c_str(), cInLabel);
       break;
 
     case CursorSelectOffset:
-      gDisplay.print("Offset");
-      gDisplay.setCursor(0, 1);
-      if (gCalibratedAltitudeOffsetInt > 0) {
-        gDisplay.print("+" + String(gCalibratedAltitudeOffsetInt) + cFtLabel);
-      }
-      else {
-        gDisplay.print(String(gCalibratedAltitudeOffsetInt) + cFtLabel);
-      }
+      sprintf(topLeftContent, "%-s", "Offset");
+      sprintf(bottomLeftContent, "%+d%s", gCalibratedAltitudeOffsetInt, cFtLabel);
       break;
 
     case CursorSelectBrightness:
-      gDisplay.print("Brtness");
-      gDisplay.setCursor(0, 1);
-      gDisplay.print(String(gScreenBrightnessInt));
+      sprintf(topLeftContent, "%s", "Brtness");
+      sprintf(bottomLeftContent, "%-7d", gScreenBrightnessInt);
       break;
 
     case CursorSelectSensor:
-      gDisplay.print("Sensor");
-      gDisplay.setCursor(0, 1);
+      sprintf(topLeftContent, "%s", "Sensor");
       if (gSensorMode == SensorModeOnShow) {
-        gDisplay.print("ON/SHOW");
+        sprintf(bottomLeftContent, "%-7s", "ON/SHOW");
       }
       else if (gSensorMode == SensorModeOnHide) {
-        gDisplay.print("ON/HIDE");
+        sprintf(bottomLeftContent, "%-7s", "ON/HIDE");
       }
       else {
-        gDisplay.print("OFF");
+        sprintf(bottomLeftContent, "%-7s", "OFF");
       }
       break;
 
     case CursorSelectAltitudeUnits:
-      gDisplay.print("A Units");
-      gDisplay.setCursor(0, 1);
+      sprintf(topLeftContent, "%-7s", "A Units");
       if (gAltitudeUnits == AltitudeUnitsFeet) {
-        gDisplay.print("Ft");
+        sprintf(bottomLeftContent, "%-7s", "Ft");
       }
       else { //(gAltitudeUnits == AltitudeUnitsMeters) {
-        gDisplay.print("Meters");
+        sprintf(bottomLeftContent, "%-7s", "Meters");
       }
       break;
 
     case CursorSelectPressureUnits:
-      gDisplay.print("P Units");
-      gDisplay.setCursor(0, 1);
+      sprintf(topLeftContent, "%-7s", "P Units");
       if (gPressureUnits == PressureUnitsInHg) {
-        gDisplay.print("\"Hg");
+        sprintf(bottomLeftContent, "%-7s", "\"Hg");
       }
       else if (gPressureUnits == PressureUnitsHPa) {
-        gDisplay.print("hPa");
+        sprintf(bottomLeftContent, "%-7s", "hPa");
       }
       else { //(gPressureUnits == PressureUnitsMb) {
-        gDisplay.print("mb");
+        sprintf(bottomLeftContent, "%-7s", "mb");
       }
       break;
 
     case CursorViewSoftwareVersion:
-      gDisplay.print("Ver");
-      gDisplay.setCursor(0, 1);
-      gDisplay.print(cAppVersion);
+      sprintf(topLeftContent, "%-7s", "Ver");
+      sprintf(bottomLeftContent, "%-7s", cAppVersion);
       break;
 
     case CursorViewBatteryLevel:
-      gDisplay.print("Batt");
-      gDisplay.setCursor(0, 1);
-      gDisplay.print("100%");
+      sprintf(topLeftContent, "%-7s", "Batt");
+      sprintf(bottomLeftContent, "%-7s", "100%"); //TODO implement battery level
       break;
   }
 
 
   //show the sensor true altitude
   if (eBMP180Failed) { //if there's a sensor error, the top line should be the error message
-    gDisplay.setCursor(12, 0);
-    gDisplay.print("FAIL"); //TODO: in the future, write the error code to EEPROM
+    sprintf(topRightContent, "%s", "FAIL");
   }
   else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
-    gDisplay.setCursor(13, 0);
-    gDisplay.print("OFF");
+    sprintf(topRightContent, "%s", "OFF");
   }
   else if (gSensorMode == SensorModeOnShow) { //...show the current altitude top-right
-    gDisplay.setCursor(8, 0);
-    gDisplay.print(displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearest)) + cFtLabel);
+    sprintf(topRightContent, "%s%s", displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearest)).c_str(), cFtLabel);
+  }
+  else {
+    sprintf(topRightContent, "%c", ' ');
   }
 
-  //...Display Selected Altitude
-  gDisplay.setCursor(8, 1);
-  long temporarySelectedAltitude = gSelectedAltitudeLong;
-  gDisplay.print(displayNumber(temporarySelectedAltitude) + cFtLabel);
+  //Selected Altitude
+  long tempSelectedAltitude = gSelectedAltitudeLong;
+  sprintf(bottomRightContent, "%s%s", displayNumber(tempSelectedAltitude).c_str(), cFtLabel);
+  
+  //Update the display
+  char topLine[17];
+  char bottomLine[17];
+  sprintf(topLine, "%-7s %8s", topLeftContent, topRightContent);
+  sprintf(bottomLine, "%-7s %8s", bottomLeftContent, bottomRightContent);
 
+  gDisplay.setCursor(0, 0);
+  gDisplay.print(topLine);
+  gDisplay.setCursor(0, 1);
+  gDisplay.print(bottomLine);
+  
+  
 
 
 
@@ -937,7 +936,7 @@ void handleDisplay() {
     case CursorSelectAltimeter:
       gDisplay.println("Altimeter");
       gDisplay.setCursor(0, 15);
-      gDisplay.println(String(gAltimeterSettingDouble) + cInHgLabel);
+      gDisplay.println(String(gAltimeterSettingDouble) + cInLabel);
       break;
 
     case CursorSelectOffset:
