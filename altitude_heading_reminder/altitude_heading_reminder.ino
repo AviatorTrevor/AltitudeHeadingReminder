@@ -122,6 +122,7 @@ volatile unsigned long gLastRotaryActionTs;
 #define cScreenWidth              128 // OLED display width, in pixels
 #define cScreenHeight             32  // OLED display height, in pixels
 #define cOledReset                4   // Reset pin # (or -1 if sharing Arduino reset pin)
+#define cLedBrightnessPin         11
 //TODO small OLED display Adafruit_SSD1306 gDisplay(cScreenWidth, cScreenHeight, &Wire, cOledReset);
 LiquidCrystal_I2C gDisplay(cDisplayAddr, 16, 2); //16x2 character display
 volatile int gScreenBrightnessInt = cScreenBrightnessSettings; //initialize to brightest setting
@@ -234,6 +235,7 @@ void initializeValuesFromEeprom() {
   EEPROM.get(eepromIndex, tempInt);
   gScreenBrightnessInt = tempInt;
   constrain(gScreenBrightnessInt, 1, cScreenBrightnessSettings);
+  analogWrite(cLedBrightnessPin,(gScreenBrightnessInt - 1) * 49 + 59);
   eepromIndex += sizeof(int);
 
   //Sensor Mode - On/Show, On/Hide, Off
@@ -547,6 +549,7 @@ void handleLeftRotaryMovement(int increment) {
 
     case CursorSelectBrightness:
       gScreenBrightnessInt = (gScreenBrightnessInt + increment + cScreenBrightnessSettings - 1) % cScreenBrightnessSettings + 1;
+      analogWrite(cLedBrightnessPin,(gScreenBrightnessInt - 1) * 49 + 59);
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
