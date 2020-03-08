@@ -19,6 +19,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *interrupts causing an interrupt to beeping noises
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
+*     https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
 *buy louder buzzer? or add 2nd buzzer? Try different frequencies using
 *
 *
@@ -216,9 +217,11 @@ void initializeValuesFromEeprom() {
   
   //Last Altimeter Setting
   EEPROM.get(eepromIndex, tempDouble);
-  gAltimeterSettingDouble = tempDouble;
-  if (gAltimeterSettingDouble < cAltimeterSettingMin || gAltimeterSettingDouble > cAltimeterSettingMax) {
+  if (isnan(tempDouble) || tempDouble < cAltimeterSettingMin || tempDouble > cAltimeterSettingMax) {
     gAltimeterSettingDouble = cSeaLevelPressureInHg;
+  }
+  else {
+    gAltimeterSettingDouble = tempDouble;
   }
   eepromIndex += sizeof(double);
   
@@ -235,7 +238,7 @@ void initializeValuesFromEeprom() {
   EEPROM.get(eepromIndex, tempInt);
   gScreenBrightnessInt = tempInt;
   constrain(gScreenBrightnessInt, 1, cScreenBrightnessSettings);
-  analogWrite(cLedBrightnessPin,(gScreenBrightnessInt - 1) * 49 + 59);
+  //TODO analogWrite(cLedBrightnessPin,(gScreenBrightnessInt - 1) * 49 + 59);
   eepromIndex += sizeof(int);
 
   //Sensor Mode - On/Show, On/Hide, Off
@@ -542,14 +545,14 @@ void handleLeftRotaryMovement(int increment) {
       break;
     
     case CursorSelectOffset:
-      gCalibratedAltitudeOffsetInt = constrain(gCalibratedAltitudeOffsetInt + cCalibrationOffsetInterval * increment, cCalibrationOffsetMin, cCalibrationOffsetMax);
+      gCalibratedAltitudeOffsetInt = constrain(roundNumber(gCalibratedAltitudeOffsetInt + cCalibrationOffsetInterval * increment, cCalibrationOffsetInterval), cCalibrationOffsetMin, cCalibrationOffsetMax);
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
 
     case CursorSelectBrightness:
       gScreenBrightnessInt = (gScreenBrightnessInt + increment + cScreenBrightnessSettings - 1) % cScreenBrightnessSettings + 1;
-      analogWrite(cLedBrightnessPin,(gScreenBrightnessInt - 1) * 49 + 59);
+      //TODO analogWrite(cLedBrightnessPin,(gScreenBrightnessInt - 1) * 49 + 59);
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
@@ -794,7 +797,6 @@ void handleDisplay() {
 
     case CursorSelectAltimeter:
       sprintf(topLeftContent, "%-s", "Altmtr");
-      println(String(gAltimeterSettingDouble));
       sprintf(bottomLeftContent, "%s%s", String(gAltimeterSettingDouble).c_str(), cInLabel);
       break;
 
@@ -1082,7 +1084,6 @@ void writeValuesToEeprom() {
   if (altimeterSetting != gAltimeterSettingDouble) {
     altimeterSetting = gAltimeterSettingDouble; //this silences a compiler warning
     EEPROM.put(eepromIndex, altimeterSetting);
-    println("Saving Altimeter Setting");
   }
   eepromIndex += sizeof(double);
 
@@ -1092,7 +1093,6 @@ void writeValuesToEeprom() {
   if (altitudeOffset != gCalibratedAltitudeOffsetInt) {
     altitudeOffset = gCalibratedAltitudeOffsetInt; //this silences a compiler warning
     EEPROM.put(eepromIndex, altitudeOffset);
-    println("Saving Altitude Offset");
   }
   eepromIndex += sizeof(int);
 
@@ -1102,7 +1102,6 @@ void writeValuesToEeprom() {
   if (brightness != gScreenBrightnessInt) {
     brightness = gScreenBrightnessInt; //this silence a compiler warning
     EEPROM.put(eepromIndex, brightness);
-    println("Saving Brightness");
   }
   eepromIndex += sizeof(int);
 
@@ -1112,7 +1111,6 @@ void writeValuesToEeprom() {
   if (sensorMode != static_cast<int>(gSensorMode)) {
     sensorMode = static_cast<int>(gSensorMode);
     EEPROM.put(eepromIndex, sensorMode);
-    println("Saving Sensor Mode");
   }
   eepromIndex += sizeof(int);
 
@@ -1122,7 +1120,6 @@ void writeValuesToEeprom() {
   if (altitudeUnits != static_cast<int>(gAltitudeUnits)) {
     altitudeUnits = static_cast<int>(gAltitudeUnits);
     EEPROM.put(eepromIndex, altitudeUnits);
-    println("Saving Altitude Units");
   }
   eepromIndex += sizeof(int);
 
@@ -1132,7 +1129,6 @@ void writeValuesToEeprom() {
   if (pressureUnits != static_cast<int>(gPressureUnits)) {
     pressureUnits = static_cast<int>(gPressureUnits);
     EEPROM.put(eepromIndex, pressureUnits);
-    println("Saving Pressure Units");
   }
   eepromIndex += sizeof(int);
 }
