@@ -200,7 +200,7 @@ void setup() {
   Serial.begin(9600);
   #endif
   println("APPLICATION START");
-
+  
   initializeValuesFromEeprom();
   initializeBmp180Sensor();
   initializeDisplayDevice();
@@ -236,27 +236,23 @@ void initializeValuesFromEeprom() {
 
   //Last Screen Brightness
   EEPROM.get(eepromIndex, tempInt);
-  gScreenBrightnessInt = tempInt;
-  constrain(gScreenBrightnessInt, 1, cScreenBrightnessSettings);
+  gScreenBrightnessInt = constrain(tempInt, 1, cScreenBrightnessSettings);
   //TODO analogWrite(cLedBrightnessPin,(gScreenBrightnessInt - 1) * 49 + 59);
   eepromIndex += sizeof(int);
 
   //Sensor Mode - On/Show, On/Hide, Off
   EEPROM.get(eepromIndex, tempInt);
-  constrain(tempInt, 0, cNumberOfSensorModes);
-  gSensorMode = static_cast<SensorMode>(tempInt);
+  gSensorMode = static_cast<SensorMode>(constrain(tempInt, 0, cNumberOfSensorModes));
   eepromIndex += sizeof(int);
 
   //Altitude Units
   EEPROM.get(eepromIndex, tempInt);
-  constrain(tempInt, 0, cNumberOfAltitudeUnits);
-  gAltitudeUnits = static_cast<AltitudeUnits>(tempInt);
+  gAltitudeUnits = static_cast<AltitudeUnits>(constrain(tempInt, 0, cNumberOfAltitudeUnits));
   eepromIndex += sizeof(int);
 
   //Pressure Units
   EEPROM.get(eepromIndex, tempInt);
-  constrain(tempInt, 0, cNumberOfPressureUnits);
-  gPressureUnits = static_cast<PressureUnits>(tempInt);
+  gPressureUnits = static_cast<PressureUnits>(constrain(tempInt, 0, cNumberOfPressureUnits));
   eepromIndex += sizeof(int);
 
   //TODO
