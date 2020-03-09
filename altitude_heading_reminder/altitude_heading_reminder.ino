@@ -9,14 +9,16 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
 *setting to invert orientation of display
+*right knob long press = sync altitude to nearest interval
 *implement screen brightness control
 *flash screen for alerts
 *add settings to disable 200ft and 1000ft alarms
-*test after 20 seconds of inactivity, reset the page and cursor to the main screen
 *test sleeping
 *test recovering pressure sensor?
 *add more data fields to settings page
 *interrupts causing an interrupt to beeping noises
+*design for battery
+*software for battery level & charging
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
 *     https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
