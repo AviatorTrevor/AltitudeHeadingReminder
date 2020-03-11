@@ -8,8 +8,7 @@ Hardware device to remind pilots of assigned headings & altitudes. Also has buzz
 to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
-*setting to invert orientation of display
-*right knob long press = sync altitude to nearest interval
+*silence alarm for a second or two after it triggers
 *implement screen brightness control
 *flash screen for alerts
 *add settings to disable 200ft and 1000ft alarms
@@ -19,6 +18,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *interrupts causing an interrupt to beeping noises
 *design for battery
 *software for battery level & charging
+*create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
 *     https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
@@ -31,7 +31,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *2100
 *2300
 *2400
-*4100 & 4200 alternating?
+*4100 & 4200 alternating?long
 */
 #include <EEPROM.h>
 #include <SFE_BMP180.h> //TODO implement your own BMP180 pressure sensor library so that we can have a slim version to cut down on program storage space
@@ -52,7 +52,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cSeaLevelPressureMb            1013.25 //standard sea level pressure in millibars
 #define cSeaLevelPressureInHg          29.92
 #define cFtLabel                       "ft"
-#define cInLabel                     "\""
+#define cInLabel                       "\""
 #define cAltitudeSelectIncrement       100   //ft
 #define cAltitudeFineSelectIncrement   10    //ft
 #define cInitialSelectedAltitudeOffset 2000  //ft
@@ -109,8 +109,10 @@ unsigned long          gNextSensorReadyTs;
 unsigned long          gNextScreenRefreshTs; //TODO is this being used?
 unsigned long          gNextBuzzTs;
 volatile unsigned long gLeftButtonPressedTs;
-volatile unsigned long gLastAltitudeSelectChangeTs;
+volatile unsigned long gRightButtonPressedTs;
+volatile unsigned long gLastRightRotaryActionTs;
 volatile unsigned long gLeftRotaryReleaseTs;
+volatile unsigned long gRightRotaryReleaseTs;
 volatile unsigned long gEepromSaveNeededTs;
 volatile unsigned long gLastRotaryActionTs;
 
@@ -131,7 +133,22 @@ LiquidCrystal_I2C gDisplay(cDisplayAddr, 16, 2); //16x2 character display
 volatile int gScreenBrightnessInt = cScreenBrightnessSettings; //initialize to brightest setting
 
 //Cursor control
-enum Cursor {CursorSelectHeading, CursorSelectAltimeter, CursorSelectOffset, CursorSelectBrightness, CursorSelectSensor, CursorSelectAltitudeUnits, CursorSelectPressureUnits, CursorViewSoftwareVersion, CursorViewBatteryLevel, cNumberOfCursorModes} gCursor = CursorSelectHeading;
+enum Cursor {
+    CursorSelectHeading,
+    CursorSelectAltimeter,
+    CursorSelectOffset,
+    CursorSelectBrightness,
+    CursorSelectSensor,
+    CursorSelectAltitudeUnits,
+    CursorSelectPressureUnits,
+    CursorViewSoftwareVersion,
+    CursorViewBatteryLevel,
+    cNumberOfCursorModes}
+    gCursor = CursorSelectHeading;
+    //TODO: set volume?
+    //TODO: set tones?
+    //TODO: turn alerts on/off?
+    //TODO: current temperature?
 
 //BMP180 Sensor variables
 #define    cSensorLoopCycle               2 //2Hz
@@ -168,7 +185,11 @@ const int cEncoderValues[2][cRotaryStates] = {
 #define        cPinRightRotaryButton    10
 volatile int   gRightRotaryIndex;
 volatile int   gRightRotaryButton = RELEASED;
+volatile int   gRightRotaryButtonPreviousValue = RELEASED;
 volatile int   gRightRotaryDirection;
+volatile bool  gRightButtonPossibleLongPress;
+volatile bool  gRightRotaryFineTuningPress;
+volatile bool  gDisableRightRotaryProcessing; //we disable knob processing right after the altitude-sync command until the button is released
 
 //Left Rotary Knob
 #define        cPinLeftRotarySignalDt  2
@@ -202,10 +223,10 @@ void setup() {
   Serial.begin(9600);
   #endif
   println("APPLICATION START");
-  
+
+  initializeDisplayDevice();
   initializeValuesFromEeprom();
   initializeBmp180Sensor();
-  initializeDisplayDevice();
   initializeRotaryKnobs();
   initializeBuzzer();
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
@@ -289,11 +310,13 @@ void initializeDisplayDevice() {
   }TODO OLED display*/
 
   gDisplay.init();
-  gDisplay.backlight();
   gDisplay.clear();
+  delay(50);
+  gDisplay.backlight();
+/*
   gDisplay.setCursor(4, 0);
   gDisplay.print("POWER ON");
-  delay(1500);
+  delay(1500);*/
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -304,8 +327,9 @@ void initializeRotaryKnobs() {
   pinMode(cPinRightRotaryButton, INPUT_PULLUP);
 
   gLeftRotaryButtonPreviousValue = gLeftRotaryButton = digitalRead(cPinLeftRotaryButton);
-  gRightRotaryButton = digitalRead(cPinRightRotaryButton);
+  gRightRotaryButtonPreviousValue =gRightRotaryButton = digitalRead(cPinRightRotaryButton);
   gDisableLeftRotaryProcessing = (gLeftRotaryButton == PRESSED); //Disable left knob processing if we started with the knob-button being pressed
+  gDisableRightRotaryProcessing = (gRightRotaryButton == PRESSED); //Disable right knob processing if we started with the knob-button being pressed
   
 
   int rightRotaryDt  = digitalRead(cPinRightRotarySignalDt);
@@ -380,14 +404,19 @@ void loop() {
     delay(cOneSecond); //we take a 1 second frozen penalty for handling this extremely rare situation
     return; //return so that we grab a new currentTime
   }
-  
-  if (millis() >= gNextSensorReadyTs) {
+
+  if (gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() >= gNextSensorReadyTs) {
     handleBmp180Sensor();
   }
 
   //check & handle long-press of left rotary knob
   if (gLeftButtonPossibleLongPress && millis() - gLeftButtonPressedTs >= cLongButtonPress) {
     handleLeftRotaryLongPress();
+  }
+
+  //check & handle long-press of right rotary knob
+  if (gRightButtonPossibleLongPress && millis() - gRightButtonPressedTs >= cLongButtonPress) {
+    handleRightRotaryLongPress();
   }
 
   if (gCursor != CursorSelectHeading && gCursor != CursorSelectAltimeter && millis() - gLastRotaryActionTs >= cTenSeconds) {
@@ -549,7 +578,7 @@ void handleLeftRotaryMovement(int increment) {
       break;
 
     case CursorSelectBrightness:
-      gScreenBrightnessInt = (gScreenBrightnessInt + increment + cScreenBrightnessSettings - 1) % cScreenBrightnessSettings + 1;
+      gScreenBrightnessInt = constrain(gScreenBrightnessInt + increment, 1, cScreenBrightnessSettings);
       //TODO analogWrite(cLedBrightnessPin,(gScreenBrightnessInt - 1) * 49 + 59);
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
@@ -576,9 +605,9 @@ void handleLeftRotaryMovement(int increment) {
       gNeedToWriteToEeprom = true;
       break;
       
-    case CursorViewSoftwareVersion:      
+    case CursorViewSoftwareVersion:
     case CursorViewBatteryLevel:
-      break; //Do nothing for these modes - viewing only
+      break; //do nothing for these modes, display only
     
     default:
       println("Unexpected default case for handling left rotary knob rotation");
@@ -600,13 +629,28 @@ void handleLeftRotaryLongPress() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleRightRotary() {
-  //The button being pressed on the right knob can only be used for fine-tuning mode. A released state indicates normal altitude selection mode.
+  //The button being pressed on the right knob can only be used for fine-tuning mode or altitude-sync (long press). A released state indicates normal altitude selection mode.
   gRightRotaryButton = digitalRead(cPinRightRotaryButton); //read button state
   int rightRotaryDt = digitalRead(cPinRightRotarySignalDt);
   int rightRotaryClk = digitalRead(cPinRightRotarySignalClk);
 
   gLastRotaryActionTs = millis();
 
+  if (gRightRotaryButton != gRightRotaryButtonPreviousValue && millis() - gRightRotaryReleaseTs >= cRotaryButtonReleaseDelay) { //if button state changed
+    gRightRotaryButtonPreviousValue = gRightRotaryButton;
+    if (gRightRotaryButton == PRESSED) {
+      gRightButtonPressedTs = millis();
+      gRightButtonPossibleLongPress = true;
+      gRightRotaryFineTuningPress = false;
+    }
+    else { //(gRightRotaryButton == RELEASED) //released after either a long-press or a fine-tuning press
+      gRightButtonPossibleLongPress = false;
+      gDisableRightRotaryProcessing = false;
+      gRightRotaryReleaseTs = millis();
+    }
+  }
+
+  //Handle rotation
   int clockwiseRotationIndex = (gRightRotaryIndex + 1) % cRotaryStates;
   int counterclockwiseRotationIndexIndex = (gRightRotaryIndex - 1 + cRotaryStates) % cRotaryStates;
   if (rightRotaryDt == cEncoderValues[cDtLookup][clockwiseRotationIndex] && rightRotaryClk == cEncoderValues[cClkLookup][clockwiseRotationIndex]) {
@@ -631,13 +675,15 @@ void handleRightRotaryMovement(int increment) { // +1 indicates rotation to the 
   if (increment == 0) {
     return; //if we didn't really move detents, do nothing
   }
-  gLastAltitudeSelectChangeTs = millis(); //note the time the knob moved to a different detent so we silence the alarm/buzzer
+  gLastRightRotaryActionTs = millis(); //note the time the knob moved to a different detent so we silence the alarm/buzzer
+  gRightButtonPossibleLongPress = false;
+  gRightRotaryFineTuningPress = (gRightRotaryButton == PRESSED);
 
   gAlarmModeEnum = AlarmDisabled; //disable alarm if we change selected altitude
   if (gSelectedAltitudeLong > cHighAltitude || (gSelectedAltitudeLong == cHighAltitude && increment == 1) ) {
     int incrementMagnitude = cAltitudeHighSelectIncrement; //normal increment magnitude indicates the button being released and the current selected altitude being on an interval
     int rounding = cAltitudeHighSelectIncrement;
-    if (gRightRotaryButton == PRESSED) { //if we're fine-tuning, make the increment magnitude smaller
+    if (gRightRotaryFineTuningPress) { //if we're fine-tuning, make the increment magnitude smaller
       incrementMagnitude = cAltitudeSelectIncrement;
       rounding = cAltitudeSelectIncrement;
     }
@@ -649,7 +695,7 @@ void handleRightRotaryMovement(int increment) { // +1 indicates rotation to the 
   else {
     int incrementMagnitude = cAltitudeSelectIncrement;
     int rounding = cAltitudeSelectIncrement;
-    if (gRightRotaryButton == PRESSED) {
+    if (gRightRotaryFineTuningPress) {
       incrementMagnitude = cAltitudeFineSelectIncrement;
       rounding = cAltitudeFineSelectIncrement;
     }
@@ -657,6 +703,23 @@ void handleRightRotaryMovement(int increment) { // +1 indicates rotation to the 
       incrementMagnitude = cAltitudeSelectIncrement / 2; //we are at an in-between cAltitudeSelectIncrement state, so the knob movement will increment or decement to the nearest cAltitudeSelectIncrement
     }
     gSelectedAltitudeLong = max(roundNumber(gSelectedAltitudeLong + increment * incrementMagnitude, rounding), cLowestAltitudeSelect);
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
+void handleRightRotaryLongPress() {
+  gRightButtonPossibleLongPress = false;
+  gDisableRightRotaryProcessing = true;
+  gRightRotaryFineTuningPress = false;
+  gLastRightRotaryActionTs = millis(); //note the time so we silence the alarm/buzzer temporarily
+  gAlarmModeEnum = AlarmDisabled; //disable alarm
+
+  //if altitude is above 18k (cHighAltitude), then set selected altitude to nearest 1000ft (cAltitudeHighSelectIncrement) of our true altitude
+  if (gTrueAltitudeDouble >= cHighAltitude) {
+    gSelectedAltitudeLong = roundNumber(gTrueAltitudeDouble, cAltitudeHighSelectIncrement);
+  }
+  else { //else, we're below 18k, so round to the nearest 100ft (cAltitudeSelectIncrement) of our true altitude
+    gSelectedAltitudeLong = roundNumber(gTrueAltitudeDouble, cAltitudeSelectIncrement);
   }
 }
 
@@ -747,7 +810,7 @@ void handleBuzzer() {
           gSelectedAltitudeLong = roundNumber(initialAltitudeSelection + cAltitudeSelectIncrement * 5, cAltitudeSelectIncrement * 5);
         }
       }
-      else if (gSensorMode != SensorModeOff || gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastAltitudeSelectChangeTs >= cDisableAlarmKnobMovementTime) {
+      else if (gSensorMode != SensorModeOff || gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
         gAlarmModeEnum = DetermineAlarmState;
       }
       break;
