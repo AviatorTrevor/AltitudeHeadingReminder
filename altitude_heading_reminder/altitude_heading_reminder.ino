@@ -1,4 +1,3 @@
-
 /*
 Author: Trevor Bartlett
 Email: aviatortrevor@gmail.com
@@ -40,7 +39,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 //TODO #include <Adafruit_GFX.h>
 //TODO #include <Adafruit_SSD1306.h> //TODO implement your own graphics libraries so that we can have a slim version to cut down on program storage space
 #include <util/atomic.h> //TODO: remove?
-#include <avr/sleep.h>
+//TODO remove? #include <avr/sleep.h>
 
 #define DEBUG
 
@@ -80,6 +79,7 @@ double          gTrueAltitudeDouble;           //feet, true altitude
 volatile long   gSelectedAltitudeLong; //feet
 volatile double gAltimeterSettingDouble = cSeaLevelPressureInHg; //inches of mercury
 volatile int    gCalibratedAltitudeOffsetInt;
+volatile int    gPermanentCalibratedAltitudeOffsetInt;
 volatile int    gSelectedHeadingInt = 360; //degrees
 enum AltitudeUnits {AltitudeUnitsFeet, AltitudeUnitsMeters, cNumberOfAltitudeUnits};
 enum PressureUnits {PressureUnitsInHg, PressureUnitsHPa, PressureUnitsMb, cNumberOfPressureUnits};
@@ -229,7 +229,7 @@ void setup() {
   initializeBmp180Sensor();
   initializeRotaryKnobs();
   initializeBuzzer();
-  set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  //TODO remove set_sleep_mode(SLEEP_MODE_PWR_DOWN); //SLEEP_MODE_PWR_SAVE,
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -257,26 +257,37 @@ void initializeValuesFromEeprom() {
   }
   eepromIndex += sizeof(int);
 
+
+  //Semi-permanent altitude offset
+  EEPROM.get(eepromIndex, tempInt);
+  gPermanentCalibratedAltitudeOffsetInt = tempInt;
+  eepromIndex += sizeof(int);
+
+
   //Last Screen Brightness
   EEPROM.get(eepromIndex, tempInt);
   gScreenBrightnessInt = constrain(tempInt, 1, cScreenBrightnessSettings);
   //TODO analogWrite(cLedBrightnessPin,(gScreenBrightnessInt - 1) * 49 + 59);
   eepromIndex += sizeof(int);
 
+
   //Sensor Mode - On/Show, On/Hide, Off
   EEPROM.get(eepromIndex, tempInt);
   gSensorMode = static_cast<SensorMode>(constrain(tempInt, 0, cNumberOfSensorModes));
   eepromIndex += sizeof(int);
+
 
   //Altitude Units
   EEPROM.get(eepromIndex, tempInt);
   gAltitudeUnits = static_cast<AltitudeUnits>(constrain(tempInt, 0, cNumberOfAltitudeUnits));
   eepromIndex += sizeof(int);
 
+
   //Pressure Units
   EEPROM.get(eepromIndex, tempInt);
   gPressureUnits = static_cast<PressureUnits>(constrain(tempInt, 0, cNumberOfPressureUnits));
   eepromIndex += sizeof(int);
+
 
   //TODO
   //1000ft alert tone
@@ -431,6 +442,14 @@ void loop() {
     writeValuesToEeprom();
   }
   //TODO calculate VSI (vertical speed) just to display for fun?
+
+  /*cli(); //this stops interrupts
+  sleep_enable();
+  sleep_bod_disable();
+  sei(); //this allows interrupts to continue
+  sleep_cpu();
+  sleep_disable();   TODO remove all this?*/
+  println("Awake");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -625,6 +644,13 @@ void handleLeftRotaryLongPress() {
   gDisableLeftRotaryProcessing = true;
   gLeftRotaryFineTuningPress = false;
   gCursor = CursorSelectHeading;
+
+  if (gSelectedHeadingInt == 333 && gSelectedAltitudeLong == -1500) { //magic numbers to program offset
+    gPermanentCalibratedAltitudeOffsetInt += gCalibratedAltitudeOffsetInt;
+    gCalibratedAltitudeOffsetInt = 0;
+    gEepromSaveNeededTs = millis();
+    gNeedToWriteToEeprom = true;
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1157,6 +1183,15 @@ void writeValuesToEeprom() {
   }
   eepromIndex += sizeof(int);
 
+  
+  //Semi-Permanent altitude offset
+  EEPROM.get(eepromIndex, altitudeOffset);
+  if (altitudeOffset != gPermanentCalibratedAltitudeOffsetInt) {
+    altitudeOffset = gPermanentCalibratedAltitudeOffsetInt; //this silences a compiler warning
+    EEPROM.put(eepromIndex, altitudeOffset);
+  }
+  eepromIndex += sizeof(int);
+
   //Last Screen Brightness
   int brightness;
   EEPROM.get(eepromIndex, brightness);
@@ -1196,7 +1231,7 @@ void writeValuesToEeprom() {
 
 //////////////////////////////////////////////////////////////////////////
 double altitudeCorrected(double pressureAltitude) {
-  return (pressureAltitude - (1 - (pow(gAltimeterSettingDouble / cSeaLevelPressureInHg, 0.190284))) * 145366.45) + gCalibratedAltitudeOffsetInt;
+  return (pressureAltitude - (1 - (pow(gAltimeterSettingDouble / cSeaLevelPressureInHg, 0.190284))) * 145366.45) + gCalibratedAltitudeOffsetInt + gPermanentCalibratedAltitudeOffsetInt;
 }
 
 //////////////////////////////////////////////////////////////////////////
