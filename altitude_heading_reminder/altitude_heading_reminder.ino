@@ -52,6 +52,8 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cSeaLevelPressureInHg          29.92
 #define cFtLabel                       "ft"
 #define cInLabel                       "\""
+#define cMbLabel                       "mb"
+#define cMetersLabel                   "m"
 #define cAltitudeSelectIncrement       100   //ft
 #define cAltitudeFineSelectIncrement   10    //ft
 #define cInitialSelectedAltitudeOffset 2000  //ft
@@ -60,9 +62,9 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cLowestAltitudeSelect          -1500 //ft
 #define cHighestAltitudeSelect         60000 //ft
 #define cHighestAltitudeAlert          20000 //ft, the pressure sensor will only measure so high. No point in alerting above a certain pressure level
-#define cAltimeterSettingMin           27.50 //inHg
-#define cAltimeterSettingMax           31.50 //inHg
-#define cAltimeterSettingInterval      0.01  //inHg
+#define cAltimeterSettingInHgMin           27.50 //inHg
+#define cAltimeterSettingInHgMax           31.50 //inHg
+#define cAltimeterSettingInHgInterval      0.01  //inHg
 #define cCalibrationOffsetMin          -990  //ft
 #define cCalibrationOffsetMax          990   //ft
 #define cCalibrationOffsetInterval     10    //ft
@@ -77,12 +79,12 @@ volatile bool   gNeedToWriteToEeprom;
 //Main program variables
 double          gTrueAltitudeDouble;           //feet, true altitude
 volatile long   gSelectedAltitudeLong; //feet
-volatile double gAltimeterSettingDouble = cSeaLevelPressureInHg; //inches of mercury
+volatile double gAltimeterSettingInHgDouble = cSeaLevelPressureInHg; //inches of mercury
 volatile int    gCalibratedAltitudeOffsetInt;
 volatile int    gPermanentCalibratedAltitudeOffsetInt;
 volatile int    gSelectedHeadingInt = 360; //degrees
 enum AltitudeUnits {AltitudeUnitsFeet, AltitudeUnitsMeters, cNumberOfAltitudeUnits};
-enum PressureUnits {PressureUnitsInHg, PressureUnitsHPa, PressureUnitsMb, cNumberOfPressureUnits};
+enum PressureUnits {PressureUnitsInHg, PressureUnitsMb, cNumberOfPressureUnits};
 volatile AltitudeUnits gAltitudeUnits = AltitudeUnitsFeet;
 volatile PressureUnits gPressureUnits = PressureUnitsInHg;
 
@@ -240,11 +242,11 @@ void initializeValuesFromEeprom() {
   
   //Last Altimeter Setting
   EEPROM.get(eepromIndex, tempDouble);
-  if (isnan(tempDouble) || tempDouble < cAltimeterSettingMin || tempDouble > cAltimeterSettingMax) {
-    gAltimeterSettingDouble = cSeaLevelPressureInHg;
+  if (isnan(tempDouble) || tempDouble < cAltimeterSettingInHgMin || tempDouble > cAltimeterSettingInHgMax) {
+    gAltimeterSettingInHgDouble = cSeaLevelPressureInHg;
   }
   else {
-    gAltimeterSettingDouble = tempDouble;
+    gAltimeterSettingInHgDouble = tempDouble;
   }
   eepromIndex += sizeof(double);
   
@@ -585,7 +587,7 @@ void handleLeftRotaryMovement(int increment) {
       break;
     
     case CursorSelectAltimeter:
-      gAltimeterSettingDouble = constrain(gAltimeterSettingDouble + cAltimeterSettingInterval * increment, cAltimeterSettingMin, cAltimeterSettingMax);
+      gAltimeterSettingInHgDouble = constrain(gAltimeterSettingInHgDouble + cAltimeterSettingInHgInterval * increment, cAltimeterSettingInHgMin, cAltimeterSettingInHgMax);
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
@@ -884,7 +886,12 @@ void handleDisplay() {
 
     case CursorSelectAltimeter:
       sprintf(topLeftContent, "%-s", "Altmtr");
-      sprintf(bottomLeftContent, "%s%s", String(gAltimeterSettingDouble).c_str(), cInLabel);
+      if (gPressureUnits == PressureUnitsInHg) {
+        sprintf(bottomLeftContent, "%s%s", String(gAltimeterSettingInHgDouble).c_str(), cInLabel);
+      }
+      else { //(gPressureUnits == PressureUnitsMb) {
+        sprintf(bottomLeftContent, "%s%s", String(static_cast<int>(gAltimeterSettingInHgDouble * cSeaLevelPressureMb/cSeaLevelPressureInHg)).c_str(), cMbLabel);
+      }
       break;
 
     case CursorSelectOffset:
@@ -925,9 +932,6 @@ void handleDisplay() {
       if (gPressureUnits == PressureUnitsInHg) {
         sprintf(bottomLeftContent, "%-7s", "\"Hg");
       }
-      else if (gPressureUnits == PressureUnitsHPa) {
-        sprintf(bottomLeftContent, "%-7s", "hPa");
-      }
       else { //(gPressureUnits == PressureUnitsMb) {
         sprintf(bottomLeftContent, "%-7s", "mb");
       }
@@ -953,7 +957,12 @@ void handleDisplay() {
     sprintf(topRightContent, "%s", "OFF");
   }
   else if (gSensorMode == SensorModeOnShow) { //...show the current altitude top-right
-    sprintf(topRightContent, "%s%s", displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearest)).c_str(), cFtLabel);
+    if (gAltitudeUnits == AltitudeUnitsFeet) {
+      sprintf(topRightContent, "%s%s", displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearest)).c_str(), cFtLabel);
+    }
+    else if (gAltitudeUnits == AltitudeUnitsMeters) {
+      sprintf(topRightContent, "%s%s", displayNumber(roundNumber(gTrueAltitudeDouble / cFeetInMeters, cTrueAltitudeRoundToNearest)).c_str(), cMetersLabel);
+    }
   }
   else {
     sprintf(topRightContent, "%c", ' ');
@@ -961,7 +970,13 @@ void handleDisplay() {
 
   //Selected Altitude
   long tempSelectedAltitude = gSelectedAltitudeLong;
-  sprintf(bottomRightContent, "%s%s", displayNumber(tempSelectedAltitude).c_str(), cFtLabel);
+  if (gAltitudeUnits == AltitudeUnitsFeet) {
+    sprintf(bottomRightContent, "%s%s", displayNumber(tempSelectedAltitude).c_str(), cFtLabel);
+  }
+  else if (gAltitudeUnits == AltitudeUnitsMeters) {
+    sprintf(bottomRightContent, "%s%s", displayNumber(tempSelectedAltitude / cFeetInMeters).c_str(), cMetersLabel);
+  }
+  
   
   //Update the display
   char topLine[17];
@@ -1028,7 +1043,7 @@ void handleDisplay() {
     case CursorSelectAltimeter:
       gDisplay.println("Altimeter");
       gDisplay.setCursor(0, 15);
-      gDisplay.println(String(gAltimeterSettingDouble) + cInLabel);
+      gDisplay.println(String(gAltimeterSettingInHgDouble) + cInLabel);
       break;
 
     case CursorSelectOffset:
@@ -1078,9 +1093,6 @@ void handleDisplay() {
       gDisplay.setCursor(0, 15);
       if (gPressureUnits == PressureUnitsInHg) {
         gDisplay.println("\"Hg");
-      }
-      else if (gPressureUnits == PressureUnitsHPa) {
-        gDisplay.println("hPa");
       }
       else { //(gPressureUnits == PressureUnitsMb) {
         gDisplay.println("mb");
@@ -1168,8 +1180,8 @@ void writeValuesToEeprom() {
   //Last Altimeter Setting
   double altimeterSetting;
   EEPROM.get(eepromIndex, altimeterSetting);
-  if (altimeterSetting != gAltimeterSettingDouble) {
-    altimeterSetting = gAltimeterSettingDouble; //this silences a compiler warning
+  if (altimeterSetting != gAltimeterSettingInHgDouble) {
+    altimeterSetting = gAltimeterSettingInHgDouble; //this silences a compiler warning
     EEPROM.put(eepromIndex, altimeterSetting);
   }
   eepromIndex += sizeof(double);
@@ -1231,7 +1243,7 @@ void writeValuesToEeprom() {
 
 //////////////////////////////////////////////////////////////////////////
 double altitudeCorrected(double pressureAltitude) {
-  return (pressureAltitude - (1 - (pow(gAltimeterSettingDouble / cSeaLevelPressureInHg, 0.190284))) * 145366.45) + gCalibratedAltitudeOffsetInt + gPermanentCalibratedAltitudeOffsetInt;
+  return (pressureAltitude - (1 - (pow(gAltimeterSettingInHgDouble / cSeaLevelPressureInHg, 0.190284))) * 145366.45) + gCalibratedAltitudeOffsetInt + gPermanentCalibratedAltitudeOffsetInt;
 }
 
 //////////////////////////////////////////////////////////////////////////
