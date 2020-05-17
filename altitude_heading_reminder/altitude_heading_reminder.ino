@@ -38,8 +38,6 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #include <LiquidCrystal_I2C.h>
 //TODO #include <Adafruit_GFX.h>
 //TODO #include <Adafruit_SSD1306.h> //TODO implement your own graphics libraries so that we can have a slim version to cut down on program storage space
-#include <util/atomic.h> //TODO: remove?
-//TODO remove? #include <avr/sleep.h>
 
 #define DEBUG
 
@@ -62,9 +60,9 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cLowestAltitudeSelect          -1500 //ft
 #define cHighestAltitudeSelect         60000 //ft
 #define cHighestAltitudeAlert          20000 //ft, the pressure sensor will only measure so high. No point in alerting above a certain pressure level
-#define cAltimeterSettingInHgMin           27.50 //inHg
-#define cAltimeterSettingInHgMax           31.50 //inHg
-#define cAltimeterSettingInHgInterval      0.01  //inHg
+#define cAltimeterSettingInHgMin       27.50 //inHg
+#define cAltimeterSettingInHgMax       31.50 //inHg
+#define cAltimeterSettingInHgInterval  0.01  //inHg
 #define cCalibrationOffsetMin          -990  //ft
 #define cCalibrationOffsetMax          990   //ft
 #define cCalibrationOffsetInterval     10    //ft
@@ -145,7 +143,7 @@ enum Cursor {
     CursorSelectPressureUnits,
     CursorViewSoftwareVersion,
     CursorViewBatteryLevel,
-    cNumberOfCursorModes}
+    cNumberOfCursorModes }
     gCursor = CursorSelectHeading;
     //TODO: set volume?
     //TODO: set tones?
@@ -231,7 +229,6 @@ void setup() {
   initializeBmp180Sensor();
   initializeRotaryKnobs();
   initializeBuzzer();
-  //TODO remove set_sleep_mode(SLEEP_MODE_PWR_DOWN); //SLEEP_MODE_PWR_SAVE,
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -444,14 +441,6 @@ void loop() {
     writeValuesToEeprom();
   }
   //TODO calculate VSI (vertical speed) just to display for fun?
-
-  /*cli(); //this stops interrupts
-  sleep_enable();
-  sleep_bod_disable();
-  sei(); //this allows interrupts to continue
-  sleep_cpu();
-  sleep_disable();   TODO remove all this?*/
-  println("Awake");
 }
 
 //////////////////////////////////////////////////////////////////////////
