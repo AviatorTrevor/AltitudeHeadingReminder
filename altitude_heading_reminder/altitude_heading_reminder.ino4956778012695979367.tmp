@@ -42,7 +42,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 #define DEBUG
 
-#define cAppVersion                    "1.0.0" //[HardwareConfig].[MajorSoftwareRelease].[MinorSoftwareRelease]
+#define cAppVersion                    "1.0.0"
 #define cOneSecond                     1000 //1000 milliseconds = 1 second
 #define cOneSecondBeforeOverflow       (unsigned long)(pow(2, sizeof(unsigned long) * 8) - cOneSecond)
 #define cTenSeconds                    10 * cOneSecond
@@ -877,16 +877,16 @@ void handleDisplay() {
     case CursorSelectAltimeter:
       sprintf(topLeftContent, "%-s", "Altmtr");
       if (gPressureUnits == PressureUnitsInHg) {
-        sprintf(bottomLeftContent, "%s" cInLabel, String(gAltimeterSettingInHgDouble).c_str());
+        sprintf(bottomLeftContent, "%s"cInLabel, String(gAltimeterSettingInHgDouble).c_str());
       }
       else { //(gPressureUnits == PressureUnitsMb) {
-        sprintf(bottomLeftContent, "%s" cMbLabel, String(static_cast<int>(gAltimeterSettingInHgDouble * cSeaLevelPressureMb/cSeaLevelPressureInHg)).c_str());
+        sprintf(bottomLeftContent, "%scMbLabel", String(static_cast<int>(gAltimeterSettingInHgDouble * cSeaLevelPressureMb/cSeaLevelPressureInHg)).c_str());
       }
       break;
 
     case CursorSelectOffset:
       sprintf(topLeftContent, "%-s", "Offset");
-      sprintf(bottomLeftContent, "%+d" cFtLabel, gCalibratedAltitudeOffsetInt);
+      sprintf(bottomLeftContent, "%+d%s", gCalibratedAltitudeOffsetInt, cFtLabel);
       break;
 
     case CursorSelectBrightness:
@@ -948,10 +948,10 @@ void handleDisplay() {
   }
   else if (gSensorMode == SensorModeOnShow) { //...show the current altitude top-right
     if (gAltitudeUnits == AltitudeUnitsFeet) {
-      sprintf(topRightContent, "%s" cFtLabel, displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearest)).c_str());
+      sprintf(topRightContent, "%s%s", displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearest)).c_str(), cFtLabel);
     }
     else if (gAltitudeUnits == AltitudeUnitsMeters) {
-      sprintf(topRightContent, "%s" cMetersLabel, displayNumber(roundNumber(gTrueAltitudeDouble / cFeetInMeters, cTrueAltitudeRoundToNearest)).c_str());
+      sprintf(topRightContent, "%s%s", displayNumber(roundNumber(gTrueAltitudeDouble / cFeetInMeters, cTrueAltitudeRoundToNearest)).c_str(), cMetersLabel);
     }
   }
   else {
@@ -961,10 +961,10 @@ void handleDisplay() {
   //Selected Altitude
   long tempSelectedAltitude = gSelectedAltitudeLong;
   if (gAltitudeUnits == AltitudeUnitsFeet) {
-    sprintf(bottomRightContent, "%s" cFtLabel, displayNumber(tempSelectedAltitude).c_str());
+    sprintf(bottomRightContent, "%s%s", displayNumber(tempSelectedAltitude).c_str(), cFtLabel);
   }
   else if (gAltitudeUnits == AltitudeUnitsMeters) {
-    sprintf(bottomRightContent, "%s" cMetersLabel, displayNumber(tempSelectedAltitude / cFeetInMeters).c_str());
+    sprintf(bottomRightContent, "%s%s", displayNumber(tempSelectedAltitude / cFeetInMeters).c_str(), cMetersLabel);
   }
   
   
