@@ -8,6 +8,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
 *silence alarm for a second or two after it triggers
+*implement F macro for string to save program memory space
 *implement screen brightness control
 *flash screen for alerts
 *add settings to disable 200ft and 1000ft alarms
@@ -876,10 +877,10 @@ void handleDisplay() {
     case CursorSelectAltimeter:
       sprintf(topLeftContent, "%-s", "Altmtr");
       if (gPressureUnits == PressureUnitsInHg) {
-        sprintf(bottomLeftContent, "%s%s", String(gAltimeterSettingInHgDouble).c_str(), cInLabel);
+        sprintf(bottomLeftContent, "%scInLabel", String(gAltimeterSettingInHgDouble).c_str());
       }
       else { //(gPressureUnits == PressureUnitsMb) {
-        sprintf(bottomLeftContent, "%s%s", String(static_cast<int>(gAltimeterSettingInHgDouble * cSeaLevelPressureMb/cSeaLevelPressureInHg)).c_str(), cMbLabel);
+        sprintf(bottomLeftContent, "%scMbLabel", String(static_cast<int>(gAltimeterSettingInHgDouble * cSeaLevelPressureMb/cSeaLevelPressureInHg)).c_str());
       }
       break;
 
