@@ -45,13 +45,13 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cAppVersion                    "1.0.0" //[HardwareConfig].[MajorSoftwareRelease].[MinorSoftwareRelease]
 #define cOneSecond                     1000 //1000 milliseconds = 1 second
 #define cOneSecondBeforeOverflow       (unsigned long)(pow(2, sizeof(unsigned long) * 8) - cOneSecond)
-#define cTenSeconds                    10 * cOneSecond
+#define cTenSeconds                    10000
 #define cFeetInMeters                  3.28084
-#define cSeaLevelPressureMb            1013.25 //standard sea level pressure in millibars
+#define cSeaLevelPressureHPa            1013.25 //standard sea level pressure in millibars
 #define cSeaLevelPressureInHg          29.92
 #define cFtLabel                       "ft"
 #define cInLabel                       "\""
-#define cMbLabel                       "mb"
+#define cHPaLabel                       "hPa"
 #define cMetersLabel                   "m"
 #define cAltitudeSelectIncrement       100   //ft
 #define cAltitudeFineSelectIncrement   10    //ft
@@ -69,7 +69,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cCalibrationOffsetInterval     10    //ft
 #define cHeadingSelectIncrement        5     //degrees
 #define cTrueAltitudeRoundToNearest    10    //ft
-#define cTryToRecover                  false
+#define cTryToRecover                  false //TODO debug, eventually remove
 
 //EEPROM
 #define         cEepromWriteDelay      10000  //milliseconds
@@ -83,7 +83,7 @@ volatile int    gCalibratedAltitudeOffsetInt;
 volatile int    gPermanentCalibratedAltitudeOffsetInt;
 volatile int    gSelectedHeadingInt = 360; //degrees
 enum AltitudeUnits {AltitudeUnitsFeet, AltitudeUnitsMeters, cNumberOfAltitudeUnits};
-enum PressureUnits {PressureUnitsInHg, PressureUnitsMb, cNumberOfPressureUnits};
+enum PressureUnits {PressureUnitsInHg, PressureUnitsHPa, cNumberOfPressureUnits};
 volatile AltitudeUnits gAltitudeUnits = AltitudeUnitsFeet;
 volatile PressureUnits gPressureUnits = PressureUnitsInHg;
 
@@ -489,7 +489,7 @@ void handleBmp180Sensor() {
         eErrorCode = cBMP180PressGetFail;
       }
       else { //only update the true altitude if the pressure reading was valid
-        gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureMb));
+        gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
       };
     }
     if (eBMP180Failed) {
@@ -877,10 +877,10 @@ void handleDisplay() {
     case CursorSelectAltimeter:
       sprintf(topLeftContent, "%-s", "Altmtr");
       if (gPressureUnits == PressureUnitsInHg) {
-        sprintf(bottomLeftContent, "%s" cInLabel, String(gAltimeterSettingInHgDouble).c_str());
+        sprintf(bottomLeftContent, "%0.2f" cInLabel, gAltimeterSettingInHgDouble);
       }
-      else { //(gPressureUnits == PressureUnitsMb) {
-        sprintf(bottomLeftContent, "%s" cMbLabel, String(static_cast<int>(gAltimeterSettingInHgDouble * cSeaLevelPressureMb/cSeaLevelPressureInHg)).c_str());
+      else { //(gPressureUnits == PressureUnitsHPa) {
+        sprintf(bottomLeftContent, "%s" cHPaLabel, String(static_cast<int>(gAltimeterSettingInHgDouble * cSeaLevelPressureHPa/cSeaLevelPressureInHg)).c_str());
       }
       break;
 
@@ -922,8 +922,8 @@ void handleDisplay() {
       if (gPressureUnits == PressureUnitsInHg) {
         sprintf(bottomLeftContent, "%-7s", "\"Hg");
       }
-      else { //(gPressureUnits == PressureUnitsMb) {
-        sprintf(bottomLeftContent, "%-7s", "mb");
+      else { //(gPressureUnits == PressureUnitsHPa) {
+        sprintf(bottomLeftContent, "%-7s", "hPa");
       }
       break;
 
@@ -1084,8 +1084,8 @@ void handleDisplay() {
       if (gPressureUnits == PressureUnitsInHg) {
         gDisplay.println("\"Hg");
       }
-      else { //(gPressureUnits == PressureUnitsMb) {
-        gDisplay.println("mb");
+      else { //(gPressureUnits == PressureUnitsHPa) {
+        gDisplay.println("hPa");
       }
       break;
 
