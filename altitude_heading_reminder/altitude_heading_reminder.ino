@@ -47,11 +47,11 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cOneSecondBeforeOverflow       (unsigned long)(pow(2, sizeof(unsigned long) * 8) - cOneSecond)
 #define cTenSeconds                    10000
 #define cFeetInMeters                  3.28084
-#define cSeaLevelPressureHPa            1013.25 //standard sea level pressure in millibars
-#define cSeaLevelPressureInHg          29.92
+#define cSeaLevelPressureHPa           1013.25 //standard sea level pressure in millibars
+#define cSeaLevelPressureInHg          29.92 //standard sea level pressure in inches of mercury
 #define cFtLabel                       "ft"
 #define cInLabel                       "\""
-#define cHPaLabel                       "hPa"
+#define cHPaLabel                      "hPa"
 #define cMetersLabel                   "m"
 #define cAltitudeSelectIncrement       100   //ft
 #define cAltitudeFineSelectIncrement   10    //ft
@@ -69,17 +69,34 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cCalibrationOffsetInterval     10    //ft
 #define cHeadingSelectIncrement        5     //degrees
 #define cTrueAltitudeRoundToNearestFt  10    //ft
-#define cTrueAltitudeRoundToNearestM   1     //meters
-#define cTryToRecover                  false //TODO debug, eventually remove
+#define cTrueAltitudeRoundToNearestM   10    //meters
 
 //EEPROM
 #define         cEepromWriteDelay      10000  //milliseconds
 volatile bool   gNeedToWriteToEeprom;
 
+//BMP180 Sensor variables
+#define    cSensorLoopCycle               2 //2Hz
+#define    cSensorLoopPeriod              (cOneSecond / cSensorLoopCycle)
+#define    cVerticalSpeedInterval         5 //number of seconds between the current altitude and the past altitude we're comparing against to calculate vertical speed
+#define    cSizeOfVertSpdArray            (cSensorLoopCycle * cVerticalSpeedInterval)
+#define    cBmp180Quality                 3 //highest quality, more electrical draw [0-3]. Wait times are {5ms, 8ms, 14ms, 26ms}. Getting temperature is always 5ms.
+SFE_BMP180 gSensor;
+char       gSensorStatusChar;             //byte value BMP180 pressure sensor returns. Acts as success status as well as time to wait for next state
+int        gSensorProcessStateInt;        //0 = start measuring temperature, 1 = get temperature, 2 = start measuring pressure, 3 = get pressure
+double     gSensorTemperatureDouble;      //celcius
+double     gSensorPressureDouble;         //millibars
+enum SensorMode {SensorModeOnShow, SensorModeOnHide, SensorModeOff, cNumberOfSensorModes};
+volatile SensorMode gSensorMode = SensorModeOnShow;
+
 //Main program variables
-double          gTrueAltitudeDouble;           //feet, true altitude
-volatile long   gSelectedAltitudeLong; //feet
-volatile double gAltimeterSettingInHgDouble = cSeaLevelPressureInHg; //inches of mercury
+double          gTrueAltitudeDouble;
+int             gVerticalSpeed[cSizeOfVertSpdArray];
+int*            gVSpdCurrent = &gVerticalSpeed[0];
+int*            gVspdOld     = &gVerticalSpeed[1];
+int             gPressureReadingCycleCounterForVerticalSpeed;
+volatile long   gSelectedAltitudeLong;
+volatile double gAltimeterSettingInHgDouble = cSeaLevelPressureInHg;
 volatile int    gCalibratedAltitudeOffsetInt;
 volatile int    gPermanentCalibratedAltitudeOffsetInt;
 volatile int    gSelectedHeadingInt = 360; //degrees
@@ -120,26 +137,24 @@ volatile unsigned long gLastRotaryActionTs;
 
 //Display
 #define cScreenBrightnessSettings 5 //TODO tune this to the new screen
-#define cFlashCursorOnPeriod      800
-#define cFlashCursorOffPeriod     200
 #define cSplashScreenDelay        cOneSecond
-#define cMaxScreenRefreshRate     30 //30Hz //TODO
-#define cMaxScreenRefreshPeriod   (cOneSecond / cMaxScreenRefreshRate)
+#define cMaxScreenRefreshRate     30 //30Hz //TODO remove?
+#define cMaxScreenRefreshPeriod   (cOneSecond / cMaxScreenRefreshRate) //TODO remove?
 #define cDisplayAddr              0x27//TODO small display address is 0x3C
 #define cScreenWidth              128 // OLED display width, in pixels
 #define cScreenHeight             32  // OLED display height, in pixels
-#define cOledReset                4   // Reset pin # (or -1 if sharing Arduino reset pin)
-#define cLedBrightnessPin         11
-//TODO small OLED display Adafruit_SSD1306 gDisplay(cScreenWidth, cScreenHeight, &Wire, cOledReset);
+#define cOledReset                4   // Reset pin # (or -1 if sharing Arduino reset pin) //TODO remove?
+#define cLedBrightnessPin         11 //TODO remove?
+//TODO small OLED display Adafruit_SSD1306 gDisplay(cScreenWidth, cScreenHeight, &Wire, cOledReset); //TODO remove?
 LiquidCrystal_I2C gDisplay(cDisplayAddr, 16, 2); //16x2 character display
 volatile int gScreenBrightnessInt = cScreenBrightnessSettings; //initialize to brightest setting
 
-char* gDisplayTopLeftContent = new char[8];
-char* gDisplayBottomLeftContent = new char[8];
-char* gDisplayTopRightContent = new char[9];
-char* gDisplayBottomRightContent = new char[9];
-char* gDisplayTopLine = new char[17];
-char* gDisplayBottomLine = new char[17];
+char gDisplayTopLeftContent[8];
+char gDisplayBottomLeftContent[8];
+char gDisplayTopRightContent[9];
+char gDisplayBottomRightContent[9];
+char gDisplayTopLine[17];
+char gDisplayBottomLine[17];
 
 //Cursor control
 enum Cursor {
@@ -158,18 +173,6 @@ enum Cursor {
     //TODO: set tones?
     //TODO: turn alerts on/off?
     //TODO: current temperature?
-
-//BMP180 Sensor variables
-#define    cSensorLoopCycle               2 //2Hz
-#define    cSensorLoopPeriod              (cOneSecond / cSensorLoopCycle)
-#define    cBmp180Quality                 3 //highest quality, more electrical draw [0-3]. Wait times are {5ms, 8ms, 14ms, 26ms}. Getting temperature is always 5ms.
-SFE_BMP180 gSensor;
-char       gSensorStatusChar;             //byte value BMP180 pressure sensor returns. Acts as success status as well as time to wait for next state
-int        gSensorProcessStateInt;        //0 = start measuring temperature, 1 = get temperature, 2 = start measuring pressure, 3 = get pressure
-double     gSensorTemperatureDouble;      //celcius
-double     gSensorPressureDouble;         //millibars
-enum SensorMode {SensorModeOnShow, SensorModeOnHide, SensorModeOff, cNumberOfSensorModes};
-volatile SensorMode gSensorMode = SensorModeOnShow;
 
 //Rotary Knobs
 #define cRotaryStates              4
@@ -218,11 +221,11 @@ volatile bool  gDisableLeftRotaryProcessing; //we disable knob processing right 
 #define cBMP180TempGetFail    30
 #define cBMP180PressStartFail 40
 #define cBMP180PressGetFail   50
-#define cDisplayInitFail      60
+#define cDisplayInitFail      60 //TODO remove?
 
 //Error handling variables
 bool eBMP180Failed;
-bool eDisplayError;
+bool eDisplayError; //TODO remove?
 int  eErrorCode;
 bool eUserAcknowledgedError;
 
@@ -230,8 +233,8 @@ bool eUserAcknowledgedError;
 void setup() {
   #ifdef DEBUG
   Serial.begin(9600);
+  println("APPLICATION START"); //TODO remove?
   #endif
-  println("APPLICATION START");
 
   initializeDisplayDevice();
   initializeValuesFromEeprom();
@@ -506,10 +509,6 @@ void handleBmp180Sensor() {
     else {
       gSensorProcessStateInt = (gSensorProcessStateInt + 1) % 4;
     }
-  }
-  else if (cTryToRecover) {
-    initializeBmp180Sensor();
-    gNextSensorReadyTs = millis() + 5000; //TODO look at this later
   }
 }
 
@@ -1086,7 +1085,7 @@ double altitudeCorrected(double pressureAltitude) {
 char* displayNumber(const long &number) {
   int thousands = static_cast<int>(number / 1000);
   int ones = static_cast<int>(number % 1000);
-  char* result = new char[7];
+  char* result = new char[8];
 
   if (number >= 1000) {
     sprintf(result, "%01d,%03d", thousands, ones);
