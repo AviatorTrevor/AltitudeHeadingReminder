@@ -82,6 +82,7 @@ volatile bool   gNeedToWriteToEeprom;
 #define    cSizeOfVertSpdArray            (cSensorLoopCycle * cVerticalSpeedInterval)
 #define    cBmp180Quality                 3 //highest quality, more electrical draw [0-3]. Wait times are {5ms, 8ms, 14ms, 26ms}. Getting temperature is always 5ms.
 SFE_BMP180 gSensor;
+bool       gInitializedAltitude;
 char       gSensorStatusChar;             //byte value BMP180 pressure sensor returns. Acts as success status as well as time to wait for next state
 int        gSensorProcessStateInt;        //0 = start measuring temperature, 1 = get temperature, 2 = start measuring pressure, 3 = get pressure
 double     gSensorTemperatureDouble;      //celcius
@@ -91,9 +92,9 @@ volatile SensorMode gSensorMode = SensorModeOnShow;
 
 //Main program variables
 double          gTrueAltitudeDouble;
-int             gVerticalSpeed[cSizeOfVertSpdArray];
-int*            gVSpdCurrent = &gVerticalSpeed[0];
-int*            gVspdOld     = &gVerticalSpeed[1];
+double          gVerticalSpeed[cSizeOfVertSpdArray];
+double*         gVSpdCurrent = &gVerticalSpeed[0];
+double*         gVSpdOld     = &gVerticalSpeed[1];
 int             gPressureReadingCycleCounterForVerticalSpeed;
 volatile long   gSelectedAltitudeLong;
 volatile double gAltimeterSettingInHgDouble = cSeaLevelPressureInHg;
@@ -106,7 +107,6 @@ volatile AltitudeUnits gAltitudeUnits = AltitudeUnitsFeet;
 volatile PressureUnits gPressureUnits = PressureUnitsInHg;
 
 //Buzzer
-#define            cInitialSelectedAltitudeTimeout 5000 //determine initial selection altitude within 5 seconds, or give up and allow it to stay at 0 because pressure sensor failed
 #define            cAlarm200ToGo                   200  //ft
 #define            cAlarm1000ToGo                  1000 //ft
 #define            cBuzzPin                        6
@@ -165,6 +165,7 @@ enum Cursor {
     CursorSelectSensor,
     CursorSelectAltitudeUnits,
     CursorSelectPressureUnits,
+    CursorViewVerticalSpeed,
     CursorViewSoftwareVersion,
     CursorViewBatteryLevel,
     cNumberOfCursorModes }
@@ -501,7 +502,26 @@ void handleBmp180Sensor() {
       }
       else { //only update the true altitude if the pressure reading was valid
         gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
-      };
+        //if this is the first pressure reading, initialize stuff for selected altitude and vertical speed
+        if (!gInitializedAltitude) {
+          gInitializedAltitude = true; //this if statement only gets called once
+          long initialAltitudeSelection = gTrueAltitudeDouble + cInitialSelectedAltitudeOffset;
+          if (initialAltitudeSelection >= cHighAltitude) {
+            gSelectedAltitudeLong = roundNumber(initialAltitudeSelection + cAltitudeHighSelectIncrement, cAltitudeHighSelectIncrement);
+          }
+          else {
+            gSelectedAltitudeLong = roundNumber(initialAltitudeSelection + cAltitudeSelectIncrement * 5, cAltitudeSelectIncrement * 5);
+          }
+          for (int idx = 0; idx < cSizeOfVertSpdArray; idx++) {
+            gVerticalSpeed[idx] = gTrueAltitudeDouble;
+          }
+        }
+        
+        //update vertical speed       
+        gVSpdOld = &gVerticalSpeed[0] + ((gVSpdOld + 1 - &gVerticalSpeed[0]) % cSizeOfVertSpdArray);
+        gVSpdCurrent = &gVerticalSpeed[0] + ((gVSpdCurrent + 1 - &gVerticalSpeed[0]) % cSizeOfVertSpdArray);
+        *gVSpdCurrent = gTrueAltitudeDouble;
+      }
     }
     if (eBMP180Failed) {
       gSensorProcessStateInt = 0;
@@ -826,15 +846,6 @@ void handleBuzzer() {
       noTone(cBuzzPin); //stop the buzzer
       if (eBMP180Failed || eDisplayError)
         break;
-      else if (gSelectedAltitudeLong == 0 && millis() < cInitialSelectedAltitudeTimeout) { //this statement is only for initializing the first altitude selection value above the current altitude
-        long initialAltitudeSelection = gTrueAltitudeDouble + cInitialSelectedAltitudeOffset;
-        if (initialAltitudeSelection >= cHighAltitude) {
-          gSelectedAltitudeLong = roundNumber(initialAltitudeSelection + cAltitudeHighSelectIncrement, cAltitudeHighSelectIncrement);
-        }
-        else {
-          gSelectedAltitudeLong = roundNumber(initialAltitudeSelection + cAltitudeSelectIncrement * 5, cAltitudeSelectIncrement * 5);
-        }
-      }
       else if (gSensorMode != SensorModeOff || gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
         gAlarmModeEnum = DetermineAlarmState;
       }
@@ -928,6 +939,11 @@ void handleDisplay() {
       else { //(gPressureUnits == PressureUnitsHPa) {
         sprintf(gDisplayBottomLeftContent, "%-7s", "hPa");
       }
+      break;
+
+    case CursorViewVerticalSpeed:
+      sprintf(gDisplayTopLeftContent, "%-7s", "V Spd");
+      sprintf(gDisplayBottomLeftContent, "%-7s", displayNumber(roundNumber((*gVSpdCurrent - *gVSpdOld) / cVerticalSpeedInterval * 60, cTrueAltitudeRoundToNearestFt)));
       break;
 
     case CursorViewSoftwareVersion:
