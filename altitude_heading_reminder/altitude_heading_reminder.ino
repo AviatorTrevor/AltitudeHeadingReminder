@@ -50,6 +50,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cSeaLevelPressureHPa           1013.25 //standard sea level pressure in millibars
 #define cSeaLevelPressureInHg          29.92 //standard sea level pressure in inches of mercury
 #define cFtLabel                       "ft"
+#define cFpmLabel                      "fpm" //feet per minute
 #define cInLabel                       "\""
 #define cHPaLabel                      "hPa"
 #define cMetersLabel                   "m"
@@ -453,7 +454,6 @@ void loop() {
   if (gNeedToWriteToEeprom && millis() - gEepromSaveNeededTs >= cEepromWriteDelay) {
     writeValuesToEeprom();
   }
-  //TODO calculate VSI (vertical speed) just to display for fun?
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -844,8 +844,12 @@ void handleBuzzer() {
     case AlarmDisabled: //Alarm can be disabled either because we just started, or the rotary knob has moved recently
       //The very first time we start up and get a pressure reading, we initialize what the altitude selection is to a little higher than current altitude
       noTone(cBuzzPin); //stop the buzzer
-      if (eBMP180Failed || eDisplayError)
+      if (eBMP180Failed || eDisplayError || !gInitializedAltitude) {
+        if (millis() > 5000) {
+          gInitializedAltitude = true;
+        }
         break;
+      }
       else if (gSensorMode != SensorModeOff || gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
         gAlarmModeEnum = DetermineAlarmState;
       }
@@ -943,7 +947,7 @@ void handleDisplay() {
 
     case CursorViewVerticalSpeed:
       sprintf(gDisplayTopLeftContent, "%-7s", "V Spd");
-      sprintf(gDisplayBottomLeftContent, "%-7s", displayNumber(roundNumber((*gVSpdCurrent - *gVSpdOld) / cVerticalSpeedInterval * 60, cTrueAltitudeRoundToNearestFt)));
+      sprintf(gDisplayBottomLeftContent, "%+d" cFpmLabel, displayNumber(roundNumber((*gVSpdCurrent - *gVSpdOld) / cVerticalSpeedInterval * 60, cTrueAltitudeRoundToNearestFt)));
       break;
 
     case CursorViewSoftwareVersion:
