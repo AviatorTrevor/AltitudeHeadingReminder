@@ -79,7 +79,7 @@ volatile bool   gNeedToWriteToEeprom;
 //BMP180 Sensor variables
 #define    cSensorLoopCycle               2 //2Hz
 #define    cSensorLoopPeriod              (cOneSecond / cSensorLoopCycle)
-#define    cVerticalSpeedInterval         5 //number of seconds between the current altitude and the past altitude we're comparing against to calculate vertical speed
+#define    cVerticalSpeedInterval         2 //number of seconds between the current altitude and the past altitude we're comparing against to calculate vertical speed
 #define    cSizeOfVertSpdArray            (cSensorLoopCycle * cVerticalSpeedInterval)
 #define    cBmp180Quality                 3 //highest quality, more electrical draw [0-3]. Wait times are {5ms, 8ms, 14ms, 26ms}. Getting temperature is always 5ms.
 SFE_BMP180 gSensor;
@@ -337,7 +337,7 @@ void initializeDisplayDevice() {
   gDisplay.clear();
   delay(50);
   gDisplay.backlight();
-/*
+/*TODO
   gDisplay.setCursor(4, 0);
   gDisplay.print("POWER ON");
   delay(1500);*/
@@ -518,7 +518,7 @@ void handleBmp180Sensor() {
         }
         
         //update vertical speed       
-        gVSpdOld = &gVerticalSpeed[0] + ((gVSpdOld + 1 - &gVerticalSpeed[0]) % cSizeOfVertSpdArray);
+        gVSpdOld     = &gVerticalSpeed[0] + ((gVSpdOld     + 1 - &gVerticalSpeed[0]) % cSizeOfVertSpdArray);
         gVSpdCurrent = &gVerticalSpeed[0] + ((gVSpdCurrent + 1 - &gVerticalSpeed[0]) % cSizeOfVertSpdArray);
         *gVSpdCurrent = gTrueAltitudeDouble;
       }
