@@ -117,6 +117,7 @@ volatile PressureUnits gPressureUnits = PressureUnitsInHg;
 #define            cUrgentBuzzNumberOfBeeps        7
 #define            cDisableAlarmKnobMovementTime   1200
 #define            cDisableAlarmAfterAlarmTime     1500
+#define            cDisableBlackLightTimePeriod    200
 enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 int                gBuzzCountInt; //always a value between [0, cUrgentBuzzNumberOfBeeps]
@@ -774,6 +775,7 @@ void handleBuzzer() {
   switch (gAlarmModeEnum) {
     case Climbing1000ToGo:
       if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm1000ToGo) {
+        analogWrite(cLedBrightnessPin, 0);
         tone(cBuzzPin, cBuzzFrequencyA, cLongBuzzDuration);
         gLastAlarmTs = millis();
         gAlarmModeEnum = AlarmDisabled;
@@ -792,6 +794,7 @@ void handleBuzzer() {
 
     case Descending1000ToGo:
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm1000ToGo) {
+        analogWrite(cLedBrightnessPin, 0);
         tone(cBuzzPin, cBuzzFrequencyA, cLongBuzzDuration);
         gLastAlarmTs = millis();
         gAlarmModeEnum = AlarmDisabled;
@@ -817,7 +820,13 @@ void handleBuzzer() {
       
     case UrgentAlarm:
       if (gBuzzCountInt == 0) {
+        gLastAlarmTs = millis();
+        analogWrite(cLedBrightnessPin, 0);
+        println("Backlight off");
         gBuzzCountInt = cUrgentBuzzNumberOfBeeps + 1;
+      }
+      if (millis() >= gLastAlarmTs + cDisableBlackLightTimePeriod) {
+        analogWrite(cLedBrightnessPin, cBrightnessValues[cScreenBrightnessSettings - 1]);
       }
       if (millis() >= gNextBuzzTs) {
         gBuzzCountInt--;
@@ -832,23 +841,30 @@ void handleBuzzer() {
         else {
           gAlarmModeEnum = AlarmDisabled;
           noTone(cBuzzPin);
-          gLastAlarmTs = millis();
         }
       }
       break;
 
-    case AlarmDisabled: //Alarm can be disabled either because we just started, or the rotary knob has moved recently
+    case AlarmDisabled:
+      if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime) {
+        if (millis() - gLastAlarmTs >= cDisableBlackLightTimePeriod) {
+          analogWrite(cLedBrightnessPin, cBrightnessValues[cScreenBrightnessSettings - 1]); //re-enable the backlight. really only meant for the 1000ft buzzer logic
+        }
+        //do nothing
+        break;
+      }
+
       if (eBMP180Failed || eDisplayError || !gInitializedAltitude) {
         if (millis() > 5000) {
           gInitializedAltitude = true;
         }
-        break;
       }
-      else if (millis() - gLastAlarmTs >= cDisableAlarmAfterAlarmTime) {
+      else if (gSensorMode != SensorModeOff && gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime && millis() - gLastAlarmTs >= cDisableAlarmAfterAlarmTime) {
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gAlarmModeEnum = DetermineAlarmState;
+      }
+      else {
         noTone(cBuzzPin); //stop the buzzer
-        if (gSensorMode != SensorModeOff || gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
-          gAlarmModeEnum = DetermineAlarmState;
-        }
       }
       break;
 
