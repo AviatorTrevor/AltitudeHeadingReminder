@@ -1,5 +1,14 @@
   //TODO: smaller OLED display code
   //If we're having display issues, try to recover
+  
+#define cDisplayAddr              0x3C
+#define cSplashScreenDelay        cOneSecond //TODO remove?
+#define cScreenWidth              128 // OLED display width, in pixels
+#define cScreenHeight             32  // OLED display height, in pixels
+#define cOledReset                4   // Reset pin # (or -1 if sharing Arduino reset pin) //TODO remove?
+Adafruit_SSD1306 gDisplay(cScreenWidth, cScreenHeight, &Wire, cOledReset); //TODO remove?
+  
+  
   if (eDisplayError && cTryToRecover) {
     initializeDisplayDevice();
     if (eDisplayError) { //if we're still having trouble, return

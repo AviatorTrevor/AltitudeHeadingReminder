@@ -41,6 +41,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cOneSecond                     1000 //1000 milliseconds = 1 second
 #define cOneSecondBeforeOverflow       (unsigned long)(pow(2, sizeof(unsigned long) * 8) - cOneSecond)
 #define cTenSeconds                    10000
+#define cMillisecondsInMinute          60000
 #define cFeetInMeters                  3.28084
 #define cSeaLevelPressureHPa           1013.25 //standard sea level pressure in millibars
 #define cSeaLevelPressureInHg          29.92 //standard sea level pressure in inches of mercury
@@ -49,6 +50,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cInLabel                       "\""
 #define cHPaLabel                      "hPa"
 #define cMetersLabel                   "m"
+#define cDegCLabel                     "C"
 #define cAltitudeSelectIncrement       100   //ft
 #define cAltitudeFineSelectIncrement   10    //ft
 #define cInitialSelectedAltitudeOffset 2000  //ft
@@ -92,6 +94,7 @@ double          gTrueAltitudeDouble;
 double          gVerticalSpeed[cSizeOfVertSpdArray];
 double*         gVSpdCurrent = &gVerticalSpeed[0];
 double*         gVSpdOld     = &gVerticalSpeed[1];
+double          gVerticalSpeedDouble;
 int             gPressureReadingCycleCounterForVerticalSpeed;
 volatile long   gSelectedAltitudeLong;
 volatile double gAltimeterSettingInHgDouble = cSeaLevelPressureInHg;
@@ -115,7 +118,8 @@ volatile PressureUnits gPressureUnits = PressureUnitsInHg;
 #define            cUrgentBuzzNumberOfBeeps        7
 #define            cDisableAlarmKnobMovementTime   1200
 #define            cDisableAlarmAfterAlarmTime     1500
-#define            cDisableBlackLightTimePeriod    200
+#define            cDisableBacklightTimePeriod     200
+#define            cDisableBacklightPriorToAlarm   300
 enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 int                gBuzzCountInt; //always a value between [0, cUrgentBuzzNumberOfBeeps]
@@ -126,6 +130,7 @@ unsigned long          gNextSensorReadyTs;
 unsigned long          gNextScreenRefreshTs; //TODO is this being used?
 unsigned long          gNextBuzzTs;
 unsigned long          gLastAlarmTs;
+unsigned long          gLastBacklightOffTs;
 volatile unsigned long gLeftButtonPressedTs;
 volatile unsigned long gRightButtonPressedTs;
 volatile unsigned long gLastRightRotaryActionTs;
@@ -136,16 +141,12 @@ volatile unsigned long gLastRotaryActionTs;
 
 //Display
 #define cScreenBrightnessSettings 10
-#define cSplashScreenDelay        cOneSecond
 #define cMaxScreenRefreshRate     30 //30Hz //TODO remove?
 #define cMaxScreenRefreshPeriod   (cOneSecond / cMaxScreenRefreshRate) //TODO remove?
-#define cDisplayAddr              0x27//TODO small display address is 0x3C
-#define cScreenWidth              128 // OLED display width, in pixels
-#define cScreenHeight             32  // OLED display height, in pixels
-#define cOledReset                4   // Reset pin # (or -1 if sharing Arduino reset pin) //TODO remove?
+#define cDisplayAddr              0x27
 #define cLedBrightnessPin         11
 const int cBrightnessValues[cScreenBrightnessSettings] = {1, 3, 5, 8, 15, 35, 60, 110, 155, 255};
-//TODO small OLED display Adafruit_SSD1306 gDisplay(cScreenWidth, cScreenHeight, &Wire, cOledReset); //TODO remove?
+bool gBacklightOn = true;
 LiquidCrystal_I2C gDisplay(cDisplayAddr, 16, 2); //16x2 character display
 volatile int gScreenBrightnessInt = cScreenBrightnessSettings; //initialize to brightest setting
 
@@ -166,6 +167,7 @@ enum Cursor {
     CursorSelectAltitudeUnits,
     CursorSelectPressureUnits,
     CursorViewVerticalSpeed,
+    CursorViewBmpTemp,
     CursorViewSoftwareVersion,
     CursorViewBatteryLevel,
     cNumberOfCursorModes }
@@ -521,6 +523,7 @@ void handleBmp180Sensor() {
         gVSpdOld     = &gVerticalSpeed[0] + ((gVSpdOld     + 1 - &gVerticalSpeed[0]) % cSizeOfVertSpdArray);
         gVSpdCurrent = &gVerticalSpeed[0] + ((gVSpdCurrent + 1 - &gVerticalSpeed[0]) % cSizeOfVertSpdArray);
         *gVSpdCurrent = gTrueAltitudeDouble;
+        gVerticalSpeedDouble = (*gVSpdCurrent - *gVSpdOld) / cVerticalSpeedInterval * 60;
       }
     }
     if (eBMP180Failed) {
@@ -773,44 +776,99 @@ void handleBuzzer() {
   switch (gAlarmModeEnum) {
     case Climbing1000ToGo:
       if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm1000ToGo) {
-        analogWrite(cLedBrightnessPin, 0);
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
         tone(cBuzzPin, cBuzzFrequencyA, cLongBuzzDuration);
-        gLastAlarmTs = millis();
+        gLastAlarmTs = millis() + cLongBuzzDuration;
         gAlarmModeEnum = AlarmDisabled;
       }
-      break;
-    
-    case Climbing200ToGo:
-      if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm200ToGo) {
-        gAlarmModeEnum = UrgentAlarm;
-        gNextBuzzTs = millis(); //next buzz time is now
+      else if (!gBacklightOn && millis() - gLastBacklightOffTs >= cDisableBacklightTimePeriod) {
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
       }
-      else if (gTrueAltitudeDouble < gSelectedAltitudeLong - cAlarm1000ToGo) {
-        gAlarmModeEnum = Climbing1000ToGo;
+      else if ((gSelectedAltitudeLong - cAlarm1000ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute) <= cDisableBacklightPriorToAlarm) {
+        //if we are cDisableBacklightPriorToAlarm milliseconds away from reaching our buzzer, we turn off the backlight
+        gBacklightOn = false;
+        analogWrite(cLedBrightnessPin, 0); //turn of the backlight
+        gLastBacklightOffTs = millis();
       }
       break;
 
     case Descending1000ToGo:
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm1000ToGo) {
-        analogWrite(cLedBrightnessPin, 0);
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
         tone(cBuzzPin, cBuzzFrequencyA, cLongBuzzDuration);
-        gLastAlarmTs = millis();
+        gLastAlarmTs = millis() + cLongBuzzDuration;
         gAlarmModeEnum = AlarmDisabled;
+      }
+      else if (!gBacklightOn && millis() - gLastBacklightOffTs >= cDisableBacklightTimePeriod) {
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
+      }
+      else if ((gSelectedAltitudeLong + cAlarm1000ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute) <= cDisableBacklightPriorToAlarm) {
+        //if we are cDisableBacklightPriorToAlarm milliseconds away from reaching our buzzer, we turn off the backlight
+        gBacklightOn = false;
+        analogWrite(cLedBrightnessPin, 0); //turn of the backlight
+        gLastBacklightOffTs = millis();
+      }
+      break;
+    
+    case Climbing200ToGo:
+      if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm200ToGo) {
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
+        gAlarmModeEnum = UrgentAlarm;
+        gNextBuzzTs = millis(); //next buzz time is now
+      }
+      else if (gTrueAltitudeDouble < gSelectedAltitudeLong - cAlarm1000ToGo) {
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
+        gAlarmModeEnum = Climbing1000ToGo;
+      }
+      else if (!gBacklightOn && millis() - gLastBacklightOffTs >= cDisableBacklightTimePeriod) {
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
+      }
+      else if ((gSelectedAltitudeLong - cAlarm200ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute) <= cDisableBacklightPriorToAlarm) {
+        //if we are cDisableBacklightPriorToAlarm milliseconds away from reaching our buzzer, we turn off the backlight
+        gBacklightOn = false;
+        analogWrite(cLedBrightnessPin, 0); //turn of the backlight
+        gLastBacklightOffTs = millis();
       }
       break;
       
     case Descending200ToGo:
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm200ToGo) {
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
         gAlarmModeEnum = UrgentAlarm;
         gNextBuzzTs = millis(); //next buzz time is now
       }
       else if (gTrueAltitudeDouble > gSelectedAltitudeLong + cAlarm1000ToGo) {
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
         gAlarmModeEnum = Descending1000ToGo;
+      }
+      else if (!gBacklightOn && millis() - gLastBacklightOffTs >= cDisableBacklightTimePeriod) {
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
+      }
+      else if ((gSelectedAltitudeLong + cAlarm200ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute) <= cDisableBacklightPriorToAlarm) {
+        //if we are cDisableBacklightPriorToAlarm milliseconds away from reaching our buzzer, we turn off the backlight
+        gBacklightOn = false;
+        analogWrite(cLedBrightnessPin, 0); //turn of the backlight
+        gLastBacklightOffTs = millis();
       }
       break;
     
     case AltitudeDeviate: //We're looking to sound the alarm if pilot deviates from his altitude he already reached
       if (gTrueAltitudeDouble > gSelectedAltitudeLong + cAlarm200ToGo || gTrueAltitudeDouble < gSelectedAltitudeLong - cAlarm200ToGo) {
+        gBacklightOn = false;
+        analogWrite(cLedBrightnessPin, 0);
+        delay(cDisableBacklightTimePeriod);
+        analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
         gAlarmModeEnum = UrgentAlarm; //initiate beeping the alarm on the next pass
         gNextBuzzTs = millis(); //next buzz time is now
       }
@@ -819,12 +877,7 @@ void handleBuzzer() {
     case UrgentAlarm:
       if (gBuzzCountInt == 0) {
         gLastAlarmTs = millis();
-        analogWrite(cLedBrightnessPin, 0);
-        println("Backlight off");
         gBuzzCountInt = cUrgentBuzzNumberOfBeeps + 1;
-      }
-      if (millis() >= gLastAlarmTs + cDisableBlackLightTimePeriod) {
-        analogWrite(cLedBrightnessPin, cBrightnessValues[cScreenBrightnessSettings - 1]);
       }
       if (millis() >= gNextBuzzTs) {
         gBuzzCountInt--;
@@ -845,9 +898,6 @@ void handleBuzzer() {
 
     case AlarmDisabled:
       if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime) {
-        if (millis() - gLastAlarmTs >= cDisableBlackLightTimePeriod) {
-          analogWrite(cLedBrightnessPin, cBrightnessValues[cScreenBrightnessSettings - 1]); //re-enable the backlight. really only meant for the 1000ft buzzer logic
-        }
         //do nothing
         break;
       }
@@ -859,6 +909,7 @@ void handleBuzzer() {
       }
       else if (gSensorMode != SensorModeOff && gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime && millis() - gLastAlarmTs >= cDisableAlarmAfterAlarmTime) {
         analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+        gBacklightOn = true;
         gAlarmModeEnum = DetermineAlarmState;
       }
       else {
@@ -958,8 +1009,12 @@ void handleDisplay() {
 
     case CursorViewVerticalSpeed:
       sprintf(gDisplayTopLeftContent, "%-7s", "V Speed");
-      //sprintf(gDisplayBottomLeftContent, "%-7s" cFpmLabel, displayNumber(roundNumber((*gVSpdCurrent - *gVSpdOld) / cVerticalSpeedInterval * 60, cTrueAltitudeRoundToNearestFt)));
-      sprintf(gDisplayBottomLeftContent, "%+05d", (int)(roundNumber((*gVSpdCurrent - *gVSpdOld) / cVerticalSpeedInterval * 60, cVerticalSpeedRoundToNearestFt)));
+      sprintf(gDisplayBottomLeftContent, "%+05d", (int)(roundNumber(gVerticalSpeedDouble, cVerticalSpeedRoundToNearestFt)));
+      break;
+
+    case CursorViewBmpTemp:
+      sprintf(gDisplayTopLeftContent, "%-7s", "Temp");
+      sprintf(gDisplayBottomLeftContent, "%d.%d" cDegCLabel, (int)gSensorTemperatureDouble, (int)(gSensorTemperatureDouble*10)%10);
       break;
 
     case CursorViewSoftwareVersion:
