@@ -7,8 +7,6 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
 *implement F macro for string to save program memory space
-*implement screen brightness control
-*flash screen for alerts
 *add settings to disable 200ft and 1000ft alarms
 *test sleeping
 *add more data fields to settings page
