@@ -1,19 +1,16 @@
 /*
 Author: Trevor Bartlett
 Email: aviatortrevor@gmail.com
-Cell: (760) 832-3480
 
 Hardware device to remind pilots of assigned headings & altitudes. Also has buzzer feature
 to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
-*silence alarm for a second or two after it triggers
 *implement F macro for string to save program memory space
 *implement screen brightness control
 *flash screen for alerts
 *add settings to disable 200ft and 1000ft alarms
 *test sleeping
-*test recovering pressure sensor?
 *add more data fields to settings page
 *interrupts causing an interrupt to beeping noises
 *design for battery
@@ -119,9 +116,9 @@ volatile PressureUnits gPressureUnits = PressureUnitsInHg;
 #define            cShortBuzzOnFreqBDuration       150
 #define            cUrgentBuzzNumberOfBeeps        7
 #define            cDisableAlarmKnobMovementTime   1200
+#define            cDisableAlarmAfterAlarmTime     1500
 enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
-BuzzAlarmMode      gNextAlarmModeEnum; //only used to get out of a multiple-beep alarm state
 int                gBuzzCountInt; //always a value between [0, cUrgentBuzzNumberOfBeeps]
 
 //Timing control
@@ -129,6 +126,7 @@ unsigned long          gNextSensorBeginCycleTs;
 unsigned long          gNextSensorReadyTs;
 unsigned long          gNextScreenRefreshTs; //TODO is this being used?
 unsigned long          gNextBuzzTs;
+unsigned long          gLastAlarmTs;
 volatile unsigned long gLeftButtonPressedTs;
 volatile unsigned long gRightButtonPressedTs;
 volatile unsigned long gLastRightRotaryActionTs;
@@ -777,14 +775,14 @@ void handleBuzzer() {
     case Climbing1000ToGo:
       if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm1000ToGo) {
         tone(cBuzzPin, cBuzzFrequencyA, cLongBuzzDuration);
-        gAlarmModeEnum = Climbing200ToGo;
+        gLastAlarmTs = millis();
+        gAlarmModeEnum = AlarmDisabled;
       }
       break;
     
     case Climbing200ToGo:
       if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm200ToGo) {
         gAlarmModeEnum = UrgentAlarm;
-        gNextAlarmModeEnum = AltitudeDeviate;
         gNextBuzzTs = millis(); //next buzz time is now
       }
       else if (gTrueAltitudeDouble < gSelectedAltitudeLong - cAlarm1000ToGo) {
@@ -795,14 +793,14 @@ void handleBuzzer() {
     case Descending1000ToGo:
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm1000ToGo) {
         tone(cBuzzPin, cBuzzFrequencyA, cLongBuzzDuration);
-        gAlarmModeEnum = Descending200ToGo;
+        gLastAlarmTs = millis();
+        gAlarmModeEnum = AlarmDisabled;
       }
       break;
       
     case Descending200ToGo:
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm200ToGo) {
         gAlarmModeEnum = UrgentAlarm;
-        gNextAlarmModeEnum = AltitudeDeviate;
         gNextBuzzTs = millis(); //next buzz time is now
       }
       else if (gTrueAltitudeDouble > gSelectedAltitudeLong + cAlarm1000ToGo) {
@@ -814,12 +812,6 @@ void handleBuzzer() {
       if (gTrueAltitudeDouble > gSelectedAltitudeLong + cAlarm200ToGo || gTrueAltitudeDouble < gSelectedAltitudeLong - cAlarm200ToGo) {
         gAlarmModeEnum = UrgentAlarm; //initiate beeping the alarm on the next pass
         gNextBuzzTs = millis(); //next buzz time is now
-        if (gTrueAltitudeDouble > gSelectedAltitudeLong + cAlarm200ToGo) {
-          gNextAlarmModeEnum = Descending200ToGo;
-        }
-        else if (gTrueAltitudeDouble < gSelectedAltitudeLong - cAlarm200ToGo) {
-          gNextAlarmModeEnum = Climbing200ToGo;
-        }
       }
       break;
       
@@ -838,23 +830,25 @@ void handleBuzzer() {
           gNextBuzzTs = millis() + cShortBuzzOnFreqADuration;
         }
         else {
-          gAlarmModeEnum = gNextAlarmModeEnum;
+          gAlarmModeEnum = AlarmDisabled;
           noTone(cBuzzPin);
+          gLastAlarmTs = millis();
         }
       }
       break;
 
     case AlarmDisabled: //Alarm can be disabled either because we just started, or the rotary knob has moved recently
-      //The very first time we start up and get a pressure reading, we initialize what the altitude selection is to a little higher than current altitude
-      noTone(cBuzzPin); //stop the buzzer
       if (eBMP180Failed || eDisplayError || !gInitializedAltitude) {
         if (millis() > 5000) {
           gInitializedAltitude = true;
         }
         break;
       }
-      else if (gSensorMode != SensorModeOff || gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
-        gAlarmModeEnum = DetermineAlarmState;
+      else if (millis() - gLastAlarmTs >= cDisableAlarmAfterAlarmTime) {
+        noTone(cBuzzPin); //stop the buzzer
+        if (gSensorMode != SensorModeOff || gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
+          gAlarmModeEnum = DetermineAlarmState;
+        }
       }
       break;
 
