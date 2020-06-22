@@ -71,15 +71,16 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cHeadingSelectIncrement        5     //degrees
 #define cTrueAltitudeRoundToNearestFt  10    //ft
 #define cTrueAltitudeRoundToNearestM   10    //meters
+#define cVerticalSpeedRoundToNearestFt 50    //ft
 
 //EEPROM
 #define         cEepromWriteDelay      10000  //milliseconds
 volatile bool   gNeedToWriteToEeprom;
 
 //BMP180 Sensor variables
-#define    cSensorLoopCycle               2 //2Hz
+#define    cSensorLoopCycle               2 //2Hz. Must be integer unless you address cVerticalSpeedInterval
 #define    cSensorLoopPeriod              (cOneSecond / cSensorLoopCycle)
-#define    cVerticalSpeedInterval         2 //number of seconds between the current altitude and the past altitude we're comparing against to calculate vertical speed
+#define    cVerticalSpeedInterval         4 //number of seconds between the current altitude and the past altitude we're comparing against to calculate vertical speed. Must be integer unless you address cVerticalSpeedInterval
 #define    cSizeOfVertSpdArray            (cSensorLoopCycle * cVerticalSpeedInterval)
 #define    cBmp180Quality                 3 //highest quality, more electrical draw [0-3]. Wait times are {5ms, 8ms, 14ms, 26ms}. Getting temperature is always 5ms.
 SFE_BMP180 gSensor;
@@ -137,7 +138,7 @@ volatile unsigned long gEepromSaveNeededTs;
 volatile unsigned long gLastRotaryActionTs;
 
 //Display
-#define cScreenBrightnessSettings 5 //TODO tune this to the new screen
+#define cScreenBrightnessSettings 8 //TODO tune this to the new screen
 #define cSplashScreenDelay        cOneSecond
 #define cMaxScreenRefreshRate     30 //30Hz //TODO remove?
 #define cMaxScreenRefreshPeriod   (cOneSecond / cMaxScreenRefreshRate) //TODO remove?
@@ -443,7 +444,7 @@ void loop() {
     handleRightRotaryLongPress();
   }
 
-  if (gCursor != CursorSelectHeading && gCursor != CursorSelectAltimeter && millis() - gLastRotaryActionTs >= cTenSeconds) {
+  if (gCursor != CursorSelectHeading && gCursor != CursorSelectAltimeter && gCursor != CursorViewVerticalSpeed && millis() - gLastRotaryActionTs >= cTenSeconds) {
     gCursor = CursorSelectHeading;
   }
 
@@ -946,8 +947,9 @@ void handleDisplay() {
       break;
 
     case CursorViewVerticalSpeed:
-      sprintf(gDisplayTopLeftContent, "%-7s", "V Spd");
-      sprintf(gDisplayBottomLeftContent, "%+d" cFpmLabel, displayNumber(roundNumber((*gVSpdCurrent - *gVSpdOld) / cVerticalSpeedInterval * 60, cTrueAltitudeRoundToNearestFt)));
+      sprintf(gDisplayTopLeftContent, "%-7s", "V Speed");
+      //sprintf(gDisplayBottomLeftContent, "%-7s" cFpmLabel, displayNumber(roundNumber((*gVSpdCurrent - *gVSpdOld) / cVerticalSpeedInterval * 60, cTrueAltitudeRoundToNearestFt)));
+      sprintf(gDisplayBottomLeftContent, "%+05d", (int)(roundNumber((*gVSpdCurrent - *gVSpdOld) / cVerticalSpeedInterval * 60, cVerticalSpeedRoundToNearestFt)));
       break;
 
     case CursorViewSoftwareVersion:
