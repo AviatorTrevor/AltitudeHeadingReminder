@@ -138,7 +138,7 @@ volatile unsigned long gEepromSaveNeededTs;
 volatile unsigned long gLastRotaryActionTs;
 
 //Display
-#define cScreenBrightnessSettings 8 //TODO tune this to the new screen
+#define cScreenBrightnessSettings 10
 #define cSplashScreenDelay        cOneSecond
 #define cMaxScreenRefreshRate     30 //30Hz //TODO remove?
 #define cMaxScreenRefreshPeriod   (cOneSecond / cMaxScreenRefreshRate) //TODO remove?
@@ -146,7 +146,8 @@ volatile unsigned long gLastRotaryActionTs;
 #define cScreenWidth              128 // OLED display width, in pixels
 #define cScreenHeight             32  // OLED display height, in pixels
 #define cOledReset                4   // Reset pin # (or -1 if sharing Arduino reset pin) //TODO remove?
-#define cLedBrightnessPin         11 //TODO remove?
+#define cLedBrightnessPin         11
+const int cBrightnessValues[cScreenBrightnessSettings] = {1, 3, 5, 8, 15, 35, 60, 110, 155, 255};
 //TODO small OLED display Adafruit_SSD1306 gDisplay(cScreenWidth, cScreenHeight, &Wire, cOledReset); //TODO remove?
 LiquidCrystal_I2C gDisplay(cDisplayAddr, 16, 2); //16x2 character display
 volatile int gScreenBrightnessInt = cScreenBrightnessSettings; //initialize to brightest setting
@@ -280,8 +281,8 @@ void initializeValuesFromEeprom() {
 
   //Last Screen Brightness
   EEPROM.get(eepromIndex, tempInt);
-  gScreenBrightnessInt = constrain(tempInt, 1, cScreenBrightnessSettings);
-  //TODO analogWrite(cLedBrightnessPin,(gScreenBrightnessInt - 1) * 49 + 59);
+  gScreenBrightnessInt = constrain(tempInt, 3, cScreenBrightnessSettings);
+  analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
   eepromIndex += sizeof(int);
 
 
@@ -334,6 +335,7 @@ void initializeDisplayDevice() {
     delay(cSplashScreenDelay);
   }TODO OLED display*/
 
+  pinMode(cLedBrightnessPin, OUTPUT);
   gDisplay.init();
   gDisplay.clear();
   delay(50);
@@ -618,7 +620,7 @@ void handleLeftRotaryMovement(int increment) {
 
     case CursorSelectBrightness:
       gScreenBrightnessInt = constrain(gScreenBrightnessInt + increment, 1, cScreenBrightnessSettings);
-      //TODO analogWrite(cLedBrightnessPin,(gScreenBrightnessInt - 1) * 49 + 59);
+      analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
