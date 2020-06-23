@@ -775,6 +775,8 @@ void handleRightRotaryLongPress() {
 void handleBuzzer() {
   switch (gAlarmModeEnum) {
     case Climbing1000ToGo:
+    {
+      double millisecondsTillAlarm = (gSelectedAltitudeLong - cAlarm1000ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute);
       if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm1000ToGo) {
         analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
         gBacklightOn = true;
@@ -786,15 +788,18 @@ void handleBuzzer() {
         analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
         gBacklightOn = true;
       }
-      else if ((gSelectedAltitudeLong - cAlarm1000ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute) <= cDisableBacklightPriorToAlarm) {
+      else if (millisecondsTillAlarm <= cDisableBacklightPriorToAlarm && millisecondsTillAlarm >= 0) {
         //if we are cDisableBacklightPriorToAlarm milliseconds away from reaching our buzzer, we turn off the backlight
         gBacklightOn = false;
         analogWrite(cLedBrightnessPin, 0); //turn of the backlight
         gLastBacklightOffTs = millis();
       }
       break;
+    }
 
     case Descending1000ToGo:
+    {
+      double millisecondsTillAlarm = (gSelectedAltitudeLong + cAlarm1000ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute);
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm1000ToGo) {
         analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
         gBacklightOn = true;
@@ -806,15 +811,18 @@ void handleBuzzer() {
         analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
         gBacklightOn = true;
       }
-      else if ((gSelectedAltitudeLong + cAlarm1000ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute) <= cDisableBacklightPriorToAlarm) {
+      else if (millisecondsTillAlarm <= cDisableBacklightPriorToAlarm && millisecondsTillAlarm >= 0) {
         //if we are cDisableBacklightPriorToAlarm milliseconds away from reaching our buzzer, we turn off the backlight
         gBacklightOn = false;
         analogWrite(cLedBrightnessPin, 0); //turn of the backlight
         gLastBacklightOffTs = millis();
       }
       break;
+    }
     
     case Climbing200ToGo:
+    {
+      double millisecondsTillAlarm = (gSelectedAltitudeLong - cAlarm200ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute);
       if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm200ToGo) {
         analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
         gBacklightOn = true;
@@ -830,15 +838,18 @@ void handleBuzzer() {
         analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
         gBacklightOn = true;
       }
-      else if ((gSelectedAltitudeLong - cAlarm200ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute) <= cDisableBacklightPriorToAlarm) {
+      else if (millisecondsTillAlarm <= cDisableBacklightPriorToAlarm && millisecondsTillAlarm >= 0) {
         //if we are cDisableBacklightPriorToAlarm milliseconds away from reaching our buzzer, we turn off the backlight
         gBacklightOn = false;
         analogWrite(cLedBrightnessPin, 0); //turn of the backlight
         gLastBacklightOffTs = millis();
       }
       break;
+    }
       
     case Descending200ToGo:
+    {
+      double millisecondsTillAlarm = (gSelectedAltitudeLong + cAlarm200ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute);
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm200ToGo) {
         analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
         gBacklightOn = true;
@@ -854,15 +865,17 @@ void handleBuzzer() {
         analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
         gBacklightOn = true;
       }
-      else if ((gSelectedAltitudeLong + cAlarm200ToGo - gTrueAltitudeDouble) / (gVerticalSpeedDouble / cMillisecondsInMinute) <= cDisableBacklightPriorToAlarm) {
+      else if (millisecondsTillAlarm <= cDisableBacklightPriorToAlarm && millisecondsTillAlarm >= 0) {
         //if we are cDisableBacklightPriorToAlarm milliseconds away from reaching our buzzer, we turn off the backlight
         gBacklightOn = false;
         analogWrite(cLedBrightnessPin, 0); //turn of the backlight
         gLastBacklightOffTs = millis();
       }
       break;
+    }
     
     case AltitudeDeviate: //We're looking to sound the alarm if pilot deviates from his altitude he already reached
+    {
       if (gTrueAltitudeDouble > gSelectedAltitudeLong + cAlarm200ToGo || gTrueAltitudeDouble < gSelectedAltitudeLong - cAlarm200ToGo) {
         gBacklightOn = false;
         analogWrite(cLedBrightnessPin, 0);
@@ -873,8 +886,10 @@ void handleBuzzer() {
         gNextBuzzTs = millis(); //next buzz time is now
       }
       break;
+    }
       
     case UrgentAlarm:
+    {
       if (gBuzzCountInt == 0) {
         gLastAlarmTs = millis();
         gBuzzCountInt = cUrgentBuzzNumberOfBeeps + 1;
@@ -895,8 +910,10 @@ void handleBuzzer() {
         }
       }
       break;
+    }
 
     case AlarmDisabled:
+    {
       if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime) {
         //do nothing
         break;
@@ -916,9 +933,11 @@ void handleBuzzer() {
         noTone(cBuzzPin); //stop the buzzer
       }
       break;
+    }
 
     default: //default case
     case DetermineAlarmState:
+    {
       long diffBetweenSelectionAndTrueAltitude = gSelectedAltitudeLong - gTrueAltitudeDouble;
       if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || eBMP180Failed || eDisplayError) {
         gAlarmModeEnum = AlarmDisabled;
@@ -939,6 +958,7 @@ void handleBuzzer() {
         gAlarmModeEnum = AltitudeDeviate;
       }
       break;
+    }
   }
 }
 
