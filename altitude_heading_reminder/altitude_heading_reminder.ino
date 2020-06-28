@@ -7,6 +7,8 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
 *implement F macro for string to save program memory space
+*stopwatch feature
+*move version to splash screen
 *add settings to disable 200ft and 1000ft alarms
 *test sleeping
 *add more data fields to settings page
@@ -131,6 +133,7 @@ unsigned long          gNextScreenRefreshTs; //TODO is this being used?
 unsigned long          gNextBuzzTs;
 unsigned long          gLastAlarmTs;
 unsigned long          gLastBacklightOffTs;
+unsigned long          gTimerStartTs;
 volatile unsigned long gLeftButtonPressedTs;
 volatile unsigned long gRightButtonPressedTs;
 volatile unsigned long gLastRightRotaryActionTs;
@@ -161,6 +164,7 @@ char gDisplayBottomLine[17];
 enum Cursor {
     CursorSelectHeading,
     CursorSelectAltimeter,
+    CursorSelectTimer,
     CursorSelectOffset,
     CursorSelectBrightness,
     CursorSelectSensor,
@@ -168,7 +172,6 @@ enum Cursor {
     CursorSelectPressureUnits,
     CursorViewVerticalSpeed,
     CursorViewBmpTemp,
-    CursorViewSoftwareVersion,
     CursorViewBatteryLevel,
     cNumberOfCursorModes }
     gCursor = CursorSelectHeading;
@@ -244,6 +247,7 @@ void setup() {
   initializeBmp180Sensor();
   initializeRotaryKnobs();
   initializeBuzzer();
+  delay(1000); //delay for splash screen (to see version number)
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -339,6 +343,10 @@ void initializeDisplayDevice() {
   gDisplay.clear();
   delay(50);
   gDisplay.backlight();
+  gDisplay.setCursor(4, 0);
+  gDisplay.print("Version");
+  gDisplay.setCursor(5, 1);
+  gDisplay.print(cAppVersion);
 /*TODO
   gDisplay.setCursor(4, 0);
   gDisplay.print("POWER ON");
@@ -445,7 +453,7 @@ void loop() {
     handleRightRotaryLongPress();
   }
 
-  if (gCursor != CursorSelectHeading && gCursor != CursorSelectAltimeter && gCursor != CursorViewVerticalSpeed && millis() - gLastRotaryActionTs >= cTenSeconds) {
+  if (gCursor != CursorSelectHeading && gCursor != CursorSelectAltimeter && gCursor != CursorViewVerticalSpeed && gCursor != CursorSelectTimer && millis() - gLastRotaryActionTs >= cTenSeconds) {
     gCursor = CursorSelectHeading;
   }
 
@@ -613,6 +621,15 @@ void handleLeftRotaryMovement(int increment) {
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
+
+    case CursorSelectTimer:
+      if (increment > 0 && gTimerStartTs != 0) {
+        gTimerStartTs = millis();
+      }
+      else if (increment < 0) {
+        gTimerStartTs = 0;
+      }
+      break;
     
     case CursorSelectOffset:
       gCalibratedAltitudeOffsetInt = constrain(roundNumber(gCalibratedAltitudeOffsetInt + cCalibrationOffsetInterval * increment, cCalibrationOffsetInterval), cCalibrationOffsetMin, cCalibrationOffsetMax);
@@ -648,7 +665,6 @@ void handleLeftRotaryMovement(int increment) {
       gNeedToWriteToEeprom = true;
       break;
       
-    case CursorViewSoftwareVersion:
     case CursorViewBatteryLevel:
       break; //do nothing for these modes, display only
     
@@ -923,6 +939,21 @@ void handleDisplay() {
       }
       break;
 
+    case CursorSelectTimer:
+      sprintf(gDisplayTopLeftContent, "%-s", "Timer");
+      if (gTimerStartTs == 0) {
+        sprintf(gDisplayBottomLeftContent, "00:00");
+      }
+      else {
+        unsigned long seconds = (millis() - gTimerStartTs) / 1000;
+        unsigned long minutes = seconds / 60;
+        while (minutes >= 100) {
+          minutes -= 100;
+        }
+        sprintf(gDisplayBottomLeftContent, "%02d:%02d", minutes, seconds);
+      }
+      break;
+    
     case CursorSelectOffset:
       sprintf(gDisplayTopLeftContent, "%-s", "Offset");
       sprintf(gDisplayBottomLeftContent, "%+d" cFtLabel, gCalibratedAltitudeOffsetInt);
@@ -972,14 +1003,12 @@ void handleDisplay() {
       break;
 
     case CursorViewBmpTemp:
+    {
       sprintf(gDisplayTopLeftContent, "%-7s", "Temp");
-      sprintf(gDisplayBottomLeftContent, "%d.%d" cDegCLabel, (int)gSensorTemperatureDouble, (int)(gSensorTemperatureDouble*10)%10);
+      double temperatureFarenheit = gSensorTemperatureDouble * 9 / 5 + 32;
+      sprintf(gDisplayBottomLeftContent, "%d.%d" cDegCLabel, (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10);
       break;
-
-    case CursorViewSoftwareVersion:
-      sprintf(gDisplayTopLeftContent, "%-7s", "Ver");
-      sprintf(gDisplayBottomLeftContent, "%-7s", cAppVersion);
-      break;
+    }
 
     case CursorViewBatteryLevel:
       sprintf(gDisplayTopLeftContent, "%-7s", "Batt");
