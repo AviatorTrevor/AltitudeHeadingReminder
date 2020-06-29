@@ -7,11 +7,8 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
 *implement F macro for string to save program memory space
-*stopwatch feature
-*move version to splash screen
 *add settings to disable 200ft and 1000ft alarms
 *test sleeping
-*add more data fields to settings page
 *interrupts causing an interrupt to beeping noises
 *design for battery
 *software for battery level & charging
@@ -19,7 +16,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
 *     https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
-*buy louder buzzer? or add 2nd buzzer? Try different frequencies using
+*buy louder buzzer? Try different frequencies using
 *
 *
 *LOUD FREQUENCIES TO USE?
@@ -34,12 +31,18 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #include <SFE_BMP180.h> //TODO implement your own BMP180 pressure sensor library so that we can have a slim version to cut down on program storage space
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-//TODO #include <Adafruit_GFX.h>
-//TODO #include <Adafruit_SSD1306.h> //TODO implement your own graphics libraries so that we can have a slim version to cut down on program storage space
 
 #define DEBUG
 
 #define cAppVersion                    "1.0.0" //[HardwareConfig].[MajorSoftwareRelease].[MinorSoftwareRelease]
+#define cSizeOfEeprom                  1024
+#define cAppCodeNumberOfDigits         6
+#define cAppCodeOne                    8
+#define cAppCodeTwo                    8
+#define cAppCodeThree                  1
+#define cAppCodeFour                   6
+#define cAppCodeFive                   6
+#define cAppCodeSix                    6
 #define cOneSecond                     1000 //1000 milliseconds = 1 second
 #define cOneSecondBeforeOverflow       (unsigned long)(pow(2, sizeof(unsigned long) * 8) - cOneSecond)
 #define cTenSeconds                    10000
@@ -52,7 +55,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cInLabel                       "\""
 #define cHPaLabel                      "hPa"
 #define cMetersLabel                   "m"
-#define cDegCLabel                     "C"
+#define cDegFLabel                     'F'
 #define cAltitudeSelectIncrement       100   //ft
 #define cAltitudeFineSelectIncrement   10    //ft
 #define cInitialSelectedAltitudeOffset 2000  //ft
@@ -60,7 +63,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cHighAltitude                  18000 //ft
 #define cLowestAltitudeSelect          -1500 //ft
 #define cHighestAltitudeSelect         60000 //ft
-#define cHighestAltitudeAlert          20000 //ft, the pressure sensor will only measure so high. No point in alerting above a certain pressure level
+#define cHighestAltitudeAlert          26000 //ft, the pressure sensor will only measure so high. No point in alerting above a certain pressure level
 #define cAltimeterSettingInHgMin       27.50 //inHg
 #define cAltimeterSettingInHgMax       31.50 //inHg
 #define cAltimeterSettingInHgInterval  0.01  //inHg
@@ -70,17 +73,14 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cHeadingSelectIncrement        5     //degrees
 #define cTrueAltitudeRoundToNearestFt  10    //ft
 #define cTrueAltitudeRoundToNearestM   10    //meters
-#define cVerticalSpeedRoundToNearestFt 50    //ft
 
 //EEPROM
 #define         cEepromWriteDelay      10000  //milliseconds
 volatile bool   gNeedToWriteToEeprom;
 
 //BMP180 Sensor variables
-#define    cSensorLoopCycle               2 //2Hz. Must be integer unless you address cVerticalSpeedInterval
+#define    cSensorLoopCycle               2 //2Hz
 #define    cSensorLoopPeriod              (cOneSecond / cSensorLoopCycle)
-#define    cVerticalSpeedInterval         4 //number of seconds between the current altitude and the past altitude we're comparing against to calculate vertical speed. Must be integer unless you address cVerticalSpeedInterval
-#define    cSizeOfVertSpdArray            (cSensorLoopCycle * cVerticalSpeedInterval)
 #define    cBmp180Quality                 3 //highest quality, more electrical draw [0-3]. Wait times are {5ms, 8ms, 14ms, 26ms}. Getting temperature is always 5ms.
 SFE_BMP180 gSensor;
 bool       gInitializedAltitude;
@@ -93,16 +93,14 @@ volatile SensorMode gSensorMode = SensorModeOnShow;
 
 //Main program variables
 double          gTrueAltitudeDouble;
-double          gVerticalSpeed[cSizeOfVertSpdArray];
-double*         gVSpdCurrent = &gVerticalSpeed[0];
-double*         gVSpdOld     = &gVerticalSpeed[1];
-double          gVerticalSpeedDouble;
-int             gPressureReadingCycleCounterForVerticalSpeed;
 volatile long   gSelectedAltitudeLong;
 volatile double gAltimeterSettingInHgDouble = cSeaLevelPressureInHg;
 volatile int    gCalibratedAltitudeOffsetInt;
 volatile int    gPermanentCalibratedAltitudeOffsetInt;
 volatile int    gSelectedHeadingInt = 360; //degrees
+volatile int    gSelectAppCode = 0;
+volatile int    gAppCodeSequence = 0;
+bool            gLegitimate = true;
 enum AltitudeUnits {AltitudeUnitsFeet, AltitudeUnitsMeters, cNumberOfAltitudeUnits};
 enum PressureUnits {PressureUnitsInHg, PressureUnitsHPa, cNumberOfPressureUnits};
 volatile AltitudeUnits gAltitudeUnits = AltitudeUnitsFeet;
@@ -129,7 +127,6 @@ int                gBuzzCountInt; //always a value between [0, cUrgentBuzzNumber
 //Timing control
 unsigned long          gNextSensorBeginCycleTs;
 unsigned long          gNextSensorReadyTs;
-unsigned long          gNextScreenRefreshTs; //TODO is this being used?
 unsigned long          gNextBuzzTs;
 unsigned long          gLastAlarmTs;
 unsigned long          gLastBacklightOffTs;
@@ -165,12 +162,11 @@ enum Cursor {
     CursorSelectHeading,
     CursorSelectAltimeter,
     CursorSelectTimer,
-    CursorSelectOffset,
     CursorSelectBrightness,
+    CursorSelectOffset,
     CursorSelectSensor,
     CursorSelectAltitudeUnits,
     CursorSelectPressureUnits,
-    CursorViewVerticalSpeed,
     CursorViewBmpTemp,
     CursorViewBatteryLevel,
     cNumberOfCursorModes }
@@ -221,19 +217,8 @@ volatile bool  gLeftButtonPossibleLongPress;
 volatile bool  gLeftRotaryFineTuningPress;
 volatile bool  gDisableLeftRotaryProcessing; //we disable knob processing right after the screen changes pages until the button is released
 
-//Error Codes
-#define cBMP180InitFail       10
-#define cBMP180TempStartFail  20
-#define cBMP180TempGetFail    30
-#define cBMP180PressStartFail 40
-#define cBMP180PressGetFail   50
-#define cDisplayInitFail      60 //TODO remove?
-
 //Error handling variables
 bool eBMP180Failed;
-bool eDisplayError; //TODO remove?
-int  eErrorCode;
-bool eUserAcknowledgedError;
 
 //////////////////////////////////////////////////////////////////////////
 void setup() {
@@ -247,7 +232,8 @@ void setup() {
   initializeBmp180Sensor();
   initializeRotaryKnobs();
   initializeBuzzer();
-  delay(1000); //delay for splash screen (to see version number)
+  initializePiracyCheck();
+  delay(1200); //delay for splash screen (to see version number)
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -314,43 +300,95 @@ void initializeValuesFromEeprom() {
 }
 
 //////////////////////////////////////////////////////////////////////////
-void initializeBmp180Sensor() {
-  delay(300);
-  if (eBMP180Failed = !gSensor.begin()) {
-    eErrorCode = cBMP180InitFail;
+void initializePiracyCheck() {
+  int eepromIndex = cSizeOfEeprom - sizeof(int) * cAppCodeNumberOfDigits;
+  int codeValue;
+
+  EEPROM.get(eepromIndex, codeValue);
+  if (codeValue != cAppCodeOne) {
+    gLegitimate = false;
+  }
+  eepromIndex += sizeof(int);
+
+  EEPROM.get(eepromIndex, codeValue);
+  if (codeValue != cAppCodeTwo) {
+    gLegitimate = false;
+  }
+  eepromIndex += sizeof(int);
+
+  EEPROM.get(eepromIndex, codeValue);
+  if (codeValue != cAppCodeThree) {
+    gLegitimate = false;
+  }
+  eepromIndex += sizeof(int);
+
+  EEPROM.get(eepromIndex, codeValue);
+  if (codeValue != cAppCodeFour) {
+    gLegitimate = false;
+  }
+  eepromIndex += sizeof(int);
+
+  EEPROM.get(eepromIndex, codeValue);
+  if (codeValue != cAppCodeFive) {
+    gLegitimate = false;
+  }
+  eepromIndex += sizeof(int);
+
+  EEPROM.get(eepromIndex, codeValue);
+  if (codeValue != cAppCodeSix) {
+    gLegitimate = false;
+  }
+
+  if (gLegitimate) {
+    return;
+  }
+  gDisplay.clear();
+  gDisplay.setCursor(4,0);
+  gDisplay.print("ERROR 69");
+  delay(3000);
+  gDisplay.clear();
+  int lastWrittenSequence = 0;
+  int currentAppCodeSequence = gAppCodeSequence;
+  int selectAppCode = gSelectAppCode;
+  eepromIndex = cSizeOfEeprom - sizeof(int) * cAppCodeNumberOfDigits;
+  while (!gLegitimate && currentAppCodeSequence <= cAppCodeNumberOfDigits) {
+    selectAppCode = gSelectAppCode;
+    gDisplay.setCursor(0,0);
+    sprintf(gDisplayTopLine, "%016d", selectAppCode);
+    gDisplay.print(gDisplayTopLine);
+    if (currentAppCodeSequence > lastWrittenSequence) {
+      EEPROM.put(eepromIndex, selectAppCode);
+      lastWrittenSequence = currentAppCodeSequence;
+      eepromIndex += sizeof(int);
+      gSelectAppCode = 0;
+      if (currentAppCodeSequence == cAppCodeNumberOfDigits) {
+        while (true) {
+          gDisplay.clear();
+          gDisplay.setCursor(4,0);
+          gDisplay.print("RESTART");
+          delay(999999999);
+        }
+      }
+    }
+    currentAppCodeSequence = gAppCodeSequence;
   }
 }
 
 //////////////////////////////////////////////////////////////////////////
-void initializeDisplayDevice() {
-  /*if(eDisplayError = !gDisplay.begin(SSD1306_SWITCHCAPVCC, cDisplayAddr)) {
-    eErrorCode = cDisplayInitFail;
-  }
-  else {
-    //Show splash screen
-    gDisplay.clearDisplay();
-    gDisplay.setTextSize(2);
-    //TODO set font
-    gDisplay.setTextColor(SSD1306_WHITE);
-    gDisplay.setCursor(18,11);
-    gDisplay.println(F("POWER ON"));
-    gDisplay.display();
-    delay(cSplashScreenDelay);
-  }TODO OLED display*/
+void initializeBmp180Sensor() {
+  eBMP180Failed = !gSensor.begin();
+}
 
+//////////////////////////////////////////////////////////////////////////
+void initializeDisplayDevice() {
   pinMode(cLedBrightnessPin, OUTPUT);
   gDisplay.init();
   gDisplay.clear();
-  delay(50);
   gDisplay.backlight();
   gDisplay.setCursor(4, 0);
   gDisplay.print("Version");
   gDisplay.setCursor(5, 1);
   gDisplay.print(cAppVersion);
-/*TODO
-  gDisplay.setCursor(4, 0);
-  gDisplay.print("POWER ON");
-  delay(1500);*/
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -434,7 +472,7 @@ void initializeBuzzer() {
 //////////////////////////////////////////////////////////////////////////
 void loop() {
   if (millis() > cOneSecondBeforeOverflow) { //this handles the extremely rare case (every ~50 days of uptime) that the clock overflows
-    gNextSensorBeginCycleTs = gNextSensorReadyTs = gNextScreenRefreshTs = gNextBuzzTs = 0; //reset timing
+    gNextSensorBeginCycleTs = gNextSensorReadyTs = gNextBuzzTs = 0; //reset timing
     delay(cOneSecond); //we take a 1 second frozen penalty for handling this extremely rare situation
     return; //return so that we grab a new currentTime
   }
@@ -453,12 +491,11 @@ void loop() {
     handleRightRotaryLongPress();
   }
 
-  if (gCursor != CursorSelectHeading && gCursor != CursorSelectAltimeter && gCursor != CursorViewVerticalSpeed && gCursor != CursorSelectTimer && millis() - gLastRotaryActionTs >= cTenSeconds) {
+  if (gCursor != CursorSelectHeading && gCursor != CursorSelectAltimeter && gCursor != CursorSelectTimer && millis() - gLastRotaryActionTs >= cTenSeconds) {
     gCursor = CursorSelectHeading;
   }
 
-  handleErrors();
-  if (gSensorMode != SensorModeOff) { //TODO add check for if buzzer is turned off?
+  if (gSensorMode != SensorModeOff) {
     handleBuzzer();
   }
   handleDisplay();
@@ -480,17 +517,15 @@ void handleBmp180Sensor() {
       gNextSensorReadyTs = millis() + gSensorStatusChar; //sensor tells us when it's ready for the next step
       if (gSensorStatusChar == 0) {
         eBMP180Failed = true;
-        eErrorCode = cBMP180TempStartFail;
       }
       break;
       
       
       case 1: //Retrieve temperature measured
-      gSensorStatusChar = gSensor.getTemperature(gSensorTemperatureDouble); //TODO: I've never tested out the accuracy of the temp sensor
+      gSensorStatusChar = gSensor.getTemperature(gSensorTemperatureDouble);
       gNextSensorReadyTs = millis(); //ready for the next step immediately
       if (gSensorStatusChar == 0) {
         eBMP180Failed = true;
-        eErrorCode = cBMP180TempGetFail;
       }
       break;
       
@@ -500,7 +535,6 @@ void handleBmp180Sensor() {
       gNextSensorReadyTs = millis() + gSensorStatusChar;//sensor tells us when it's ready for the next step
       if (gSensorStatusChar == 0) {
         eBMP180Failed = true;
-        eErrorCode = cBMP180PressStartFail;
       }
       break;
       
@@ -510,11 +544,10 @@ void handleBmp180Sensor() {
       gSensorStatusChar = gSensor.getPressure(gSensorPressureDouble, gSensorTemperatureDouble);
       if (gSensorStatusChar == 0) {
         eBMP180Failed = true;
-        eErrorCode = cBMP180PressGetFail;
       }
       else { //only update the true altitude if the pressure reading was valid
         gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
-        //if this is the first pressure reading, initialize stuff for selected altitude and vertical speed
+        //if this is the first pressure reading, initialize selected altitude
         if (!gInitializedAltitude) {
           gInitializedAltitude = true; //this if statement only gets called once
           long initialAltitudeSelection = gTrueAltitudeDouble + cInitialSelectedAltitudeOffset;
@@ -524,16 +557,7 @@ void handleBmp180Sensor() {
           else {
             gSelectedAltitudeLong = roundNumber(initialAltitudeSelection + cAltitudeSelectIncrement * 5, cAltitudeSelectIncrement * 5);
           }
-          for (int idx = 0; idx < cSizeOfVertSpdArray; idx++) {
-            gVerticalSpeed[idx] = gTrueAltitudeDouble;
-          }
         }
-        
-        //update vertical speed       
-        gVSpdOld     = &gVerticalSpeed[0] + ((gVSpdOld     + 1 - &gVerticalSpeed[0]) % cSizeOfVertSpdArray);
-        gVSpdCurrent = &gVerticalSpeed[0] + ((gVSpdCurrent + 1 - &gVerticalSpeed[0]) % cSizeOfVertSpdArray);
-        *gVSpdCurrent = gTrueAltitudeDouble;
-        gVerticalSpeedDouble = (*gVSpdCurrent - *gVSpdOld) / cVerticalSpeedInterval * 60;
       }
     }
     if (eBMP180Failed) {
@@ -552,24 +576,31 @@ void handleLeftRotary() {
   int leftRotaryDt = digitalRead(cPinLeftRotarySignalDt);
   int leftRotaryClk = digitalRead(cPinLeftRotarySignalClk);
 
-  gLastRotaryActionTs = millis();
-
-  if (gLeftRotaryButton != gLeftRotaryButtonPreviousValue && millis() - gLeftRotaryReleaseTs >= cRotaryButtonReleaseDelay) { //if button state changed
-    gLeftRotaryButtonPreviousValue = gLeftRotaryButton;
-    if (gLeftRotaryButton == PRESSED) {
-      gLeftButtonPressedTs = millis();
-      gLeftButtonPossibleLongPress = true;
-      gLeftRotaryFineTuningPress = false;
+  if (!gLegitimate) {
+    if (gLeftRotaryButton == PRESSED && gSelectAppCode != 0) {
+      gAppCodeSequence++;
     }
-    else if (millis() - gLeftButtonPressedTs < cLongButtonPress && !gLeftRotaryFineTuningPress) { //released after short press that wasn't a fine-tuning event
-      gLeftButtonPossibleLongPress = false;
-      gLeftRotaryReleaseTs = millis();
-      handleLeftRotaryShortPress();
-    }
-    else { //(gLeftRotaryButton == RELEASED) //released after either a long-press or a fine-tuning press
-      gLeftButtonPossibleLongPress = false;
-      gDisableLeftRotaryProcessing = false;
-      gLeftRotaryReleaseTs = millis();
+  }
+  else {
+    gLastRotaryActionTs = millis();
+  
+    if (gLeftRotaryButton != gLeftRotaryButtonPreviousValue && millis() - gLeftRotaryReleaseTs >= cRotaryButtonReleaseDelay) { //if button state changed
+      gLeftRotaryButtonPreviousValue = gLeftRotaryButton;
+      if (gLeftRotaryButton == PRESSED) {
+        gLeftButtonPressedTs = millis();
+        gLeftButtonPossibleLongPress = true;
+        gLeftRotaryFineTuningPress = false;
+      }
+      else if (millis() - gLeftButtonPressedTs < cLongButtonPress && !gLeftRotaryFineTuningPress) { //released after short press that wasn't a fine-tuning event
+        gLeftButtonPossibleLongPress = false;
+        gLeftRotaryReleaseTs = millis();
+        handleLeftRotaryShortPress();
+      }
+      else { //(gLeftRotaryButton == RELEASED) //released after either a long-press or a fine-tuning press
+        gLeftButtonPossibleLongPress = false;
+        gDisableLeftRotaryProcessing = false;
+        gLeftRotaryReleaseTs = millis();
+      }
     }
   }
   
@@ -598,6 +629,12 @@ void handleLeftRotaryMovement(int increment) {
   if (increment == 0 || gDisableLeftRotaryProcessing) {
     return; //if we didn't really move detents, do nothing
   }
+
+  if (!gLegitimate) {
+    gSelectAppCode += increment;
+    return;
+  }
+  
   gLeftButtonPossibleLongPress = false;
   gLeftRotaryFineTuningPress = (gLeftRotaryButton == PRESSED); //not all states have a fine-tuning press, but we still have to set this here because we don't want a short-press to register and move cursor
   int incrementMagnitude;
@@ -623,23 +660,23 @@ void handleLeftRotaryMovement(int increment) {
       break;
 
     case CursorSelectTimer:
-      if (increment > 0 && gTimerStartTs != 0) {
+      if (increment > 0 && gTimerStartTs == 0) {
         gTimerStartTs = millis();
       }
       else if (increment < 0) {
         gTimerStartTs = 0;
       }
       break;
-    
-    case CursorSelectOffset:
-      gCalibratedAltitudeOffsetInt = constrain(roundNumber(gCalibratedAltitudeOffsetInt + cCalibrationOffsetInterval * increment, cCalibrationOffsetInterval), cCalibrationOffsetMin, cCalibrationOffsetMax);
-      gEepromSaveNeededTs = millis();
-      gNeedToWriteToEeprom = true;
-      break;
 
     case CursorSelectBrightness:
       gScreenBrightnessInt = constrain(gScreenBrightnessInt + increment, 1, cScreenBrightnessSettings);
       analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+      gEepromSaveNeededTs = millis();
+      gNeedToWriteToEeprom = true;
+      break;
+    
+    case CursorSelectOffset:
+      gCalibratedAltitudeOffsetInt = constrain(roundNumber(gCalibratedAltitudeOffsetInt + cCalibrationOffsetInterval * increment, cCalibrationOffsetInterval), cCalibrationOffsetMin, cCalibrationOffsetMax);
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
@@ -876,7 +913,7 @@ void handleBuzzer() {
         break;
       }
 
-      if (eBMP180Failed || eDisplayError || !gInitializedAltitude) {
+      if (eBMP180Failed || !gInitializedAltitude) {
         if (millis() > 5000) {
           gInitializedAltitude = true;
         }
@@ -894,7 +931,7 @@ void handleBuzzer() {
     case DetermineAlarmState:
     {
       long diffBetweenSelectionAndTrueAltitude = gSelectedAltitudeLong - gTrueAltitudeDouble;
-      if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || eBMP180Failed || eDisplayError) {
+      if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || eBMP180Failed) {
         gAlarmModeEnum = AlarmDisabled;
       }
       else if (diffBetweenSelectionAndTrueAltitude > cAlarm1000ToGo) {
@@ -950,18 +987,19 @@ void handleDisplay() {
         while (minutes >= 100) {
           minutes -= 100;
         }
-        sprintf(gDisplayBottomLeftContent, "%02d:%02d", minutes, seconds);
+        seconds -= minutes * 60;
+        sprintf(gDisplayBottomLeftContent, "%02d:%02d", (int)minutes, (int)seconds);
       }
-      break;
-    
-    case CursorSelectOffset:
-      sprintf(gDisplayTopLeftContent, "%-s", "Offset");
-      sprintf(gDisplayBottomLeftContent, "%+d" cFtLabel, gCalibratedAltitudeOffsetInt);
       break;
 
     case CursorSelectBrightness:
       sprintf(gDisplayTopLeftContent, "%s", "Brtness");
       sprintf(gDisplayBottomLeftContent, "%-7d", gScreenBrightnessInt);
+      break;
+
+    case CursorSelectOffset:
+      sprintf(gDisplayTopLeftContent, "%-s", "Offset");
+      sprintf(gDisplayBottomLeftContent, "%+d" cFtLabel, gCalibratedAltitudeOffsetInt);
       break;
 
     case CursorSelectSensor:
@@ -997,16 +1035,11 @@ void handleDisplay() {
       }
       break;
 
-    case CursorViewVerticalSpeed:
-      sprintf(gDisplayTopLeftContent, "%-7s", "V Speed");
-      sprintf(gDisplayBottomLeftContent, "%+05d", (int)(roundNumber(gVerticalSpeedDouble, cVerticalSpeedRoundToNearestFt)));
-      break;
-
     case CursorViewBmpTemp:
     {
       sprintf(gDisplayTopLeftContent, "%-7s", "Temp");
       double temperatureFarenheit = gSensorTemperatureDouble * 9 / 5 + 32;
-      sprintf(gDisplayBottomLeftContent, "%d.%d" cDegCLabel, (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10);
+      sprintf(gDisplayBottomLeftContent, "%d.%d%c%c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, (char)(223), cDegFLabel);
       break;
     }
 
@@ -1191,16 +1224,6 @@ long roundNumber(const double &number, const int &roundNearest) {
 int roundNumber(const int &number, const int &roundNearest) {
   int sign = (number < 0) ? -1 : 1; //positive or negative number
   return (number + sign * roundNearest / 2) / roundNearest * roundNearest;
-}
-
-//////////////////////////////////////////////////////////////////////////
-void handleErrors() {
-  /*if (eBMP180Failed) {
-    println(String("SENSOR FAILED CODE ") + String(eErrorCode)); //TODO print out error codes
-  }
-  if (eDisplayError) {
-    println(String("DISPLAY FAILED"));
-  }*/
 }
 
 //////////////////////////////////////////////////////////////////////////

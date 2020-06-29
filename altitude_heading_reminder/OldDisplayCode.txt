@@ -1,5 +1,7 @@
   //TODO: smaller OLED display code
   //If we're having display issues, try to recover
+//TODO #include <Adafruit_GFX.h>
+//TODO #include <Adafruit_SSD1306.h> //TODO implement your own graphics libraries so that we can have a slim version to cut down on program storage space
   
 #define cDisplayAddr              0x3C
 #define cSplashScreenDelay        cOneSecond //TODO remove?
@@ -131,3 +133,20 @@ Adafruit_SSD1306 gDisplay(cScreenWidth, cScreenHeight, &Wire, cOledReset); //TOD
   gDisplay.println(displayNumber(temporarySelectedAltitude) + cFtLabel);
 
   gDisplay.display();
+  
+  void initializeDisplayDevice() {
+    /*if(eDisplayError = !gDisplay.begin(SSD1306_SWITCHCAPVCC, cDisplayAddr)) {
+		eErrorCode = cDisplayInitFail;
+	  }
+	  else {
+		//Show splash screen
+		gDisplay.clearDisplay();
+		gDisplay.setTextSize(2);
+		//TODO set font
+		gDisplay.setTextColor(SSD1306_WHITE);
+		gDisplay.setCursor(18,11);
+		gDisplay.println(F("POWER ON"));
+		gDisplay.display();
+		delay(cSplashScreenDelay);
+	  }TODO OLED display*/
+	}
