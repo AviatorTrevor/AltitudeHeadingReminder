@@ -7,6 +7,11 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
 *implement F macro for string to save program memory space
+*handle EEPROM writes
+  *byte 0 stores the next available EEPROM value. It can't reassign unless the value can fit before reaching 1024 - piracy values
+  *bytes [1-X] stores index of EEPROM items. needs to be set to zero when piracy code is entered
+  *each EEPROM value must also store a value for number of writes to EEPROM so we can know when to abandon that chunk of EEPROM
+*option to show text upside down for different mounting options?
 *add settings to disable 200ft and 1000ft alarms
 *test sleeping
 *interrupts causing an interrupt to beeping noises
@@ -32,10 +37,9 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-#define DEBUG
+#define DEBUG //TODO remove
 
 #define cAppVersion                    "1.0.0" //[HardwareConfig].[MajorSoftwareRelease].[MinorSoftwareRelease]
-#define cSizeOfEeprom                  1024
 #define cAppCodeNumberOfDigits         6
 #define cAppCodeOne                    8
 #define cAppCodeTwo                    8
@@ -75,7 +79,9 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cTrueAltitudeRoundToNearestM   10    //meters
 
 //EEPROM
+#define         cSizeOfEeprom          1024
 #define         cEepromWriteDelay      10000  //milliseconds
+#define         cEepromMaxWrites       90000
 volatile bool   gNeedToWriteToEeprom;
 
 //BMP180 Sensor variables
@@ -357,7 +363,7 @@ void initializePiracyCheck() {
     sprintf(gDisplayTopLine, "%016d", selectAppCode);
     gDisplay.print(gDisplayTopLine);
     if (currentAppCodeSequence > lastWrittenSequence) {
-      EEPROM.put(eepromIndex, selectAppCode);
+      EEPROM.update(eepromIndex, selectAppCode);
       lastWrittenSequence = currentAppCodeSequence;
       eepromIndex += sizeof(int);
       gSelectAppCode = 0;
