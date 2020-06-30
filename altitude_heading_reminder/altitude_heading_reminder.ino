@@ -7,6 +7,12 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
 *implement F macro for string to save program memory space
+*implement dual OLED displays
+  *multiplexer or alternative method
+  *rotating display option
+  *flash/invert screen when alerting
+  *dim mode?
+  *custom library to cut size
 *handle EEPROM writes
   *byte 0 stores the next available EEPROM value. It can't reassign unless the value can fit before reaching 1024 - piracy values
   *bytes [1-X] stores index of EEPROM items. needs to be set to zero when piracy code is entered
@@ -35,7 +41,8 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #include <EEPROM.h>
 #include <SFE_BMP180.h> //TODO implement your own BMP180 pressure sensor library so that we can have a slim version to cut down on program storage space
 #include <Wire.h>
-#include <LiquidCrystal_I2C.h>
+#include <Adafruit_GFX.h> //TODO temporary for now
+#include <Adafruit_SSD1306.h> //TODO temporary for now
 
 #define DEBUG //TODO remove
 
@@ -67,7 +74,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cHighAltitude                  18000 //ft
 #define cLowestAltitudeSelect          -1500 //ft
 #define cHighestAltitudeSelect         60000 //ft
-#define cHighestAltitudeAlert          26000 //ft, the pressure sensor will only measure so high. No point in alerting above a certain pressure level
+#define cHighestAltitudeAlert          24000 //ft, the pressure sensor will only measure so high. No point in alerting above a certain pressure level
 #define cAltimeterSettingInHgMin       27.50 //inHg
 #define cAltimeterSettingInHgMax       31.50 //inHg
 #define cAltimeterSettingInHgInterval  0.01  //inHg
@@ -146,22 +153,21 @@ volatile unsigned long gEepromSaveNeededTs;
 volatile unsigned long gLastRotaryActionTs;
 
 //Display
-#define cScreenBrightnessSettings 10
+#define cOledAddr      0x3C
+#define cOledWidth     128
+#define cOledHeight    32
+#define cOledReset     4
+Adafruit_SSD1306 gOled(cOledWidth, cOledHeight, &Wire, cOledReset);
 #define cMaxScreenRefreshRate     30 //30Hz //TODO remove?
 #define cMaxScreenRefreshPeriod   (cOneSecond / cMaxScreenRefreshRate) //TODO remove?
-#define cDisplayAddr              0x27
-#define cLedBrightnessPin         11
-const int cBrightnessValues[cScreenBrightnessSettings] = {1, 3, 5, 8, 15, 35, 60, 110, 155, 255};
-bool gBacklightOn = true;
-LiquidCrystal_I2C gDisplay(cDisplayAddr, 16, 2); //16x2 character display
-volatile int gScreenBrightnessInt = cScreenBrightnessSettings; //initialize to brightest setting
+volatile bool gOledDim = false;
+volatile bool gDeviceFlipped = false;
+volatile bool gShowLeftScreen = false; //TODO temporary, remove
 
 char gDisplayTopLeftContent[8];
 char gDisplayBottomLeftContent[8];
 char gDisplayTopRightContent[9];
-char gDisplayBottomRightContent[9];
-char gDisplayTopLine[17];
-char gDisplayBottomLine[17];
+char gDisplayBottomRightContent[7];
 
 //Cursor control
 enum Cursor {
@@ -247,6 +253,7 @@ void initializeValuesFromEeprom() {
   int eepromIndex = 0;
   double tempDouble;
   int tempInt;
+  bool tempBool;
   
   //Last Altimeter Setting
   EEPROM.get(eepromIndex, tempDouble);
@@ -275,10 +282,9 @@ void initializeValuesFromEeprom() {
 
 
   //Last Screen Brightness
-  EEPROM.get(eepromIndex, tempInt);
-  gScreenBrightnessInt = constrain(tempInt, 3, cScreenBrightnessSettings);
-  analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
-  eepromIndex += sizeof(int);
+  EEPROM.get(eepromIndex, tempBool);
+  gOledDim = tempBool;
+  eepromIndex += sizeof(bool);
 
 
   //Sensor Mode - On/Show, On/Hide, Off
@@ -348,20 +354,21 @@ void initializePiracyCheck() {
   if (gLegitimate) {
     return;
   }
-  gDisplay.clear();
-  gDisplay.setCursor(4,0);
-  gDisplay.print("ERROR 69");
+  gOled.clearDisplay();
+  gOled.setCursor(13,0);
+  gOled.setTextSize(2);
+  gOled.print("ERROR 69");
   delay(3000);
-  gDisplay.clear();
+  gOled.clearDisplay();
   int lastWrittenSequence = 0;
   int currentAppCodeSequence = gAppCodeSequence;
   int selectAppCode = gSelectAppCode;
   eepromIndex = cSizeOfEeprom - sizeof(int) * cAppCodeNumberOfDigits;
   while (!gLegitimate && currentAppCodeSequence <= cAppCodeNumberOfDigits) {
     selectAppCode = gSelectAppCode;
-    gDisplay.setCursor(0,0);
+    gOled.setCursor(0,0);
     sprintf(gDisplayTopLine, "%016d", selectAppCode);
-    gDisplay.print(gDisplayTopLine);
+    gOled.print(gDisplayTopLine);
     if (currentAppCodeSequence > lastWrittenSequence) {
       EEPROM.update(eepromIndex, selectAppCode);
       lastWrittenSequence = currentAppCodeSequence;
@@ -369,9 +376,9 @@ void initializePiracyCheck() {
       gSelectAppCode = 0;
       if (currentAppCodeSequence == cAppCodeNumberOfDigits) {
         while (true) {
-          gDisplay.clear();
-          gDisplay.setCursor(4,0);
-          gDisplay.print("RESTART");
+          gOled.clearDisplay();
+          gOled.setCursor(13,0);
+          gOled.print("RESTART");
           delay(999999999);
         }
       }
@@ -387,14 +394,15 @@ void initializeBmp180Sensor() {
 
 //////////////////////////////////////////////////////////////////////////
 void initializeDisplayDevice() {
-  pinMode(cLedBrightnessPin, OUTPUT);
-  gDisplay.init();
-  gDisplay.clear();
-  gDisplay.backlight();
-  gDisplay.setCursor(4, 0);
-  gDisplay.print("Version");
-  gDisplay.setCursor(5, 1);
-  gDisplay.print(cAppVersion);
+  gOled.begin(SSD1306_SWITCHCAPVCC, cOledAddr);
+  gOled.invertDisplay(false);
+  gOled.clearDisplay();
+  gOled.setTextSize(2);
+  gOled.setCursor(12,0);
+  gOled.print("Version");
+  gOled.setCursor(15, 17);
+  gOled.print(cAppVersion);
+  gOled.display();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -577,6 +585,7 @@ void handleBmp180Sensor() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleLeftRotary() {
+  gShowLeftScreen = true;
   //The button being pressed can lead to 1 of 3 outcomes: {Short Press, Long Press, a rotation occuring before the long press time is reached}
   gLeftRotaryButton = digitalRead(cPinLeftRotaryButton); //read button state
   int leftRotaryDt = digitalRead(cPinLeftRotarySignalDt);
@@ -667,7 +676,7 @@ void handleLeftRotaryMovement(int increment) {
 
     case CursorSelectTimer:
       if (increment > 0 && gTimerStartTs == 0) {
-        gTimerStartTs = millis();
+        gTimerStartTs = millis() - 750;
       }
       else if (increment < 0) {
         gTimerStartTs = 0;
@@ -675,8 +684,7 @@ void handleLeftRotaryMovement(int increment) {
       break;
 
     case CursorSelectBrightness:
-      gScreenBrightnessInt = constrain(gScreenBrightnessInt + increment, 1, cScreenBrightnessSettings);
-      analogWrite(cLedBrightnessPin, cBrightnessValues[gScreenBrightnessInt - 1]);
+      gOledDim = !gOledDim;
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
@@ -738,6 +746,7 @@ void handleLeftRotaryLongPress() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleRightRotary() {
+  gShowLeftScreen = false;
   //The button being pressed on the right knob can only be used for fine-tuning mode or altitude-sync (long press). A released state indicates normal altitude selection mode.
   gRightRotaryButton = digitalRead(cPinRightRotaryButton); //read button state
   int rightRotaryDt = digitalRead(cPinRightRotarySignalDt);
@@ -962,8 +971,16 @@ void handleBuzzer() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleDisplay() {
-  //show the parameter name top-left and the associated value bottom-left
-  
+  if (gShowLeftScreen) {
+    drawLeftScreen();
+  }
+  else {
+    drawRightScreen();
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
+void drawLeftScreen() {
   switch (gCursor) {
     case CursorSelectHeading: //Display Selected Heading
     {
@@ -999,8 +1016,8 @@ void handleDisplay() {
       break;
 
     case CursorSelectBrightness:
-      sprintf(gDisplayTopLeftContent, "%s", "Brtness");
-      sprintf(gDisplayBottomLeftContent, "%-7d", gScreenBrightnessInt);
+      sprintf(gDisplayTopLeftContent, "%s", "Dim");
+      sprintf(gDisplayBottomLeftContent, "%-7d", gOledDim ? "ON" : "OFF");
       break;
 
     case CursorSelectOffset:
@@ -1055,25 +1072,54 @@ void handleDisplay() {
       break;
   }
 
+  if (gOledDim) {
+    gOled.ssd1306_command(SSD1306_SETCONTRAST); //0x81
+    gOled.ssd1306_command(0);
+    
+    gOled.ssd1306_command(SSD1306_SETPRECHARGE); //0xD9
+    gOled.ssd1306_command(0);
 
+    gOled.ssd1306_command(SSD1306_SETVCOMDETECT); //0xDB
+    gOled.ssd1306_command(0);
+  }
+  else {
+    gOled.ssd1306_command(SSD1306_SETCONTRAST); //0x81
+    gOled.ssd1306_command(255);
+    
+    gOled.ssd1306_command(SSD1306_SETPRECHARGE); //0xD9
+    gOled.ssd1306_command(255);
+
+    gOled.ssd1306_command(SSD1306_SETVCOMDETECT); //0xDB
+    gOled.ssd1306_command(255);
+  }
+  gOled.clearDisplay();
+  gOled.setRotation(2);
+  gOled.setTextColor(SSD1306_WHITE);
+  gOled.setTextSize(1);
+  gOled.setCursor(0, 0);
+  gOled.println(gDisplayTopLeftContent);
+  gOled.setTextSize(3);
+  gOled.setCursor(0, 11);
+  gOled.println(gDisplayBottomLeftContent);
+  gOled.setTextSize(2);
+  gOled.setCursor(25, 11);
+  gOled.print(cFtLabel);
+  gOled.display();
+}
+
+//////////////////////////////////////////////////////////////////////////
+void drawRightScreen() {
   //show the sensor true altitude
   if (eBMP180Failed) { //if there's a sensor error, the top line should be the error message
-    sprintf(gDisplayTopRightContent, "%s", "FAIL");
+    sprintf(gDisplayTopRightContent, "%8s", "FAIL");
   }
   else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
-    sprintf(gDisplayTopRightContent, "%s", "OFF");
+    sprintf(gDisplayTopRightContent, "%8s", "OFF");
   }
   else if (gSensorMode == SensorModeOnShow) { //...show the current altitude top-right
-    if (gAltitudeUnits == AltitudeUnitsFeet) {
-      char* trueAltitudeReadout = displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearestFt));
-      sprintf(gDisplayTopRightContent, "%6s" cFtLabel, trueAltitudeReadout);
-      delete trueAltitudeReadout;
-    }
-    else if (gAltitudeUnits == AltitudeUnitsMeters) {
-      char* trueAltitudeReadout = displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearestM));
-      sprintf(gDisplayTopRightContent, "%7s" cMetersLabel, trueAltitudeReadout);
-      delete trueAltitudeReadout;
-    }
+    char* trueAltitudeReadout = displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearestFt));
+    sprintf(gDisplayTopRightContent, "%6s" cFtLabel, trueAltitudeReadout);
+    delete trueAltitudeReadout;
   }
   else {
     sprintf(gDisplayTopRightContent, "%c", ' ');
@@ -1081,29 +1127,45 @@ void handleDisplay() {
 
   //Selected Altitude
   long tempSelectedAltitude = gSelectedAltitudeLong;
-  if (gAltitudeUnits == AltitudeUnitsFeet) {
-    char* selectedAltitudeReadout = displayNumber(tempSelectedAltitude);
-    sprintf(gDisplayBottomRightContent, "%6s" cFtLabel, selectedAltitudeReadout);
-    delete selectedAltitudeReadout;
-  }
-  else if (gAltitudeUnits == AltitudeUnitsMeters) {
-    char* selectedAltitudeReadout = displayNumber(tempSelectedAltitude / cFeetInMeters);
-    sprintf(gDisplayBottomRightContent, "%7s" cMetersLabel, selectedAltitudeReadout);
-    delete selectedAltitudeReadout;
-  }
-  
-  
-  //Update the display
-  sprintf(gDisplayTopLine, "%-7s %8s", gDisplayTopLeftContent, gDisplayTopRightContent);
-  sprintf(gDisplayBottomLine, "%-7s %8s", gDisplayBottomLeftContent, gDisplayBottomRightContent);
+  char* selectedAltitudeReadout = displayNumber(tempSelectedAltitude);
+  sprintf(gDisplayBottomRightContent, "%6s", selectedAltitudeReadout);
+  delete selectedAltitudeReadout;
 
-  gDisplay.setCursor(0, 0);
-  gDisplay.print(gDisplayTopLine);
-  gDisplay.setCursor(0, 1);
-  gDisplay.print(gDisplayBottomLine);
+
+  if (gOledDim) {
+    gOled.ssd1306_command(SSD1306_SETCONTRAST); //0x81
+    gOled.ssd1306_command(0);
+    
+    gOled.ssd1306_command(SSD1306_SETPRECHARGE); //0xD9
+    gOled.ssd1306_command(0);
+
+    gOled.ssd1306_command(SSD1306_SETVCOMDETECT); //0xDB
+    gOled.ssd1306_command(0);
+  }
+  else {
+    gOled.ssd1306_command(SSD1306_SETCONTRAST); //0x81
+    gOled.ssd1306_command(255);
+    
+    gOled.ssd1306_command(SSD1306_SETPRECHARGE); //0xD9
+    gOled.ssd1306_command(255);
+
+    gOled.ssd1306_command(SSD1306_SETVCOMDETECT); //0xDB
+    gOled.ssd1306_command(255);
+  }
+  gOled.clearDisplay();
+  gOled.setRotation(2);
+  gOled.setTextColor(SSD1306_WHITE);
+  gOled.setTextSize(1);
+  gOled.setCursor(0, 0);
+  gOled.println(gDisplayTopRightContent);
+  gOled.setTextSize(3);
+  gOled.setCursor(0, 11);
+  gOled.println(gDisplayBottomRightContent);
+  gOled.setTextSize(2);
+  gOled.setCursor(25, 11);
+  gOled.print(cFtLabel);
+  gOled.display();
 }
-
-
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -1151,14 +1213,14 @@ void writeValuesToEeprom() {
   }
   eepromIndex += sizeof(int);
 
-  //Last Screen Brightness
-  int brightness;
-  EEPROM.get(eepromIndex, brightness);
-  if (brightness != gScreenBrightnessInt) {
-    brightness = gScreenBrightnessInt; //this silence a compiler warning
-    EEPROM.put(eepromIndex, brightness);
+  //Screen dim
+  bool dim;
+  EEPROM.get(eepromIndex, dim);
+  if (dim != gOledDim) {
+    dim = gOledDim; //this silence a compiler warning
+    EEPROM.put(eepromIndex, dim);
   }
-  eepromIndex += sizeof(int);
+  eepromIndex += sizeof(bool);
 
   //Sensor Mode - On/Show, On/Hide, Off
   int sensorMode;
