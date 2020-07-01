@@ -114,10 +114,6 @@ volatile int    gSelectedHeadingInt = 360; //degrees
 volatile int    gSelectAppCode = 0;
 volatile int    gAppCodeSequence = 0;
 bool            gLegitimate = true;
-enum AltitudeUnits {AltitudeUnitsFeet, AltitudeUnitsMeters, cNumberOfAltitudeUnits};
-enum PressureUnits {PressureUnitsInHg, PressureUnitsHPa, cNumberOfPressureUnits};
-volatile AltitudeUnits gAltitudeUnits = AltitudeUnitsFeet;
-volatile PressureUnits gPressureUnits = PressureUnitsInHg;
 
 //Buzzer
 #define            cAlarm200ToGo                   200  //ft
@@ -177,8 +173,6 @@ enum Cursor {
     CursorSelectBrightness,
     CursorSelectOffset,
     CursorSelectSensor,
-    CursorSelectAltitudeUnits,
-    CursorSelectPressureUnits,
     CursorViewBmpTemp,
     CursorViewBatteryLevel,
     cNumberOfCursorModes }
@@ -291,24 +285,6 @@ void initializeValuesFromEeprom() {
   EEPROM.get(eepromIndex, tempInt);
   gSensorMode = static_cast<SensorMode>(constrain(tempInt, 0, cNumberOfSensorModes));
   eepromIndex += sizeof(int);
-
-
-  //Altitude Units
-  EEPROM.get(eepromIndex, tempInt);
-  gAltitudeUnits = static_cast<AltitudeUnits>(constrain(tempInt, 0, cNumberOfAltitudeUnits));
-  eepromIndex += sizeof(int);
-
-
-  //Pressure Units
-  EEPROM.get(eepromIndex, tempInt);
-  gPressureUnits = static_cast<PressureUnits>(constrain(tempInt, 0, cNumberOfPressureUnits));
-  eepromIndex += sizeof(int);
-
-
-  //TODO
-  //1000ft alert tone
-  //200ft alert tone
-  //departing altitude by 200ft alert tone
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -354,6 +330,7 @@ void initializePiracyCheck() {
   if (gLegitimate) {
     return;
   }
+  //TODO this needs to be tested for the OLED screens
   gOled.clearDisplay();
   gOled.setCursor(13,0);
   gOled.setTextSize(2);
@@ -367,8 +344,7 @@ void initializePiracyCheck() {
   while (!gLegitimate && currentAppCodeSequence <= cAppCodeNumberOfDigits) {
     selectAppCode = gSelectAppCode;
     gOled.setCursor(0,0);
-    sprintf(gDisplayTopLine, "%016d", selectAppCode);
-    gOled.print(gDisplayTopLine);
+    gOled.print(selectAppCode);
     if (currentAppCodeSequence > lastWrittenSequence) {
       EEPROM.update(eepromIndex, selectAppCode);
       lastWrittenSequence = currentAppCodeSequence;
@@ -703,19 +679,8 @@ void handleLeftRotaryMovement(int increment) {
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
-      
-    case CursorSelectAltitudeUnits:
-      gAltitudeUnits = static_cast<AltitudeUnits>((gAltitudeUnits + increment + cNumberOfAltitudeUnits) % cNumberOfAltitudeUnits);
-      gEepromSaveNeededTs = millis();
-      gNeedToWriteToEeprom = true;
-      break;
 
-    case CursorSelectPressureUnits:
-      gPressureUnits = static_cast<PressureUnits>((gPressureUnits + increment + cNumberOfPressureUnits) % cNumberOfPressureUnits);
-      gEepromSaveNeededTs = millis();
-      gNeedToWriteToEeprom = true;
-      break;
-      
+    case CursorViewBmpTemp:
     case CursorViewBatteryLevel:
       break; //do nothing for these modes, display only
     
@@ -991,12 +956,7 @@ void drawLeftScreen() {
 
     case CursorSelectAltimeter:
       sprintf(gDisplayTopLeftContent, "%-s", "Altmtr");
-      if (gPressureUnits == PressureUnitsInHg) {
-        sprintf(gDisplayBottomLeftContent, "%d.%02d" cInLabel, (int)gAltimeterSettingInHgDouble, (int)(gAltimeterSettingInHgDouble*100)%100);
-      }
-      else { //(gPressureUnits == PressureUnitsHPa) {
-        sprintf(gDisplayBottomLeftContent, "%s" cHPaLabel, String(static_cast<int>(gAltimeterSettingInHgDouble * cSeaLevelPressureHPa/cSeaLevelPressureInHg)).c_str()); //TODO fix this to use sprintf like a few lines above
-      }
+      sprintf(gDisplayBottomLeftContent, "%d.%02d" cInLabel, (int)gAltimeterSettingInHgDouble, (int)(gAltimeterSettingInHgDouble*100)%100);
       break;
 
     case CursorSelectTimer:
@@ -1035,26 +995,6 @@ void drawLeftScreen() {
       }
       else {
         sprintf(gDisplayBottomLeftContent, "%-7s", "OFF");
-      }
-      break;
-
-    case CursorSelectAltitudeUnits:
-      sprintf(gDisplayTopLeftContent, "%-7s", "A Units");
-      if (gAltitudeUnits == AltitudeUnitsFeet) {
-        sprintf(gDisplayBottomLeftContent, "%-7s", "Ft");
-      }
-      else { //(gAltitudeUnits == AltitudeUnitsMeters) {
-        sprintf(gDisplayBottomLeftContent, "%-7s", "Meters");
-      }
-      break;
-
-    case CursorSelectPressureUnits:
-      sprintf(gDisplayTopLeftContent, "%-7s", "P Units");
-      if (gPressureUnits == PressureUnitsInHg) {
-        sprintf(gDisplayBottomLeftContent, "%-7s", "\"Hg");
-      }
-      else { //(gPressureUnits == PressureUnitsHPa) {
-        sprintf(gDisplayBottomLeftContent, "%-7s", "hPa");
       }
       break;
 
@@ -1228,24 +1168,6 @@ void writeValuesToEeprom() {
   if (sensorMode != static_cast<int>(gSensorMode)) {
     sensorMode = static_cast<int>(gSensorMode);
     EEPROM.put(eepromIndex, sensorMode);
-  }
-  eepromIndex += sizeof(int);
-
-  //Altitude Units
-  int altitudeUnits;
-  EEPROM.get(eepromIndex, altitudeUnits);
-  if (altitudeUnits != static_cast<int>(gAltitudeUnits)) {
-    altitudeUnits = static_cast<int>(gAltitudeUnits);
-    EEPROM.put(eepromIndex, altitudeUnits);
-  }
-  eepromIndex += sizeof(int);
-
-  //Pressure Units
-  int pressureUnits;
-  EEPROM.get(eepromIndex, pressureUnits);
-  if (pressureUnits != static_cast<int>(gPressureUnits)) {
-    pressureUnits = static_cast<int>(gPressureUnits);
-    EEPROM.put(eepromIndex, pressureUnits);
   }
   eepromIndex += sizeof(int);
 }
