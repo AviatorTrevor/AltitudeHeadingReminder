@@ -17,6 +17,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
   *byte 0 stores the next available EEPROM value. It can't reassign unless the value can fit before reaching 1024 - piracy values
   *bytes [1-X] stores index of EEPROM items. needs to be set to zero when piracy code is entered
   *each EEPROM value must also store a value for number of writes to EEPROM so we can know when to abandon that chunk of EEPROM
+*adjust pin mapping for PCB board layout
 *option to show text upside down for different mounting options?
 *add settings to disable 200ft and 1000ft alarms
 *test sleeping
@@ -41,8 +42,8 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #include <EEPROM.h>
 #include <SFE_BMP180.h> //TODO implement your own BMP180 pressure sensor library so that we can have a slim version to cut down on program storage space
 #include <Wire.h>
-#include <Adafruit_GFX.h> //TODO temporary for now
-#include <Adafruit_SSD1306.h> //TODO temporary for now
+#include <Custom_GFX.h> //TODO temporary for now
+#include <Custom_SSD1306.h> //TODO temporary for now
 
 #define DEBUG //TODO remove
 
@@ -65,7 +66,6 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cFpmLabel                      "fpm" //feet per minute
 #define cInLabel                       "\""
 #define cHPaLabel                      "hPa"
-#define cMetersLabel                   "m"
 #define cDegFLabel                     'F'
 #define cAltitudeSelectIncrement       100   //ft
 #define cAltitudeFineSelectIncrement   10    //ft
@@ -83,7 +83,6 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cCalibrationOffsetInterval     10    //ft
 #define cHeadingSelectIncrement        5     //degrees
 #define cTrueAltitudeRoundToNearestFt  10    //ft
-#define cTrueAltitudeRoundToNearestM   10    //meters
 
 //EEPROM
 #define         cSizeOfEeprom          1024
@@ -149,21 +148,24 @@ volatile unsigned long gEepromSaveNeededTs;
 volatile unsigned long gLastRotaryActionTs;
 
 //Display
-#define cOledAddr      0x3C
-#define cOledWidth     128
-#define cOledHeight    32
-#define cOledReset     4
-Adafruit_SSD1306 gOled(cOledWidth, cOledHeight, &Wire, cOledReset);
+#define cOledAddr        0x3C
+#define cOledWidth       128
+#define cOledHeight      32
+#define cOledReset       4
+#define cLabelTextSize   1
+#define cLabelTextYpos   0
+#define cReadoutTextSize 3
+#define cReadoutTextYpos 11
 #define cMaxScreenRefreshRate     30 //30Hz //TODO remove?
 #define cMaxScreenRefreshPeriod   (cOneSecond / cMaxScreenRefreshRate) //TODO remove?
+Custom_SSD1306 gOled(cOledWidth, cOledHeight, &Wire, cOledReset);
 volatile bool gOledDim = false;
+volatile bool gInvertDisplay = false;
 volatile bool gDeviceFlipped = false;
 volatile bool gShowLeftScreen = false; //TODO temporary, remove
 
-char gDisplayTopLeftContent[8];
-char gDisplayBottomLeftContent[8];
-char gDisplayTopRightContent[9];
-char gDisplayBottomRightContent[7];
+char gDisplayTopContent[20];
+char gDisplayBottomContent[10];
 
 //Cursor control
 enum Cursor {
@@ -173,6 +175,7 @@ enum Cursor {
     CursorSelectBrightness,
     CursorSelectOffset,
     CursorSelectSensor,
+    CursorSelectInvert,
     CursorViewBmpTemp,
     CursorViewBatteryLevel,
     cNumberOfCursorModes }
@@ -271,11 +274,16 @@ void initializeValuesFromEeprom() {
 
   //Semi-permanent altitude offset
   EEPROM.get(eepromIndex, tempInt);
-  gPermanentCalibratedAltitudeOffsetInt = tempInt;
+  if (tempInt >= cCalibrationOffsetMin && tempInt <= cCalibrationOffsetMax) {
+    gPermanentCalibratedAltitudeOffsetInt = tempInt;
+  }
+  else {
+    gPermanentCalibratedAltitudeOffsetInt = 0;
+  }
   eepromIndex += sizeof(int);
 
 
-  //Last Screen Brightness
+  //Screen Brightness
   EEPROM.get(eepromIndex, tempBool);
   gOledDim = tempBool;
   eepromIndex += sizeof(bool);
@@ -285,6 +293,12 @@ void initializeValuesFromEeprom() {
   EEPROM.get(eepromIndex, tempInt);
   gSensorMode = static_cast<SensorMode>(constrain(tempInt, 0, cNumberOfSensorModes));
   eepromIndex += sizeof(int);
+
+
+  //Screen Orientation
+  EEPROM.get(eepromIndex, tempBool);
+  gInvertDisplay = tempBool;
+  eepromIndex += sizeof(bool);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -373,12 +387,14 @@ void initializeDisplayDevice() {
   gOled.begin(SSD1306_SWITCHCAPVCC, cOledAddr);
   gOled.invertDisplay(false);
   gOled.clearDisplay();
+  gOled.setTextColor(SSD1306_WHITE);
   gOled.setTextSize(2);
-  gOled.setCursor(12,0);
+  gOled.setCursor(15,0);
   gOled.print("Version");
   gOled.setCursor(15, 17);
   gOled.print(cAppVersion);
   gOled.display();
+  delay(3000); //TODO debug remove
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -560,12 +576,12 @@ void handleBmp180Sensor() {
 }
 
 //////////////////////////////////////////////////////////////////////////
-void handleLeftRotary() {
+void handleLeftRotary(int rotaryButton, int rotaryDt, int rotaryClk) {
   gShowLeftScreen = true;
   //The button being pressed can lead to 1 of 3 outcomes: {Short Press, Long Press, a rotation occuring before the long press time is reached}
-  gLeftRotaryButton = digitalRead(cPinLeftRotaryButton); //read button state
-  int leftRotaryDt = digitalRead(cPinLeftRotarySignalDt);
-  int leftRotaryClk = digitalRead(cPinLeftRotarySignalClk);
+  gLeftRotaryButton = digitalRead(rotaryButton); //read button state
+  int leftRotaryDt = digitalRead(rotaryDt);
+  int leftRotaryClk = digitalRead(rotaryClk);
 
   if (!gLegitimate) {
     if (gLeftRotaryButton == PRESSED && gSelectAppCode != 0) {
@@ -660,7 +676,12 @@ void handleLeftRotaryMovement(int increment) {
       break;
 
     case CursorSelectBrightness:
-      gOledDim = !gOledDim;
+      if (gOledDim) {
+        gOledDim = false;
+      }
+      else {
+        gOledDim = true;
+      }
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
@@ -675,6 +696,17 @@ void handleLeftRotaryMovement(int increment) {
       gSensorMode = static_cast<SensorMode>((gSensorMode + increment + cNumberOfSensorModes) % cNumberOfSensorModes);
       if (gSensorMode == SensorModeOff) {
         gAlarmModeEnum = AlarmDisabled;
+      }
+      gEepromSaveNeededTs = millis();
+      gNeedToWriteToEeprom = true;
+      break;
+
+    case CursorSelectInvert:
+      if (gInvertDisplay) {
+        gInvertDisplay = false;
+      }
+      else {
+        gInvertDisplay = true;
       }
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
@@ -710,12 +742,12 @@ void handleLeftRotaryLongPress() {
 }
 
 //////////////////////////////////////////////////////////////////////////
-void handleRightRotary() {
+void handleRightRotary(int rotaryButton, int rotaryDt, int rotaryClk) {
   gShowLeftScreen = false;
   //The button being pressed on the right knob can only be used for fine-tuning mode or altitude-sync (long press). A released state indicates normal altitude selection mode.
-  gRightRotaryButton = digitalRead(cPinRightRotaryButton); //read button state
-  int rightRotaryDt = digitalRead(cPinRightRotarySignalDt);
-  int rightRotaryClk = digitalRead(cPinRightRotarySignalClk);
+  gRightRotaryButton = digitalRead(rotaryButton); //read button state
+  int rightRotaryDt = digitalRead(rotaryDt);
+  int rightRotaryClk = digitalRead(rotaryClk);
 
   gLastRotaryActionTs = millis();
 
@@ -946,23 +978,34 @@ void handleDisplay() {
 
 //////////////////////////////////////////////////////////////////////////
 void drawLeftScreen() {
+  gOled.clearDisplay();
+  if (gInvertDisplay) {
+    gOled.setRotation(2);
+  }
+  else {
+    gOled.setRotation(0);
+  }
+
   switch (gCursor) {
     case CursorSelectHeading: //Display Selected Heading
     {
-      sprintf(gDisplayTopLeftContent, "%s", "Hdg");
-      sprintf(gDisplayBottomLeftContent, "%03d%c", gSelectedHeadingInt, (char)(223)); //223 == degree symbol
+      sprintf(gDisplayTopContent, "%s", "Heading");
+      sprintf(gDisplayBottomContent, "%03d", gSelectedHeadingInt);
+      gOled.setTextSize(2);
+      gOled.setCursor(55, 11);
+      gOled.print((char)(247)); //247 = degree symbol
       break;
     }
 
     case CursorSelectAltimeter:
-      sprintf(gDisplayTopLeftContent, "%-s", "Altmtr");
-      sprintf(gDisplayBottomLeftContent, "%d.%02d" cInLabel, (int)gAltimeterSettingInHgDouble, (int)(gAltimeterSettingInHgDouble*100)%100);
+      sprintf(gDisplayTopContent, "%s", "Altimeter");
+      sprintf(gDisplayBottomContent, "%d.%02d" cInLabel, (int)gAltimeterSettingInHgDouble, (int)(gAltimeterSettingInHgDouble*100)%100);
       break;
 
     case CursorSelectTimer:
-      sprintf(gDisplayTopLeftContent, "%-s", "Timer");
+      sprintf(gDisplayTopContent, "%s", "Stopwatch");
       if (gTimerStartTs == 0) {
-        sprintf(gDisplayBottomLeftContent, "00:00");
+        sprintf(gDisplayBottomContent, "00:00");
       }
       else {
         unsigned long seconds = (millis() - gTimerStartTs) / 1000;
@@ -971,151 +1014,155 @@ void drawLeftScreen() {
           minutes -= 100;
         }
         seconds -= minutes * 60;
-        sprintf(gDisplayBottomLeftContent, "%02d:%02d", (int)minutes, (int)seconds);
+        sprintf(gDisplayBottomContent, "%02d:%02d", (int)minutes, (int)seconds);
       }
       break;
 
     case CursorSelectBrightness:
-      sprintf(gDisplayTopLeftContent, "%s", "Dim");
-      sprintf(gDisplayBottomLeftContent, "%-7d", gOledDim ? "ON" : "OFF");
+      sprintf(gDisplayTopContent, "%s", "Brightness");
+      if (gOledDim) {
+        sprintf(gDisplayBottomContent, "%s", "DIM");
+      }
+      else {
+        sprintf(gDisplayBottomContent, "%s", "BRIGHT");
+      }
       break;
 
     case CursorSelectOffset:
-      sprintf(gDisplayTopLeftContent, "%-s", "Offset");
-      sprintf(gDisplayBottomLeftContent, "%+d" cFtLabel, gCalibratedAltitudeOffsetInt);
+      sprintf(gDisplayTopContent, "%s", "Calibration Offset");
+      sprintf(gDisplayBottomContent, "%+d" cFtLabel, gCalibratedAltitudeOffsetInt);
       break;
 
     case CursorSelectSensor:
-      sprintf(gDisplayTopLeftContent, "%s", "Sensor");
+      sprintf(gDisplayTopContent, "%s", "Sensor");
       if (gSensorMode == SensorModeOnShow) {
-        sprintf(gDisplayBottomLeftContent, "%-7s", "ON/SHOW");
+        sprintf(gDisplayBottomContent, "%s", "ON/SHOW");
       }
       else if (gSensorMode == SensorModeOnHide) {
-        sprintf(gDisplayBottomLeftContent, "%-7s", "ON/HIDE");
+        sprintf(gDisplayBottomContent, "%s", "ON/HIDE");
       }
       else {
-        sprintf(gDisplayBottomLeftContent, "%-7s", "OFF");
+        sprintf(gDisplayBottomContent, "%s", "OFF");
       }
+      break;
+
+    case CursorSelectInvert:
+      sprintf(gDisplayTopContent, "%s", "Orientation");
+      sprintf(gDisplayBottomContent, "UP%c", (char)(24));
       break;
 
     case CursorViewBmpTemp:
     {
-      sprintf(gDisplayTopLeftContent, "%-7s", "Temp");
+      sprintf(gDisplayTopContent, "%s", "Temperature");
       double temperatureFarenheit = gSensorTemperatureDouble * 9 / 5 + 32;
-      sprintf(gDisplayBottomLeftContent, "%d.%d%c%c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, (char)(223), cDegFLabel);
+      sprintf(gDisplayBottomContent, "%d.%d %c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, cDegFLabel);
+      gOled.setTextSize(2);
+      gOled.setCursor(75, 11);
+      gOled.print((char)(247));
       break;
     }
 
     case CursorViewBatteryLevel:
-      sprintf(gDisplayTopLeftContent, "%-7s", "Batt");
-      sprintf(gDisplayBottomLeftContent, "%-7s", "100%"); //TODO implement battery level
+      sprintf(gDisplayTopContent, "%s", "Battery");
+      sprintf(gDisplayBottomContent, "%s", "100%"); //TODO implement battery level
       break;
   }
 
   if (gOledDim) {
-    gOled.ssd1306_command(SSD1306_SETCONTRAST); //0x81
-    gOled.ssd1306_command(0);
-    
-    gOled.ssd1306_command(SSD1306_SETPRECHARGE); //0xD9
-    gOled.ssd1306_command(0);
-
-    gOled.ssd1306_command(SSD1306_SETVCOMDETECT); //0xDB
-    gOled.ssd1306_command(0);
+    gOled.dim(true, 0);
   }
   else {
-    gOled.ssd1306_command(SSD1306_SETCONTRAST); //0x81
-    gOled.ssd1306_command(255);
-    
-    gOled.ssd1306_command(SSD1306_SETPRECHARGE); //0xD9
-    gOled.ssd1306_command(255);
-
-    gOled.ssd1306_command(SSD1306_SETVCOMDETECT); //0xDB
-    gOled.ssd1306_command(255);
+    gOled.dim(false, 255);
   }
-  gOled.clearDisplay();
-  gOled.setRotation(2);
-  gOled.setTextColor(SSD1306_WHITE);
-  gOled.setTextSize(1);
-  gOled.setCursor(0, 0);
-  gOled.println(gDisplayTopLeftContent);
-  gOled.setTextSize(3);
-  gOled.setCursor(0, 11);
-  gOled.println(gDisplayBottomLeftContent);
-  gOled.setTextSize(2);
-  gOled.setCursor(25, 11);
-  gOled.print(cFtLabel);
+  
+  gOled.setTextSize(cLabelTextSize);
+  gOled.setCursor(0, cLabelTextYpos);
+  gOled.print(gDisplayTopContent);
+
+  gOled.setTextSize(cReadoutTextSize);
+  gOled.setCursor(0, cReadoutTextYpos);
+  gOled.print(gDisplayBottomContent);
+  
   gOled.display();
 }
 
 //////////////////////////////////////////////////////////////////////////
 void drawRightScreen() {
+  gOled.clearDisplay();
+  if (gInvertDisplay) {
+    gOled.setRotation(2);
+  }
+  else {
+    gOled.setRotation(0);
+  }
+
   //show the sensor true altitude
   if (eBMP180Failed) { //if there's a sensor error, the top line should be the error message
-    sprintf(gDisplayTopRightContent, "%8s", "FAIL");
+    sprintf(gDisplayTopContent, "%6s", "FAIL");
   }
   else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
-    sprintf(gDisplayTopRightContent, "%8s", "OFF");
+    sprintf(gDisplayTopContent, "%6s", "OFF");
   }
   else if (gSensorMode == SensorModeOnShow) { //...show the current altitude top-right
     char* trueAltitudeReadout = displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearestFt));
-    sprintf(gDisplayTopRightContent, "%6s" cFtLabel, trueAltitudeReadout);
+    sprintf(gDisplayTopContent, "%6s", trueAltitudeReadout);
     delete trueAltitudeReadout;
+    gOled.setTextSize(cLabelTextSize);
+    gOled.setCursor(105, cLabelTextYpos);
+    gOled.print(cFtLabel);
   }
   else {
-    sprintf(gDisplayTopRightContent, "%c", ' ');
+    sprintf(gDisplayTopContent, "%c", ' ');
   }
 
   //Selected Altitude
   long tempSelectedAltitude = gSelectedAltitudeLong;
   char* selectedAltitudeReadout = displayNumber(tempSelectedAltitude);
-  sprintf(gDisplayBottomRightContent, "%6s", selectedAltitudeReadout);
+  sprintf(gDisplayBottomContent, "%6s", selectedAltitudeReadout);
   delete selectedAltitudeReadout;
 
 
   if (gOledDim) {
-    gOled.ssd1306_command(SSD1306_SETCONTRAST); //0x81
-    gOled.ssd1306_command(0);
-    
-    gOled.ssd1306_command(SSD1306_SETPRECHARGE); //0xD9
-    gOled.ssd1306_command(0);
-
-    gOled.ssd1306_command(SSD1306_SETVCOMDETECT); //0xDB
-    gOled.ssd1306_command(0);
+    gOled.dim(true, 0);
   }
   else {
-    gOled.ssd1306_command(SSD1306_SETCONTRAST); //0x81
-    gOled.ssd1306_command(255);
-    
-    gOled.ssd1306_command(SSD1306_SETPRECHARGE); //0xD9
-    gOled.ssd1306_command(255);
-
-    gOled.ssd1306_command(SSD1306_SETVCOMDETECT); //0xDB
-    gOled.ssd1306_command(255);
+    gOled.dim(false, 255);
   }
-  gOled.clearDisplay();
-  gOled.setRotation(2);
-  gOled.setTextColor(SSD1306_WHITE);
-  gOled.setTextSize(1);
-  gOled.setCursor(0, 0);
-  gOled.println(gDisplayTopRightContent);
-  gOled.setTextSize(3);
-  gOled.setCursor(0, 11);
-  gOled.println(gDisplayBottomRightContent);
+  
+  gOled.setTextSize(cLabelTextSize);
+  gOled.setCursor(70, cLabelTextYpos);
+  gOled.print(gDisplayTopContent);
+
+  gOled.setTextSize(cReadoutTextSize);
+  gOled.setCursor(0, cReadoutTextYpos);
+  gOled.print(gDisplayBottomContent);
+
   gOled.setTextSize(2);
-  gOled.setCursor(25, 11);
+  gOled.setCursor(104, 18);
   gOled.print(cFtLabel);
+  
   gOled.display();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
 ISR (PCINT0_vect) {    // handle pin change interrupt for D8 to D13 here
-  handleRightRotary();
+  if (gInvertDisplay) {
+    handleLeftRotary(cPinRightRotaryButton, cPinRightRotarySignalDt, cPinRightRotarySignalClk);
+  }
+  else {
+    handleRightRotary(cPinRightRotaryButton, cPinRightRotarySignalDt, cPinRightRotarySignalClk);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////
 ISR (PCINT2_vect) {    // handle pin change interrupt for D0 to D7 here
-  handleLeftRotary();
+    if (gInvertDisplay) {
+    handleRightRotary(cPinLeftRotaryButton, cPinLeftRotarySignalDt, cPinLeftRotarySignalClk);
+  }
+  else {
+    handleLeftRotary(cPinLeftRotaryButton, cPinLeftRotarySignalDt, cPinLeftRotarySignalClk);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1170,6 +1217,15 @@ void writeValuesToEeprom() {
     EEPROM.put(eepromIndex, sensorMode);
   }
   eepromIndex += sizeof(int);
+
+  //Screen invert
+  bool invert;
+  EEPROM.get(eepromIndex, invert);
+  if (dim != gInvertDisplay) {
+    invert = gInvertDisplay; //this silence a compiler warning
+    EEPROM.put(eepromIndex, invert);
+  }
+  eepromIndex += sizeof(bool);
 }
 
 //////////////////////////////////////////////////////////////////////////
