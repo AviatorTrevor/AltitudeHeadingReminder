@@ -9,10 +9,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *implement F macro for string to save program memory space
 *implement dual OLED displays
   *multiplexer or alternative method
-  *rotating display option
   *flash/invert screen when alerting
-  *dim mode?
-  *custom library to cut size
 *handle EEPROM writes
   *byte 0 stores the next available EEPROM value. It can't reassign unless the value can fit before reaching 1024 - piracy values
   *bytes [1-X] stores index of EEPROM items. needs to be set to zero when piracy code is entered
@@ -40,10 +37,10 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *4100 & 4200 alternating?long
 */
 #include <EEPROM.h>
-#include <SFE_BMP180.h> //TODO implement your own BMP180 pressure sensor library so that we can have a slim version to cut down on program storage space
+#include <SFE_BMP180.h>
 #include <Wire.h>
-#include <Custom_GFX.h> //TODO temporary for now
-#include <Custom_SSD1306.h> //TODO temporary for now
+#include <Custom_GFX.h>
+#include <Custom_SSD1306.h>
 
 #define DEBUG //TODO remove
 
@@ -1108,7 +1105,7 @@ void drawRightScreen() {
     sprintf(gDisplayTopContent, "%6s", trueAltitudeReadout);
     delete trueAltitudeReadout;
     gOled.setTextSize(cLabelTextSize);
-    gOled.setCursor(105, cLabelTextYpos);
+    gOled.setCursor(106, cLabelTextYpos);
     gOled.print(cFtLabel);
   }
   else {
