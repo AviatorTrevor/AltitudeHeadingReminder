@@ -157,8 +157,8 @@ volatile unsigned long gLastRotaryActionTs;
 #define cMaxScreenRefreshPeriod   (cOneSecond / cMaxScreenRefreshRate) //TODO remove?
 Custom_SSD1306 gOled(cOledWidth, cOledHeight, &Wire, cOledReset);
 volatile bool gOledDim = false;
-volatile bool gInvertDisplay = false;
 volatile bool gDeviceFlipped = false;
+bool gFlashScreen = false;
 volatile bool gShowLeftScreen = false; //TODO temporary, remove
 
 char gDisplayTopContent[20];
@@ -172,7 +172,7 @@ enum Cursor {
     CursorSelectBrightness,
     CursorSelectOffset,
     CursorSelectSensor,
-    CursorSelectInvert,
+    CursorSelectFlipDevice,
     CursorViewBmpTemp,
     CursorViewBatteryLevel,
     cNumberOfCursorModes }
@@ -294,7 +294,7 @@ void initializeValuesFromEeprom() {
 
   //Screen Orientation
   EEPROM.get(eepromIndex, tempBool);
-  gInvertDisplay = tempBool;
+  gDeviceFlipped = tempBool;
   eepromIndex += sizeof(bool);
 }
 
@@ -698,12 +698,12 @@ void handleLeftRotaryMovement(int increment) {
       gNeedToWriteToEeprom = true;
       break;
 
-    case CursorSelectInvert:
-      if (gInvertDisplay) {
-        gInvertDisplay = false;
+    case CursorSelectFlipDevice:
+      if (gDeviceFlipped) {
+        gDeviceFlipped = false;
       }
       else {
-        gInvertDisplay = true;
+        gDeviceFlipped = true;
       }
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
@@ -842,6 +842,7 @@ void handleBuzzer() {
     {
       if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm1000ToGo) {
         tone(cBuzzPin, cBuzzFrequencyA, cLongBuzzDuration);
+        gFlashScreen = true;
         gLastAlarmTs = millis() + cLongBuzzDuration;
         gAlarmModeEnum = AlarmDisabled;
       }
@@ -852,6 +853,7 @@ void handleBuzzer() {
     {
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm1000ToGo) {
         tone(cBuzzPin, cBuzzFrequencyA, cLongBuzzDuration);
+        gFlashScreen = true;
         gLastAlarmTs = millis() + cLongBuzzDuration;
         gAlarmModeEnum = AlarmDisabled;
       }
@@ -901,15 +903,18 @@ void handleBuzzer() {
         gBuzzCountInt--;
         if (gBuzzCountInt != 0 && gBuzzCountInt % 2 == 0) { //every other cycle, change frequency
           tone(cBuzzPin, cBuzzFrequencyB);
+          gFlashScreen = true;
           gNextBuzzTs = millis() + cShortBuzzOnFreqBDuration;
         }
         else if (gBuzzCountInt % 2 == 1) {
           tone(cBuzzPin, cBuzzFrequencyA);
+          gFlashScreen = true;
           gNextBuzzTs = millis() + cShortBuzzOnFreqADuration;
         }
         else {
           gAlarmModeEnum = AlarmDisabled;
           noTone(cBuzzPin);
+          gFlashScreen = false;
         }
       }
       break;
@@ -939,6 +944,7 @@ void handleBuzzer() {
     default: //default case
     case DetermineAlarmState:
     {
+      gFlashScreen = false;
       long diffBetweenSelectionAndTrueAltitude = gSelectedAltitudeLong - gTrueAltitudeDouble;
       if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || eBMP180Failed) {
         gAlarmModeEnum = AlarmDisabled;
@@ -976,12 +982,13 @@ void handleDisplay() {
 //////////////////////////////////////////////////////////////////////////
 void drawLeftScreen() {
   gOled.clearDisplay();
-  if (gInvertDisplay) {
+  if (gDeviceFlipped) {
     gOled.setRotation(2);
   }
   else {
     gOled.setRotation(0);
   }
+  gOled.invertDisplay(gFlashScreen);
 
   switch (gCursor) {
     case CursorSelectHeading: //Display Selected Heading
@@ -1043,7 +1050,7 @@ void drawLeftScreen() {
       }
       break;
 
-    case CursorSelectInvert:
+    case CursorSelectFlipDevice:
       sprintf(gDisplayTopContent, "%s", "Orientation");
       sprintf(gDisplayBottomContent, "UP%c", (char)(24));
       break;
@@ -1086,12 +1093,13 @@ void drawLeftScreen() {
 //////////////////////////////////////////////////////////////////////////
 void drawRightScreen() {
   gOled.clearDisplay();
-  if (gInvertDisplay) {
+  if (gDeviceFlipped) {
     gOled.setRotation(2);
   }
   else {
     gOled.setRotation(0);
   }
+  gOled.invertDisplay(gFlashScreen);
 
   //show the sensor true altitude
   if (eBMP180Failed) { //if there's a sensor error, the top line should be the error message
@@ -1144,7 +1152,7 @@ void drawRightScreen() {
 
 //////////////////////////////////////////////////////////////////////////
 ISR (PCINT0_vect) {    // handle pin change interrupt for D8 to D13 here
-  if (gInvertDisplay) {
+  if (gDeviceFlipped) {
     handleLeftRotary(cPinRightRotaryButton, cPinRightRotarySignalDt, cPinRightRotarySignalClk);
   }
   else {
@@ -1154,7 +1162,7 @@ ISR (PCINT0_vect) {    // handle pin change interrupt for D8 to D13 here
 
 //////////////////////////////////////////////////////////////////////////
 ISR (PCINT2_vect) {    // handle pin change interrupt for D0 to D7 here
-    if (gInvertDisplay) {
+    if (gDeviceFlipped) {
     handleRightRotary(cPinLeftRotaryButton, cPinLeftRotarySignalDt, cPinLeftRotarySignalClk);
   }
   else {
@@ -1216,11 +1224,11 @@ void writeValuesToEeprom() {
   eepromIndex += sizeof(int);
 
   //Screen invert
-  bool invert;
-  EEPROM.get(eepromIndex, invert);
-  if (dim != gInvertDisplay) {
-    invert = gInvertDisplay; //this silence a compiler warning
-    EEPROM.put(eepromIndex, invert);
+  bool screenFlip;
+  EEPROM.get(eepromIndex, screenFlip);
+  if (dim != gDeviceFlipped) {
+    screenFlip = gDeviceFlipped; //this silence a compiler warning
+    EEPROM.put(eepromIndex, screenFlip);
   }
   eepromIndex += sizeof(bool);
 }
