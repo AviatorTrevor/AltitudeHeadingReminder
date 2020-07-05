@@ -6,19 +6,17 @@ Hardware device to remind pilots of assigned headings & altitudes. Also has buzz
 to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
-*implement F macro for string to save program memory space
+*implement F macro for string to save program memory space?
 *implement dual OLED displays
   *multiplexer or alternative method
-  *flash/invert screen when alerting
-*handle EEPROM writes
-  *byte 0 stores the next available EEPROM value. It can't reassign unless the value can fit before reaching 1024 - piracy values
-  *bytes [1-X] stores index of EEPROM items. needs to be set to zero when piracy code is entered
-  *each EEPROM value must also store a value for number of writes to EEPROM so we can know when to abandon that chunk of EEPROM
+  *test flash/invert screen when alerting
+*test new EEPROM. set limit to like 5 writes to test it
 *adjust pin mapping for PCB board layout
 *option to show text upside down for different mounting options?
-*add settings to disable 200ft and 1000ft alarms
+*add settings to disable 200ft and 1000ft and altitude departure alarms
 *test sleeping
 *interrupts causing an interrupt to beeping noises
+*update pinout because we are moving rotary knob to accomidate positioning
 *design for battery
 *software for battery level & charging
 *create software license - credit for libraries used
@@ -82,9 +80,16 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cTrueAltitudeRoundToNearestFt  10    //ft
 
 //EEPROM
-#define         cSizeOfEeprom          1024
-#define         cEepromWriteDelay      10000  //milliseconds
-#define         cEepromMaxWrites       90000
+#define         cSizeOfEeprom                       1024
+#define         cEepromWriteDelay                   10000  //milliseconds
+#define         cEepromMaxWrites                    85000
+#define         cEepromNextAvailableSlot            12
+#define         cEepromAltimeterAddr                14
+#define         cEepromAltitudeOffsetAddr           16
+#define         cEepromPermanentAltitutdeOffsetAddr 18
+#define         cEepromSensorModeAddr               20
+#define         cEepromScreenDimAddr                22
+#define         cEepromScreenOrientationAddr        24
 volatile bool   gNeedToWriteToEeprom;
 
 //BMP180 Sensor variables
@@ -234,73 +239,104 @@ void setup() {
   #endif
 
   initializeDisplayDevice();
+  initializeRotaryKnobs();
+  initializePiracyCheck();
   initializeValuesFromEeprom();
   initializeBmp180Sensor();
-  initializeRotaryKnobs();
   initializeBuzzer();
-  initializePiracyCheck();
   delay(1200); //delay for splash screen (to see version number)
 }
 
 //////////////////////////////////////////////////////////////////////////
 void initializeValuesFromEeprom() {
-  int eepromIndex = 0;
+  int eepromIndex;
   double tempDouble;
   int tempInt;
+  byte tempByte;
   bool tempBool;
-  
+
   //Last Altimeter Setting
-  EEPROM.get(eepromIndex, tempDouble);
-  if (isnan(tempDouble) || tempDouble < cAltimeterSettingInHgMin || tempDouble > cAltimeterSettingInHgMax) {
-    gAltimeterSettingInHgDouble = cSeaLevelPressureInHg;
+  EEPROM.get(cEepromAltimeterAddr, eepromIndex);
+  if (eepromIndex >= 0 && eepromIndex < cSizeOfEeprom) {
+    EEPROM.get(eepromIndex, tempDouble);
+    if (isnan(tempDouble) || tempDouble < cAltimeterSettingInHgMin || tempDouble > cAltimeterSettingInHgMax) {
+      gAltimeterSettingInHgDouble = cSeaLevelPressureInHg;
+    }
+    else {
+      gAltimeterSettingInHgDouble = tempDouble;
+    }
   }
-  else {
-    gAltimeterSettingInHgDouble = tempDouble;
-  }
-  eepromIndex += sizeof(double);
-  
   
   //Last altitude offset
-  EEPROM.get(eepromIndex, tempInt);
-  gCalibratedAltitudeOffsetInt = tempInt;
-  if (gCalibratedAltitudeOffsetInt < cCalibrationOffsetMin || gCalibratedAltitudeOffsetInt > cCalibrationOffsetMax) {
-    gCalibratedAltitudeOffsetInt = 0;
+  EEPROM.get(cEepromAltitudeOffsetAddr, eepromIndex);
+  if (eepromIndex >= 0 && eepromIndex < cSizeOfEeprom) {
+    EEPROM.get(eepromIndex, tempInt);
+    gCalibratedAltitudeOffsetInt = tempInt;
+    if (gCalibratedAltitudeOffsetInt < cCalibrationOffsetMin || gCalibratedAltitudeOffsetInt > cCalibrationOffsetMax) {
+      gCalibratedAltitudeOffsetInt = 0;
+    }
   }
-  eepromIndex += sizeof(int);
-
 
   //Semi-permanent altitude offset
-  EEPROM.get(eepromIndex, tempInt);
-  if (tempInt >= cCalibrationOffsetMin && tempInt <= cCalibrationOffsetMax) {
-    gPermanentCalibratedAltitudeOffsetInt = tempInt;
+  EEPROM.get(cEepromPermanentAltitutdeOffsetAddr, eepromIndex);
+  if (eepromIndex >= 0 && eepromIndex < cSizeOfEeprom) {
+    EEPROM.get(eepromIndex, tempInt);
+    if (tempInt >= cCalibrationOffsetMin && tempInt <= cCalibrationOffsetMax) {
+      gPermanentCalibratedAltitudeOffsetInt = tempInt;
+    }
+    else {
+      gPermanentCalibratedAltitudeOffsetInt = 0;
+    }
   }
-  else {
-    gPermanentCalibratedAltitudeOffsetInt = 0;
-  }
-  eepromIndex += sizeof(int);
-
-
-  //Screen Brightness
-  EEPROM.get(eepromIndex, tempBool);
-  gOledDim = tempBool;
-  eepromIndex += sizeof(bool);
-
 
   //Sensor Mode - On/Show, On/Hide, Off
-  EEPROM.get(eepromIndex, tempInt);
-  gSensorMode = static_cast<SensorMode>(constrain(tempInt, 0, cNumberOfSensorModes));
-  eepromIndex += sizeof(int);
+  EEPROM.get(cEepromSensorModeAddr, eepromIndex);
+  if (eepromIndex >= 0 && eepromIndex < cSizeOfEeprom) {
+    EEPROM.get(eepromIndex, tempByte);
+    gSensorMode = static_cast<SensorMode>(constrain(tempByte, 0, cNumberOfSensorModes));
+  }
 
+  //Screen Brightness Dim
+  EEPROM.get(cEepromScreenDimAddr, eepromIndex);
+  if (eepromIndex >= 0 && eepromIndex < cSizeOfEeprom) {
+    EEPROM.get(eepromIndex, tempBool);
+    gOledDim = tempBool;
+  }
 
   //Screen Orientation
-  EEPROM.get(eepromIndex, tempBool);
-  gDeviceFlipped = tempBool;
-  eepromIndex += sizeof(bool);
+  EEPROM.get(cEepromScreenOrientationAddr, eepromIndex);
+  if (eepromIndex >= 0 && eepromIndex < cSizeOfEeprom) {
+    EEPROM.get(eepromIndex, tempBool);
+    gDeviceFlipped = tempBool;
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
+void initializeDefaultEeprom() {
+  EEPROM.update(cEepromNextAvailableSlot, 49);
+  
+  EEPROM.update(cEepromAltimeterAddr, 26);
+  EEPROM.update(26 + sizeof(double), 0);
+  
+  EEPROM.update(cEepromAltitudeOffsetAddr, 32);
+  EEPROM.update(32 + sizeof(int), 0);
+  
+  EEPROM.update(cEepromPermanentAltitutdeOffsetAddr, 36);
+  EEPROM.update(36 + sizeof(int), 0);
+  
+  EEPROM.update(cEepromSensorModeAddr, 40);
+  EEPROM.update(40 + sizeof(byte), 0);
+  
+  EEPROM.update(cEepromScreenDimAddr, 43);
+  EEPROM.update(43 + sizeof(bool), 0);
+  
+  EEPROM.update(cEepromScreenOrientationAddr, 46);
+  EEPROM.update(46 + sizeof(bool), 0);
 }
 
 //////////////////////////////////////////////////////////////////////////
 void initializePiracyCheck() {
-  int eepromIndex = cSizeOfEeprom - sizeof(int) * cAppCodeNumberOfDigits;
+  int eepromIndex = 0;
   int codeValue;
 
   EEPROM.get(eepromIndex, codeValue);
@@ -349,11 +385,12 @@ void initializePiracyCheck() {
   delay(3000);
   gOled.clearDisplay();
   int lastWrittenSequence = 0;
-  int currentAppCodeSequence = gAppCodeSequence;
+  int currentAppCodeSequence;
   int selectAppCode = gSelectAppCode;
-  eepromIndex = cSizeOfEeprom - sizeof(int) * cAppCodeNumberOfDigits;
-  while (!gLegitimate && currentAppCodeSequence <= cAppCodeNumberOfDigits) {
+  eepromIndex = 0;
+  while (currentAppCodeSequence <= cAppCodeNumberOfDigits) {
     selectAppCode = gSelectAppCode;
+    currentAppCodeSequence = gAppCodeSequence;
     gOled.setCursor(0,0);
     gOled.print(selectAppCode);
     if (currentAppCodeSequence > lastWrittenSequence) {
@@ -361,8 +398,9 @@ void initializePiracyCheck() {
       lastWrittenSequence = currentAppCodeSequence;
       eepromIndex += sizeof(int);
       gSelectAppCode = 0;
-      if (currentAppCodeSequence == cAppCodeNumberOfDigits) {
+      if (currentAppCodeSequence == cAppCodeNumberOfDigits) { //final digit entered
         while (true) {
+          initializeDefaultEeprom();
           gOled.clearDisplay();
           gOled.setCursor(13,0);
           gOled.print("RESTART");
@@ -370,7 +408,6 @@ void initializePiracyCheck() {
         }
       }
     }
-    currentAppCodeSequence = gAppCodeSequence;
   }
 }
 
@@ -735,6 +772,9 @@ void handleLeftRotaryLongPress() {
     gCalibratedAltitudeOffsetInt = 0;
     gEepromSaveNeededTs = millis();
     gNeedToWriteToEeprom = true;
+  }
+  else if (gSelectedHeadingInt == 111 && gSelectedAltitudeLong == -1500) { //magic numbers to reset EEPROM
+    initializeDefaultEeprom();
   }
 }
 
@@ -1176,61 +1216,124 @@ ISR (PCINT2_vect) {    // handle pin change interrupt for D0 to D7 here
 //////////////////////////////////////////////////////////////////////////
 void writeValuesToEeprom() {
   gNeedToWriteToEeprom = false;
-  int eepromIndex = 0;
+  int eepromIndex;
+  int numOfWrites;
+  int datatypeSize;
+  int dataAddr;
   
   //Last Altimeter Setting
+  datatypeSize = sizeof(double);
+  dataAddr = cEepromAltimeterAddr;
   double altimeterSetting;
+  EEPROM.get(dataAddr, eepromIndex);
   EEPROM.get(eepromIndex, altimeterSetting);
+  EEPROM.get(eepromIndex + datatypeSize, numOfWrites);
+  if (numOfWrites > cEepromMaxWrites) {
+    EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
+    EEPROM.put(eepromIndex + datatypeSize, 0); //reset write counter
+    EEPROM.put(dataAddr, eepromIndex); //reset address
+    EEPROM.put(cEepromNextAvailableSlot, eepromIndex + datatypeSize + sizeof(int)); //reset next available slot
+  }
   if (altimeterSetting != gAltimeterSettingInHgDouble) {
     altimeterSetting = gAltimeterSettingInHgDouble; //this silences a compiler warning
     EEPROM.put(eepromIndex, altimeterSetting);
+    EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
   }
-  eepromIndex += sizeof(double);
 
   //Last altitude offset
+  datatypeSize = sizeof(int);
+  dataAddr = cEepromAltitudeOffsetAddr;
   int altitudeOffset;
+  EEPROM.get(dataAddr, eepromIndex);
   EEPROM.get(eepromIndex, altitudeOffset);
+  EEPROM.get(eepromIndex + datatypeSize, numOfWrites);
+  if (numOfWrites > cEepromMaxWrites) {
+    EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
+    EEPROM.put(eepromIndex + datatypeSize, 0); //reset write counter
+    EEPROM.put(dataAddr, eepromIndex); //reset address
+    EEPROM.put(cEepromNextAvailableSlot, eepromIndex + datatypeSize + sizeof(int)); //reset next available slot
+  }
   if (altitudeOffset != gCalibratedAltitudeOffsetInt) {
     altitudeOffset = gCalibratedAltitudeOffsetInt; //this silences a compiler warning
     EEPROM.put(eepromIndex, altitudeOffset);
+    EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
   }
-  eepromIndex += sizeof(int);
 
   
   //Semi-Permanent altitude offset
+  datatypeSize = sizeof(int);
+  dataAddr = cEepromPermanentAltitutdeOffsetAddr;
+  EEPROM.get(dataAddr, eepromIndex);
   EEPROM.get(eepromIndex, altitudeOffset);
+  EEPROM.get(eepromIndex + datatypeSize, numOfWrites);
+  if (numOfWrites > cEepromMaxWrites) {
+    EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
+    EEPROM.put(eepromIndex + datatypeSize, 0); //reset write counter
+    EEPROM.put(dataAddr, eepromIndex); //reset address
+    EEPROM.put(cEepromNextAvailableSlot, eepromIndex + datatypeSize + sizeof(int)); //reset next available slot
+  }
   if (altitudeOffset != gPermanentCalibratedAltitudeOffsetInt) {
     altitudeOffset = gPermanentCalibratedAltitudeOffsetInt; //this silences a compiler warning
     EEPROM.put(eepromIndex, altitudeOffset);
+    EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
   }
-  eepromIndex += sizeof(int);
-
-  //Screen dim
-  bool dim;
-  EEPROM.get(eepromIndex, dim);
-  if (dim != gOledDim) {
-    dim = gOledDim; //this silence a compiler warning
-    EEPROM.put(eepromIndex, dim);
-  }
-  eepromIndex += sizeof(bool);
 
   //Sensor Mode - On/Show, On/Hide, Off
-  int sensorMode;
+  datatypeSize = sizeof(byte);
+  dataAddr = cEepromSensorModeAddr;
+  byte sensorMode;
+  EEPROM.get(dataAddr, eepromIndex);
   EEPROM.get(eepromIndex, sensorMode);
-  if (sensorMode != static_cast<int>(gSensorMode)) {
-    sensorMode = static_cast<int>(gSensorMode);
+  EEPROM.get(eepromIndex + datatypeSize, numOfWrites);
+  if (numOfWrites > cEepromMaxWrites) {
+    EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
+    EEPROM.put(eepromIndex + datatypeSize, 0); //reset write counter
+    EEPROM.put(dataAddr, eepromIndex); //reset address
+    EEPROM.put(cEepromNextAvailableSlot, eepromIndex + datatypeSize + sizeof(int)); //reset next available slot
+  }
+  if (sensorMode != static_cast<byte>(gSensorMode)) {
+    sensorMode = static_cast<byte>(gSensorMode); //this silences a compiler warning
     EEPROM.put(eepromIndex, sensorMode);
+    EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
   }
-  eepromIndex += sizeof(int);
 
-  //Screen invert
-  bool screenFlip;
-  EEPROM.get(eepromIndex, screenFlip);
-  if (dim != gDeviceFlipped) {
-    screenFlip = gDeviceFlipped; //this silence a compiler warning
-    EEPROM.put(eepromIndex, screenFlip);
+  //Screen dim
+  datatypeSize = sizeof(bool);
+  dataAddr = cEepromScreenDimAddr;
+  bool dim;
+  EEPROM.get(dataAddr, eepromIndex);
+  EEPROM.get(eepromIndex, dim);
+  EEPROM.get(eepromIndex + datatypeSize, numOfWrites);
+  if (numOfWrites > cEepromMaxWrites) {
+    EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
+    EEPROM.put(eepromIndex + datatypeSize, 0); //reset write counter
+    EEPROM.put(dataAddr, eepromIndex); //reset address
+    EEPROM.put(cEepromNextAvailableSlot, eepromIndex + datatypeSize + sizeof(int)); //reset next available slot
   }
-  eepromIndex += sizeof(bool);
+  if (dim != gOledDim) {
+    dim = gOledDim; //this silences a compiler warning
+    EEPROM.put(eepromIndex, dim);
+    EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
+  }
+
+  //Screen orientation
+  datatypeSize = sizeof(bool);
+  dataAddr = cEepromScreenOrientationAddr;
+  bool screenFlip;
+  EEPROM.get(dataAddr, eepromIndex);
+  EEPROM.get(eepromIndex, screenFlip);
+  EEPROM.get(eepromIndex + datatypeSize, numOfWrites);
+  if (numOfWrites > cEepromMaxWrites) {
+    EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
+    EEPROM.put(eepromIndex + datatypeSize, 0); //reset write counter
+    EEPROM.put(dataAddr, eepromIndex); //reset address
+    EEPROM.put(cEepromNextAvailableSlot, eepromIndex + datatypeSize + sizeof(int)); //reset next available slot
+  }
+  if (dim != gDeviceFlipped) {
+    screenFlip = gDeviceFlipped; //this silences a compiler warning
+    EEPROM.put(eepromIndex, screenFlip);
+    EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////
