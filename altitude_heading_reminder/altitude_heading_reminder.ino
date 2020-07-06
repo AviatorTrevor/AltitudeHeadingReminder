@@ -11,11 +11,9 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
   *test flash/invert screen when alerting
 *test new EEPROM. set limit to like 5 writes to test it
 *adjust pin mapping for PCB board layout
-*option to show text upside down for different mounting options?
 *add settings to disable 200ft and 1000ft and altitude departure alarms
 *test sleeping
 *interrupts causing an interrupt to beeping noises
-*update pinout because we are moving rotary knob to accomidate positioning
 *design for battery
 *software for battery level & charging
 *create software license - credit for libraries used
@@ -128,10 +126,10 @@ bool            gLegitimate = true;
 #define            cShortBuzzOnFreqBDuration       150
 #define            cUrgentBuzzNumberOfBeeps        7
 #define            cDisableAlarmKnobMovementTime   1200
-#define            cDisableAlarmAfterAlarmTime     1500
+#define            cDisableAlarmAfterAlarmTime     1800
 #define            cDisableBacklightTimePeriod     200
 #define            cDisableBacklightPriorToAlarm   300
-enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, AlarmDisabled, DetermineAlarmState};
+enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 int                gBuzzCountInt; //always a value between [0, cUrgentBuzzNumberOfBeeps]
 
@@ -186,7 +184,6 @@ enum Cursor {
     //TODO: set volume?
     //TODO: set tones?
     //TODO: turn alerts on/off?
-    //TODO: current temperature?
 
 //Rotary Knobs
 #define cRotaryStates              4
@@ -384,7 +381,7 @@ void initializePiracyCheck() {
   if (gLegitimate) {
     return;
   }
-  //TODO this needs to be tested for the OLED screens
+
   gOled.clearDisplay();
   gOled.setCursor(13,0);
   gOled.setTextSize(2);
@@ -546,9 +543,7 @@ void loop() {
     gCursor = CursorSelectHeading;
   }
 
-  if (gSensorMode != SensorModeOff) {
-    handleBuzzer();
-  }
+  handleBuzzer();
   handleDisplay();
 
   if (gNeedToWriteToEeprom && millis() - gEepromSaveNeededTs >= cEepromWriteDelay) {
@@ -740,7 +735,7 @@ void handleLeftRotaryMovement(int increment) {
     case CursorSelectSensor:
       gSensorMode = static_cast<SensorMode>((gSensorMode + increment + cNumberOfSensorModes) % cNumberOfSensorModes);
       if (gSensorMode == SensorModeOff) {
-        gAlarmModeEnum = AlarmDisabled;
+        gAlarmModeEnum = DetermineAlarmState;
       }
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
@@ -842,7 +837,7 @@ void handleRightRotaryMovement(int increment) { // +1 indicates rotation to the 
   gRightButtonPossibleLongPress = false;
   gRightRotaryFineTuningPress = (gRightRotaryButton == PRESSED);
 
-  gAlarmModeEnum = AlarmDisabled; //disable alarm if we change selected altitude
+  gAlarmModeEnum = DetermineAlarmState; //disable alarm if we change selected altitude
   if (gSelectedAltitudeLong > cHighAltitude || (gSelectedAltitudeLong == cHighAltitude && increment == 1) ) {
     int incrementMagnitude = cAltitudeHighSelectIncrement; //normal increment magnitude indicates the button being released and the current selected altitude being on an interval
     int rounding = cAltitudeHighSelectIncrement;
@@ -875,7 +870,7 @@ void handleRightRotaryLongPress() {
   gDisableRightRotaryProcessing = true;
   gRightRotaryFineTuningPress = false;
   gLastRightRotaryActionTs = millis(); //note the time so we silence the alarm/buzzer temporarily
-  gAlarmModeEnum = AlarmDisabled; //disable alarm
+  gAlarmModeEnum = DetermineAlarmState; //disable alarm
 
   if (gSensorMode == SensorModeOff) {
     return; //don't sync the altitude if we're not measuring the current altitude
@@ -896,10 +891,8 @@ void handleBuzzer() {
     case Climbing1000ToGo:
     {
       if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm1000ToGo) {
-        tone(cBuzzPin, cBuzzFrequencyA, cLongBuzzDuration);
-        gFlashScreen = true;
-        gLastAlarmTs = millis() + cLongBuzzDuration;
-        gAlarmModeEnum = AlarmDisabled;
+        gAlarmModeEnum = LongAlarm;
+        gNextBuzzTs = millis(); //next buzz time is now
       }
       break;
     }
@@ -907,10 +900,8 @@ void handleBuzzer() {
     case Descending1000ToGo:
     {
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm1000ToGo) {
-        tone(cBuzzPin, cBuzzFrequencyA, cLongBuzzDuration);
-        gFlashScreen = true;
-        gLastAlarmTs = millis() + cLongBuzzDuration;
-        gAlarmModeEnum = AlarmDisabled;
+        gAlarmModeEnum = LongAlarm;
+        gNextBuzzTs = millis(); //next buzz time is now
       }
       break;
     }
@@ -975,6 +966,27 @@ void handleBuzzer() {
       break;
     }
 
+    case LongAlarm:
+      if (gBuzzCountInt == 0) {
+        gLastAlarmTs = millis();
+        gBuzzCountInt = 2;
+      }
+      if (millis() >= gNextBuzzTs) {
+        if (gBuzzCountInt == 2) {
+          gBuzzCountInt = 1;
+          tone(cBuzzPin, cBuzzFrequencyA);
+          gNextBuzzTs = millis() + cLongBuzzDuration;
+          gFlashScreen = true;
+        }
+        else {
+          gBuzzCountInt = 0;
+          gAlarmModeEnum = AlarmDisabled;
+          noTone(cBuzzPin);
+          gFlashScreen = false;
+        }
+      }
+      break;
+
     case AlarmDisabled:
     {
       if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime) {
@@ -987,11 +999,12 @@ void handleBuzzer() {
           gInitializedAltitude = true;
         }
       }
-      else if (gSensorMode != SensorModeOff && gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime && millis() - gLastAlarmTs >= cDisableAlarmAfterAlarmTime) {
+      else if (gSensorMode != SensorModeOff && gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
         gAlarmModeEnum = DetermineAlarmState;
       }
       else {
         noTone(cBuzzPin); //stop the buzzer
+        gFlashScreen = false;
       }
       break;
     }
@@ -1001,7 +1014,12 @@ void handleBuzzer() {
     {
       gFlashScreen = false;
       long diffBetweenSelectionAndTrueAltitude = gSelectedAltitudeLong - gTrueAltitudeDouble;
-      if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || eBMP180Failed) {
+      if (millis() - gLastRightRotaryActionTs < cDisableAlarmKnobMovementTime) {
+        noTone(cBuzzPin); //stop the buzzer
+        gFlashScreen = false;
+        gBuzzCountInt = 0;
+      }
+      else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || eBMP180Failed) {
         gAlarmModeEnum = AlarmDisabled;
       }
       else if (diffBetweenSelectionAndTrueAltitude > cAlarm1000ToGo) {
