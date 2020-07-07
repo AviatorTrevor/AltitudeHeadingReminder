@@ -9,7 +9,10 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *implement dual OLED displays
   *multiplexer or alternative method
   *test flash/invert screen when alerting
-*test new EEPROM. set limit to like 5 writes to test it
+*when timer is running, show the timer in small font on all left-hand screens
+*recently changed gFlashScreen to gFlashRightScreen. Look carefully at every existing location and determine how gFlashLeftScreen will fit in there
+*analyze gAlarmMode being set outside of the handleAlarm() function
+*left-display, shows altitude countdown
 *adjust pin mapping for PCB board layout
 *add settings to disable 200ft and 1000ft and altitude departure alarms
 *test sleeping
@@ -29,7 +32,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *2100
 *2300
 *2400
-*4100 & 4200 alternating?long
+*4100 & 4200 alternating?
 */
 #include <EEPROM.h>
 #include <SFE_BMP180.h>
@@ -39,7 +42,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 #define DEBUG //TODO remove
 
-#define cAppVersion                    "1.0.0" //[HardwareConfig].[MajorSoftwareRelease].[MinorSoftwareRelease]
+#define cAppVersion                    "1.0" //[HardwareConfigOrMajorRedesign].[SoftwareRelease]
 #define cAppCodeNumberOfDigits         6
 #define cAppCodeOne                    8
 #define cAppCodeTwo                    8
@@ -99,7 +102,7 @@ char       gSensorStatusChar;             //byte value BMP180 pressure sensor re
 int        gSensorProcessStateInt;        //0 = start measuring temperature, 1 = get temperature, 2 = start measuring pressure, 3 = get pressure
 double     gSensorTemperatureDouble;      //celcius
 double     gSensorPressureDouble;         //millibars
-enum SensorMode {SensorModeOnShow, SensorModeOnHide, SensorModeOff, cNumberOfSensorModes};
+enum SensorMode {SensorModeOff, SensorModeOnHide, SensorModeOnShow, cNumberOfSensorModes};
 volatile SensorMode gSensorMode = SensorModeOnShow;
 
 //Main program variables
@@ -162,7 +165,8 @@ volatile unsigned long gLastRotaryActionTs;
 Custom_SSD1306 gOled(cOledWidth, cOledHeight, &Wire, cOledReset);
 volatile bool gOledDim = false;
 volatile bool gDeviceFlipped = false;
-bool gFlashScreen = false;
+bool gFlashRightScreen = false;
+bool gFlashLeftScreen = false;
 volatile bool gShowLeftScreen = false; //TODO temporary, remove
 
 char gDisplayTopContent[20];
@@ -949,18 +953,18 @@ void handleBuzzer() {
         gBuzzCountInt--;
         if (gBuzzCountInt != 0 && gBuzzCountInt % 2 == 0) { //every other cycle, change frequency
           tone(cBuzzPin, cBuzzFrequencyB);
-          gFlashScreen = true;
+          gFlashRightScreen = true;
           gNextBuzzTs = millis() + cShortBuzzOnFreqBDuration;
         }
         else if (gBuzzCountInt % 2 == 1) {
           tone(cBuzzPin, cBuzzFrequencyA);
-          gFlashScreen = true;
+          gFlashRightScreen = true;
           gNextBuzzTs = millis() + cShortBuzzOnFreqADuration;
         }
         else {
           gAlarmModeEnum = AlarmDisabled;
           noTone(cBuzzPin);
-          gFlashScreen = false;
+          gFlashRightScreen = false;
         }
       }
       break;
@@ -976,25 +980,26 @@ void handleBuzzer() {
           gBuzzCountInt = 1;
           tone(cBuzzPin, cBuzzFrequencyA);
           gNextBuzzTs = millis() + cLongBuzzDuration;
-          gFlashScreen = true;
+          gFlashRightScreen = true;
         }
         else {
           gBuzzCountInt = 0;
           gAlarmModeEnum = AlarmDisabled;
           noTone(cBuzzPin);
-          gFlashScreen = false;
+          gFlashRightScreen = false;
         }
       }
       break;
 
     case AlarmDisabled:
     {
-      if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime) {
-        //do nothing
-        break;
+      if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime || eBMP180Failed) {
+        //if alarm disabled or BMP180 failed, do nothing
       }
-
-      if (eBMP180Failed || !gInitializedAltitude) {
+      else if (!gInitializedAltitude) {
+        /* I don't want it to go into a mode where it can beep unless we've given 
+         * the pressure sensor and arduino a chance to initialize the altitude,
+         * otherwise you'll hear a beep right at start-up */
         if (millis() > 5000) {
           gInitializedAltitude = true;
         }
@@ -1002,25 +1007,23 @@ void handleBuzzer() {
       else if (gSensorMode != SensorModeOff && gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
         gAlarmModeEnum = DetermineAlarmState;
       }
-      else {
-        noTone(cBuzzPin); //stop the buzzer
-        gFlashScreen = false;
-      }
       break;
     }
 
     default: //default case
     case DetermineAlarmState:
     {
-      gFlashScreen = false;
       long diffBetweenSelectionAndTrueAltitude = gSelectedAltitudeLong - gTrueAltitudeDouble;
       if (millis() - gLastRightRotaryActionTs < cDisableAlarmKnobMovementTime) {
         noTone(cBuzzPin); //stop the buzzer
-        gFlashScreen = false;
+        gFlashRightScreen = false;
         gBuzzCountInt = 0;
       }
       else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || eBMP180Failed) {
         gAlarmModeEnum = AlarmDisabled;
+        noTone(cBuzzPin); //stop the buzzer
+        gFlashRightScreen = false;
+        gBuzzCountInt = 0;
       }
       else if (diffBetweenSelectionAndTrueAltitude > cAlarm1000ToGo) {
         gAlarmModeEnum = Climbing1000ToGo;
@@ -1044,6 +1047,7 @@ void handleBuzzer() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleDisplay() {
+  //TODO
   if (gShowLeftScreen) {
     drawLeftScreen();
   }
@@ -1061,7 +1065,7 @@ void drawLeftScreen() {
   else {
     gOled.setRotation(0);
   }
-  gOled.invertDisplay(gFlashScreen);
+  gOled.invertDisplay(gFlashLeftScreen);
 
   switch (gCursor) {
     case CursorSelectHeading: //Display Selected Heading
@@ -1106,7 +1110,7 @@ void drawLeftScreen() {
       break;
 
     case CursorSelectOffset:
-      sprintf(gDisplayTopContent, "%s", "Calibration Offset");
+      sprintf(gDisplayTopContent, "%s", "Calibration");
       sprintf(gDisplayBottomContent, "%+d" cFtLabel, gCalibratedAltitudeOffsetInt);
       break;
 
@@ -1177,7 +1181,7 @@ void drawRightScreen() {
   else {
     gOled.setRotation(0);
   }
-  gOled.invertDisplay(gFlashScreen);
+  gOled.invertDisplay(gFlashRightScreen);
 
   //show the sensor true altitude
   if (eBMP180Failed) { //if there's a sensor error, the top line should be the error message
