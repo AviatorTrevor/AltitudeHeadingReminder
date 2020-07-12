@@ -1,0 +1,119 @@
+{
+  "uuid": "0dd7d562cfd39c06789fe5bb33d02b26",
+  "path": "Offline/AltitudeHeadingReminder",
+  "name": "AltitudeHeadingReminder",
+  "content": "",
+  "created_at": "2020-07-07 22:56:29",
+  "updated_at": "2020-07-11 22:52:53",
+  "stick": "",
+  "documents": [
+    {
+      "uuid": "96c9730d0ba9b5b3bc83bb37cbc040b8",
+      "title": "AltitudeHeadingReminder_Schematic",
+      "description": "",
+      "docType": "1",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "da53e3076dca7f227f530de614f40169": 3,
+        "fa33d4808b42d46b96893a5da4a98304": 1,
+        "280b7685de874215b63ae54f467162de": 1,
+        "dc0fa062e09a41408c16dbb49b24c67b": 1,
+        "f857a0fcc85544eb9273adf6bcbce8e4": 2
+      },
+      "BOM": [
+        [
+          "Value",
+          "Quantity",
+          "Package",
+          "Components",
+          "CustomPara"
+        ],
+        [
+          "Piezo Buzzer",
+          1,
+          "BUZZER-12MM",
+          "SG1",
+          {
+            "BOM_Manufacturer Part": "",
+            "puuid": "95b694801b43434aaa24ff5c53669890",
+            "uuid": "280b7685de874215b63ae54f467162de"
+          }
+        ],
+        [
+          "100nF",
+          3,
+          "CAP-SMD_L3.2-W1.6-R-RD",
+          "C1,C2,C3",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "AVX",
+            "BOM_Manufacturer Part": "TAJA104K035RNJ",
+            "BOM_Supplier Part": "C7173",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "61ca4390f2284e11848b2ab1e8ce9766",
+            "uuid": "da53e3076dca7f227f530de614f40169"
+          }
+        ],
+        [
+          "BMP280",
+          1,
+          "SENSOR-TH_BMP280-BL",
+          "U2",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "Bosch",
+            "BOM_Manufacturer Part": "BMP280",
+            "BOM_Supplier Part": "C83291",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "715ac655327e4ef6b01e73dc26df3def",
+            "uuid": "dc0fa062e09a41408c16dbb49b24c67b"
+          }
+        ],
+        [
+          "2SC2411KT146R",
+          2,
+          "SOT-346_L2.9-W1.6-P1.90-LS2.8-TR-CW",
+          "Q1,Q2",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C122622",
+            "BOM_Manufacturer": "ROHM Semicon",
+            "BOM_Manufacturer Part": "2SC2411KT146R",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "077df2cb8bf048659d42646d7a9c4022",
+            "uuid": "f857a0fcc85544eb9273adf6bcbce8e4"
+          }
+        ],
+        [
+          "ATMEGA328P-AU",
+          1,
+          "TQFP-32_L7.0-W7.0-P0.80-LS9.0-BL",
+          "U1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "MICROCHIP",
+            "BOM_Manufacturer Part": "ATMEGA328P-AU",
+            "BOM_Supplier Part": "C14877",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "9c6dab9dc91e4b929269cb3454d6d713",
+            "uuid": "fa33d4808b42d46b96893a5da4a98304"
+          }
+        ]
+      ],
+      "updateTime": 1594533173,
+      "createTime": 1594192792,
+      "histories": [],
+      "created_at": "2020-07-08 00:19:52",
+      "updated_at": "2020-07-11 22:52:53"
+    }
+  ],
+  "sort": [
+    "96c9730d0ba9b5b3bc83bb37cbc040b8",
+    "edf74c51157f410cd60287eba6c98f64"
+  ],
+  "title": "AltitudeHeadingReminder",
+  "foldername": "AltitudeHeadingReminder",
+  "schfilename": "AltitudeHeadingReminder.json",
+  "schfilemtime": 1594533173526
+}
