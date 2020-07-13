@@ -387,6 +387,7 @@ void initializePiracyCheck() {
   }
 
   gOled.clearDisplay();
+  gOled.invert(true);
   gOled.setCursor(13,0);
   gOled.setTextSize(2);
   gOled.print("ERROR 69");
