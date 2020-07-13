@@ -4,7 +4,7 @@
   "name": "AltitudeHeadingReminder",
   "content": "",
   "created_at": "2020-07-07 22:56:29",
-  "updated_at": "2020-07-11 22:52:53",
+  "updated_at": "2020-07-12 21:52:08",
   "stick": "",
   "documents": [
     {
@@ -28,6 +28,250 @@
           "Package",
           "Components",
           "CustomPara"
+        ],
+        [
+          "22uH",
+          1,
+          "7*7*4",
+          "L2",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "LCSC",
+            "BOM_Manufacturer Part": "SMRH74-220MT",
+            "BOM_Supplier Part": "C27442",
+            "puuid": "64c218d3fccaef3eba55d80d6eef5377",
+            "uuid": ""
+          }
+        ],
+        [
+          "SS34",
+          1,
+          "SMA(DO-214AC)",
+          "D1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer Part": "SS34",
+            "BOM_Supplier Part": "C8678",
+            "puuid": "ed2608fb878c01f3500a9ec0a517fd5d",
+            "uuid": ""
+          }
+        ],
+        [
+          "MT3608",
+          1,
+          "SOT-23-6",
+          "U4",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "LCSC",
+            "BOM_Manufacturer Part": "MT3608",
+            "BOM_Supplier Part": "C84817",
+            "puuid": "c9505f60178b4b09a38c43ffc0b7a6ef",
+            "uuid": ""
+          }
+        ],
+        [
+          "2k",
+          2,
+          "0603",
+          "R7,R5",
+          {
+            "BOM_Manufacturer Part": "?",
+            "puuid": "37f403b8f2c64219a86a53bf250027c8",
+            "uuid": ""
+          }
+        ],
+        [
+          "BAT-",
+          1,
+          "HDR-1X1/2.54",
+          "BAT-1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "LCSC",
+            "BOM_Manufacturer Part": "Header-Male-2.54_1x1",
+            "BOM_Supplier Part": "C81276",
+            "puuid": "00ce14e502d271fec74fd74dca50c72e",
+            "uuid": ""
+          }
+        ],
+        [
+          "0.1u",
+          1,
+          "0603",
+          "C4",
+          {
+            "BOM_Manufacturer Part": "?",
+            "puuid": "37f403b8f2c64219a86a53bf250027c8",
+            "uuid": ""
+          }
+        ],
+        [
+          "100",
+          1,
+          "0603",
+          "R6",
+          {
+            "BOM_Manufacturer Part": "?",
+            "puuid": "37f403b8f2c64219a86a53bf250027c8",
+            "uuid": ""
+          }
+        ],
+        [
+          "BAT+",
+          1,
+          "HDR-1X1/2.54",
+          "BAT+1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "LCSC",
+            "BOM_Manufacturer Part": "Header-Male-2.54_1x1",
+            "BOM_Supplier Part": "C81276",
+            "puuid": "00ce14e502d271fec74fd74dca50c72e",
+            "uuid": ""
+          }
+        ],
+        [
+          "1k",
+          3,
+          "0603",
+          "R4,R3,R1",
+          {
+            "BOM_Manufacturer Part": "?",
+            "puuid": "37f403b8f2c64219a86a53bf250027c8",
+            "uuid": ""
+          }
+        ],
+        [
+          "FS8205",
+          1,
+          "SOT-23-6",
+          "Q3",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "FORTUNE",
+            "BOM_Manufacturer Part": "FS8205",
+            "BOM_Supplier Part": "C32254",
+            "puuid": "c9505f60178b4b09a38c43ffc0b7a6ef",
+            "uuid": ""
+          }
+        ],
+        [
+          "7.5k",
+          1,
+          "0603",
+          "R2",
+          {
+            "BOM_Manufacturer Part": "?",
+            "puuid": "37f403b8f2c64219a86a53bf250027c8",
+            "uuid": ""
+          }
+        ],
+        [
+          "19-217/GHC-YR1S2/3T",
+          1,
+          "LED-0603",
+          "LEDG1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "EVERLIGHT",
+            "BOM_Manufacturer Part": "19-217/GHC-YR1S2/3T",
+            "BOM_Supplier Part": "C72043",
+            "puuid": "e944ec19815d45acbea002a74d6ffe9a",
+            "uuid": ""
+          }
+        ],
+        [
+          "Red(0603)",
+          1,
+          "LED-0603",
+          "LEDR1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "LCSC",
+            "BOM_Manufacturer Part": "KT-0603R",
+            "BOM_Supplier Part": "C2286",
+            "puuid": "e944ec19815d45acbea002a74d6ffe9a",
+            "uuid": ""
+          }
+        ],
+        [
+          "10u",
+          1,
+          "0603",
+          "C5",
+          {
+            "BOM_Manufacturer Part": "?",
+            "puuid": "37f403b8f2c64219a86a53bf250027c8",
+            "uuid": ""
+          }
+        ],
+        [
+          "22uF",
+          2,
+          "1812",
+          "C6,C7",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "FH",
+            "BOM_Manufacturer Part": "1812X226K250NT",
+            "BOM_Supplier Part": "C28504",
+            "puuid": "928e1e5a88724d78a8e96de4af4d2cc0",
+            "uuid": ""
+          }
+        ],
+        [
+          "TP4056",
+          1,
+          "SOP-8_EP_150MIL",
+          "U3",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "TOPPOWER",
+            "BOM_Manufacturer Part": "TP4056",
+            "BOM_Supplier Part": "C16581",
+            "puuid": "71fd3f31f7a3ef00a5e0ec6cf54d61e0",
+            "uuid": ""
+          }
+        ],
+        [
+          "Toggle Switch",
+          1,
+          "SW5-2.0-8.8X4.4X4.7MM-90D",
+          "SW1",
+          {
+            "BOM_Manufacturer Part": "3P-2.0-90D-REINFORCE;",
+            "puuid": "5b2021ef46f644b2b963a971ad0994bd",
+            "uuid": ""
+          }
+        ],
+        [
+          "MICRO USB",
+          1,
+          "MICRO-USB-1",
+          "USB1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "LCSC",
+            "BOM_Manufacturer Part": "MICRO USB 5S B",
+            "BOM_Supplier Part": "C10418",
+            "puuid": "899742fced764dc897c6bd25296410e1",
+            "uuid": ""
+          }
+        ],
+        [
+          "FS312F-G",
+          1,
+          "SOT-23-6",
+          "U5",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "FORTUNE",
+            "BOM_Manufacturer Part": "DW01+G",
+            "BOM_Supplier Part": "C14213",
+            "puuid": "c9505f60178b4b09a38c43ffc0b7a6ef",
+            "uuid": ""
+          }
         ],
         [
           "Piezo Buzzer",
@@ -101,19 +345,19 @@
           }
         ]
       ],
-      "updateTime": 1594533173,
+      "updateTime": 1594615928,
       "createTime": 1594192792,
       "histories": [],
       "created_at": "2020-07-08 00:19:52",
-      "updated_at": "2020-07-11 22:52:53"
+      "updated_at": "2020-07-12 21:52:08"
     }
   ],
   "sort": [
     "96c9730d0ba9b5b3bc83bb37cbc040b8",
-    "edf74c51157f410cd60287eba6c98f64"
+    "3404bb137e85eb9a4b557284d6e59d94"
   ],
   "title": "AltitudeHeadingReminder",
   "foldername": "AltitudeHeadingReminder",
   "schfilename": "AltitudeHeadingReminder.json",
-  "schfilemtime": 1594533173526
+  "schfilemtime": 1594615928247
 }
