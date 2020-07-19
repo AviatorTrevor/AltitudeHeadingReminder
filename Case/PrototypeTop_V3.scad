@@ -81,6 +81,22 @@ difference() {
   translate([screwCylinderRadius - screwHoleCylinderRadius, mainWidth - screwCylinderRadius - screwHoleCylinderRadius, 0]) {
     cube([screwHoleCylinderRadius*2, screwHoleCylinderRadius*2, lidThickness]);
   };
+  
+  linear_extrude(resolution) {
+    translate([mainDepth / 2 + 3, mainWidth / 2, resolution]) {
+      rotate([180, 0, 90]){
+        text("Altitude/Heading Reminder", size = 4, halign = "center", valign = "center", font="Impact:style=Regular");
+      }
+    };
+  };
+  
+  linear_extrude(resolution) {
+    translate([mainDepth / 2 - 3, mainWidth / 2, resolution]) {
+      rotate([180, 0, 90]){
+        text("Made by: Trevor Bartlett", size = 3, halign = "center", valign = "center", font="Impact:style=Regular");
+      }
+    };
+  };
 };
 
 

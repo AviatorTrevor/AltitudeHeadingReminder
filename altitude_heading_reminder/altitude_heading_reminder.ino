@@ -157,9 +157,9 @@ volatile unsigned long gLastRotaryActionTs;
 #define cOledHeight      32
 #define cOledReset       4
 #define cLabelTextSize   1
-#define cLabelTextYpos   0
+#define cLabelTextYpos   1
 #define cReadoutTextSize 3
-#define cReadoutTextYpos 11
+#define cReadoutTextYpos 10
 #define cMaxScreenRefreshRate     30 //30Hz //TODO remove?
 #define cMaxScreenRefreshPeriod   (cOneSecond / cMaxScreenRefreshRate) //TODO remove?
 Custom_SSD1306 gOled(cOledWidth, cOledHeight, &Wire, cOledReset);
@@ -387,8 +387,8 @@ void initializePiracyCheck() {
   }
 
   gOled.clearDisplay();
-  gOled.invert(true);
-  gOled.setCursor(13,0);
+  gOled.invertDisplay(true);
+  gOled.setCursor(13,3);
   gOled.setTextSize(2);
   gOled.print("ERROR 69");
   gOled.display();
@@ -401,7 +401,7 @@ void initializePiracyCheck() {
     selectAppCode = gSelectAppCode;
     currentAppCodeSequence = gAppCodeSequence;
     gOled.clearDisplay();
-    gOled.setCursor(0,0);
+    gOled.setCursor(2,2);
     gOled.print(selectAppCode);
     gOled.display();
     if (currentAppCodeSequence > lastWrittenSequence) {
@@ -413,9 +413,9 @@ void initializePiracyCheck() {
         while (true) {
           initializeDefaultEeprom();
           gOled.clearDisplay();
-          gOled.setCursor(12,0);
+          gOled.setCursor(12,1);
           gOled.print("PLEASE");
-          gOled.setCursor(12, 16);
+          gOled.setCursor(12, 17);
           gOled.print("RESTART");
           gOled.display();
           delay(999999999);
@@ -1060,13 +1060,24 @@ void handleDisplay() {
 //////////////////////////////////////////////////////////////////////////
 void drawLeftScreen() {
   gOled.clearDisplay();
+  
   if (gDeviceFlipped) {
     gOled.setRotation(2);
   }
   else {
     gOled.setRotation(0);
   }
-  gOled.invertDisplay(gFlashLeftScreen);
+
+  if (gOledDim) {
+    gOled.dim(true, 0);
+  }
+  else {
+    gOled.dim(false, 255);
+  }
+  
+  //gOled.invertDisplay(gFlashLeftScreen);
+  gOled.invertDisplay(true);
+
 
   switch (gCursor) {
     case CursorSelectHeading: //Display Selected Heading
@@ -1074,7 +1085,7 @@ void drawLeftScreen() {
       sprintf(gDisplayTopContent, "%s", "Heading");
       sprintf(gDisplayBottomContent, "%03d", gSelectedHeadingInt);
       gOled.setTextSize(2);
-      gOled.setCursor(55, 11);
+      gOled.setCursor(56, 11);
       gOled.print((char)(247)); //247 = degree symbol
       break;
     }
@@ -1140,10 +1151,10 @@ void drawLeftScreen() {
       sprintf(gDisplayBottomContent, "%d.%d %c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, cDegFLabel);
       gOled.setTextSize(2);
       if (temperatureFarenheit >= 100) {
-        gOled.setCursor(93, 11);
+        gOled.setCursor(94, 11);
       }
       else {
-        gOled.setCursor(75, 11);
+        gOled.setCursor(76, 11);
       }
       gOled.print((char)(247));
       break;
@@ -1154,20 +1165,13 @@ void drawLeftScreen() {
       sprintf(gDisplayBottomContent, "%s", "100%"); //TODO implement battery level
       break;
   }
-
-  if (gOledDim) {
-    gOled.dim(true, 0);
-  }
-  else {
-    gOled.dim(false, 255);
-  }
   
   gOled.setTextSize(cLabelTextSize);
-  gOled.setCursor(0, cLabelTextYpos);
+  gOled.setCursor(1, cLabelTextYpos);
   gOled.print(gDisplayTopContent);
 
   gOled.setTextSize(cReadoutTextSize);
-  gOled.setCursor(0, cReadoutTextYpos);
+  gOled.setCursor(1, cReadoutTextYpos);
   gOled.print(gDisplayBottomContent);
   
   gOled.display();
@@ -1176,39 +1180,16 @@ void drawLeftScreen() {
 //////////////////////////////////////////////////////////////////////////
 void drawRightScreen() {
   gOled.clearDisplay();
+  
   if (gDeviceFlipped) {
     gOled.setRotation(2);
   }
   else {
     gOled.setRotation(0);
   }
-  gOled.invertDisplay(gFlashRightScreen);
-
-  //show the sensor true altitude
-  if (eBMP180Failed) { //if there's a sensor error, the top line should be the error message
-    sprintf(gDisplayTopContent, "%6s", "FAIL");
-  }
-  else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
-    sprintf(gDisplayTopContent, "%6s", "OFF");
-  }
-  else if (gSensorMode == SensorModeOnShow) { //...show the current altitude top-right
-    char* trueAltitudeReadout = displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearestFt));
-    sprintf(gDisplayTopContent, "%6s", trueAltitudeReadout);
-    delete trueAltitudeReadout;
-    gOled.setTextSize(cLabelTextSize);
-    gOled.setCursor(106, cLabelTextYpos);
-    gOled.print(cFtLabel);
-  }
-  else {
-    sprintf(gDisplayTopContent, "%c", ' ');
-  }
-
-  //Selected Altitude
-  long tempSelectedAltitude = gSelectedAltitudeLong;
-  char* selectedAltitudeReadout = displayNumber(tempSelectedAltitude);
-  sprintf(gDisplayBottomContent, "%6s", selectedAltitudeReadout);
-  delete selectedAltitudeReadout;
-
+  
+  //gOled.invertDisplay(gFlashRightScreen);
+  gOled.invertDisplay(true);
 
   if (gOledDim) {
     gOled.dim(true, 0);
@@ -1217,16 +1198,56 @@ void drawRightScreen() {
     gOled.dim(false, 255);
   }
   
-  gOled.setTextSize(cLabelTextSize);
-  gOled.setCursor(70, cLabelTextYpos);
-  gOled.print(gDisplayTopContent);
+
+  long tempSelectedAltitude = gSelectedAltitudeLong; //doing this here because it's used inside of 2 scopes
+
+  //show the sensor true altitude in top-right corner, show altitude count-down in top-left corner
+  if (eBMP180Failed) { //if there's a sensor error, the top line should be the error message
+    sprintf(gDisplayTopContent, "%6s", "FAIL");
+  }
+  else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
+    sprintf(gDisplayTopContent, "%6s", "OFF");
+  }
+  else if (gSensorMode == SensorModeOnShow) {
+    //show the current altitude top-right
+    char* trueAltitudeReadout = displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearestFt));
+    sprintf(gDisplayTopContent, "%6s", trueAltitudeReadout);
+    gOled.setTextSize(cLabelTextSize);
+    gOled.setCursor(70, cLabelTextYpos);
+    gOled.print(gDisplayTopContent);
+    delete trueAltitudeReadout;
+
+    //print the "ft" label
+    gOled.setTextSize(cLabelTextSize);
+    gOled.setCursor(106, cLabelTextYpos);
+    gOled.print(cFtLabel);
+
+    //show the altitude countdown on the top-left
+    long altitudeDifference = gTrueAltitudeDouble - tempSelectedAltitude;
+    bool climb = altitudeDifference < 0;
+    char* altitudeCountdownReadout = displayNumber(roundNumber(abs(altitudeDifference), cTrueAltitudeRoundToNearestFt));
+    sprintf(gDisplayTopContent, "%6s", altitudeCountdownReadout);
+    gOled.setCursor(1, cLabelTextYpos);
+    if (climb)
+      gOled.print((char)(24));
+    else
+      gOled.print((char)(25));
+    gOled.print(gDisplayTopContent);
+    delete altitudeCountdownReadout;
+  }
+
+
+  //Selected Altitude
+  char* selectedAltitudeReadout = displayNumber(tempSelectedAltitude);
+  sprintf(gDisplayBottomContent, "%6s", selectedAltitudeReadout);
+  delete selectedAltitudeReadout;
 
   gOled.setTextSize(cReadoutTextSize);
   gOled.setCursor(0, cReadoutTextYpos);
   gOled.print(gDisplayBottomContent);
 
   gOled.setTextSize(2);
-  gOled.setCursor(104, 18);
+  gOled.setCursor(104, cReadoutTextYpos + 7);
   gOled.print(cFtLabel);
   
   gOled.display();
