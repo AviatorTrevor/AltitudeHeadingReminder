@@ -127,21 +127,24 @@ bool            gLegitimate = true;
 #define            cLongBuzzDuration               1000
 #define            cShortBuzzOnFreqADuration       150
 #define            cShortBuzzOnFreqBDuration       150
+#define            cMinimumsBuzzOnFreqADuration    400
+#define            cMinimumsBuzzOnFreqBDuration    100
 #define            cUrgentBuzzNumberOfBeeps        7
 #define            cDisableAlarmKnobMovementTime   1200
 #define            cDisableAlarmAfterAlarmTime     1800
 #define            cDisableBacklightTimePeriod     200
 #define            cDisableBacklightPriorToAlarm   300
-enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState};
+enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
+BuzzAlarmMode      gClimbOrDescentFlag = AltitudeDeviate;
 int                gBuzzCountInt; //always a value between [0, cUrgentBuzzNumberOfBeeps]
+volatile bool      gLatchAltitudeReached;
 
 //Timing control
 unsigned long          gNextSensorBeginCycleTs;
 unsigned long          gNextSensorReadyTs;
 unsigned long          gNextBuzzTs;
 unsigned long          gLastAlarmTs;
-unsigned long          gLastBacklightOffTs;
 unsigned long          gTimerStartTs;
 volatile unsigned long gLeftButtonPressedTs;
 volatile unsigned long gRightButtonPressedTs;
@@ -176,6 +179,7 @@ char gDisplayBottomContent[10];
 enum Cursor {
     CursorSelectHeading,
     CursorSelectAltimeter,
+    CursorViewMinimums,
     CursorSelectTimer,
     CursorSelectBrightness,
     CursorSelectOffset,
@@ -842,6 +846,7 @@ void handleRightRotaryMovement(int increment) { // +1 indicates rotation to the 
   gRightButtonPossibleLongPress = false;
   gRightRotaryFineTuningPress = (gRightRotaryButton == PRESSED);
 
+  gLatchAltitudeReached = false; //altitude selection reset, so minimums alarm reset
   gAlarmModeEnum = DetermineAlarmState; //disable alarm if we change selected altitude
   if (gSelectedAltitudeLong > cHighAltitude || (gSelectedAltitudeLong == cHighAltitude && increment == 1) ) {
     int incrementMagnitude = cAltitudeHighSelectIncrement; //normal increment magnitude indicates the button being released and the current selected altitude being on an interval
@@ -913,6 +918,7 @@ void handleBuzzer() {
     
     case Climbing200ToGo:
     {
+      gClimbOrDescentFlag = Climbing200ToGo;
       if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm200ToGo) {
         gAlarmModeEnum = UrgentAlarm;
         gNextBuzzTs = millis(); //next buzz time is now
@@ -925,6 +931,7 @@ void handleBuzzer() {
       
     case Descending200ToGo:
     {
+      gClimbOrDescentFlag = Descending200ToGo;
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm200ToGo) {
         gAlarmModeEnum = UrgentAlarm;
         gNextBuzzTs = millis(); //next buzz time is now
@@ -937,6 +944,12 @@ void handleBuzzer() {
     
     case AltitudeDeviate: //We're looking to sound the alarm if pilot deviates from his altitude he already reached
     {
+      if (!gLatchAltitudeReached && gClimbOrDescentFlag == Descending200ToGo && gTrueAltitudeDouble <= gSelectedAltitudeLong) {
+        gLatchAltitudeReached = true;
+        gAlarmModeEnum = MinimumsAlarm;
+        break;
+      }
+      
       if (gTrueAltitudeDouble > gSelectedAltitudeLong + cAlarm200ToGo || gTrueAltitudeDouble < gSelectedAltitudeLong - cAlarm200ToGo) {
         gAlarmModeEnum = UrgentAlarm; //initiate beeping the alarm on the next pass
         gNextBuzzTs = millis(); //next buzz time is now
@@ -966,6 +979,33 @@ void handleBuzzer() {
           gAlarmModeEnum = AlarmDisabled;
           noTone(cBuzzPin);
           gFlashRightScreen = false;
+        }
+      }
+      break;
+    }
+
+    case MinimumsAlarm:
+    {
+      if (gBuzzCountInt == 0) {
+        gLastAlarmTs = millis();
+        gBuzzCountInt = cUrgentBuzzNumberOfBeeps + 1;
+      }
+      if (millis() >= gNextBuzzTs) {
+        gBuzzCountInt--;
+        if (gBuzzCountInt != 0 && gBuzzCountInt % 2 == 0) { //every other cycle, change frequency
+          tone(cBuzzPin, cBuzzFrequencyA);
+          gFlashLeftScreen = true;
+          gNextBuzzTs = millis() + cMinimumsBuzzOnFreqADuration;
+        }
+        else if (gBuzzCountInt % 2 == 1) {
+          tone(cBuzzPin, cBuzzFrequencyB);
+          gFlashLeftScreen = true;
+          gNextBuzzTs = millis() + cMinimumsBuzzOnFreqBDuration;
+        }
+        else {
+          gAlarmModeEnum = AlarmDisabled;
+          noTone(cBuzzPin);
+          gFlashLeftScreen = false;
         }
       }
       break;
@@ -1075,9 +1115,7 @@ void drawLeftScreen() {
     gOled.dim(false, 255);
   }
   
-  //gOled.invertDisplay(gFlashLeftScreen);
-  gOled.invertDisplay(true);
-
+  gOled.invertDisplay(gFlashLeftScreen);
 
   switch (gCursor) {
     case CursorSelectHeading: //Display Selected Heading
@@ -1093,6 +1131,22 @@ void drawLeftScreen() {
     case CursorSelectAltimeter:
       sprintf(gDisplayTopContent, "%s", "Altimeter");
       sprintf(gDisplayBottomContent, "%d.%02d" cInLabel, (int)gAltimeterSettingInHgDouble, (int)(gAltimeterSettingInHgDouble*100)%100);
+      break;
+
+    case CursorViewMinimums:
+      sprintf(gDisplayTopContent, "%s", "Minimums");
+      if (gSensorMode == SensorModeOnShow) {
+        long altitudeDifference = gTrueAltitudeDouble - gSelectedAltitudeLong;
+        char* altitudeCountdownReadout = displayNumber(roundNumber(altitudeDifference, cTrueAltitudeRoundToNearestFt));
+        sprintf(gDisplayBottomContent, "%6s", altitudeCountdownReadout);
+        delete altitudeCountdownReadout;
+        gOled.setTextSize(2);
+        gOled.setCursor(104, cReadoutTextYpos + 7);
+        gOled.print(cFtLabel);
+      }
+      else {
+        sprintf(gDisplayBottomContent, "%7s", "OFF");
+      }
       break;
 
     case CursorSelectTimer:
@@ -1188,8 +1242,7 @@ void drawRightScreen() {
     gOled.setRotation(0);
   }
   
-  //gOled.invertDisplay(gFlashRightScreen);
-  gOled.invertDisplay(true);
+  gOled.invertDisplay(gFlashRightScreen);
 
   if (gOledDim) {
     gOled.dim(true, 0);
