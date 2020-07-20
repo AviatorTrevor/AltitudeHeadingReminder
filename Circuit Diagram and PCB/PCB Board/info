@@ -4,7 +4,7 @@
   "name": "AltitudeHeadingReminder",
   "content": "",
   "created_at": "2020-07-07 22:56:29",
-  "updated_at": "2020-07-12 21:52:08",
+  "updated_at": "2020-07-19 22:41:29",
   "stick": "",
   "documents": [
     {
@@ -15,11 +15,27 @@
       "master": "",
       "thumb": "/images/thumb-default.png",
       "components": {
-        "da53e3076dca7f227f530de614f40169": 3,
         "fa33d4808b42d46b96893a5da4a98304": 1,
         "280b7685de874215b63ae54f467162de": 1,
         "dc0fa062e09a41408c16dbb49b24c67b": 1,
-        "f857a0fcc85544eb9273adf6bcbce8e4": 2
+        "f857a0fcc85544eb9273adf6bcbce8e4": 2,
+        "d97afe882be746cab78c10b35a8148ea": 1,
+        "f5fb5a24e9edc515352eb800d4f925df": 1,
+        "303ea8960e30b8ac9e63b17d909c778d": 1,
+        "0806368f73e1232ca543f14a515367b4": 1,
+        "55090ee8c30bc22b4cca116cb1960d9d": 3,
+        "0ac3068f3aae4ae48e8e3e5aa0b00c47": 2,
+        "5647ec5a7aae5fc3415f6524f735cd0c": 1,
+        "736d336546772c5794576cbf42cabb8b": 6,
+        "289007557929444a9e8874b23820a482": 1,
+        "4439ff8d4269ac30d55af3439a30f0ec": 1,
+        "a25fe1f0b81244f181a1f91bd2ae7bde": 1,
+        "f5b1d9403e49471cab43bc5a1bec336f": 2,
+        "93b44d62463c4c9c82dd7108c8ee7d73": 1,
+        "a052559478a14ee2b9e3514bee4ff72d": 2,
+        "c593732d1a97474eaf93a564ed29a212": 2,
+        "212e4e7ac253e44d17caceb02663d93c": 1,
+        "404aa9221ff94de597b8734806e7c74f": 2
       },
       "BOM": [
         [
@@ -60,85 +76,13 @@
           "MT3608",
           1,
           "SOT-23-6",
-          "U4",
+          "U3",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "LCSC",
             "BOM_Manufacturer Part": "MT3608",
             "BOM_Supplier Part": "C84817",
             "puuid": "c9505f60178b4b09a38c43ffc0b7a6ef",
-            "uuid": ""
-          }
-        ],
-        [
-          "2k",
-          2,
-          "0603",
-          "R7,R5",
-          {
-            "BOM_Manufacturer Part": "?",
-            "puuid": "37f403b8f2c64219a86a53bf250027c8",
-            "uuid": ""
-          }
-        ],
-        [
-          "BAT-",
-          1,
-          "HDR-1X1/2.54",
-          "BAT-1",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "LCSC",
-            "BOM_Manufacturer Part": "Header-Male-2.54_1x1",
-            "BOM_Supplier Part": "C81276",
-            "puuid": "00ce14e502d271fec74fd74dca50c72e",
-            "uuid": ""
-          }
-        ],
-        [
-          "0.1u",
-          1,
-          "0603",
-          "C4",
-          {
-            "BOM_Manufacturer Part": "?",
-            "puuid": "37f403b8f2c64219a86a53bf250027c8",
-            "uuid": ""
-          }
-        ],
-        [
-          "100",
-          1,
-          "0603",
-          "R6",
-          {
-            "BOM_Manufacturer Part": "?",
-            "puuid": "37f403b8f2c64219a86a53bf250027c8",
-            "uuid": ""
-          }
-        ],
-        [
-          "BAT+",
-          1,
-          "HDR-1X1/2.54",
-          "BAT+1",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "LCSC",
-            "BOM_Manufacturer Part": "Header-Male-2.54_1x1",
-            "BOM_Supplier Part": "C81276",
-            "puuid": "00ce14e502d271fec74fd74dca50c72e",
-            "uuid": ""
-          }
-        ],
-        [
-          "1k",
-          3,
-          "0603",
-          "R4,R3,R1",
-          {
-            "BOM_Manufacturer Part": "?",
-            "puuid": "37f403b8f2c64219a86a53bf250027c8",
             "uuid": ""
           }
         ],
@@ -157,84 +101,6 @@
           }
         ],
         [
-          "7.5k",
-          1,
-          "0603",
-          "R2",
-          {
-            "BOM_Manufacturer Part": "?",
-            "puuid": "37f403b8f2c64219a86a53bf250027c8",
-            "uuid": ""
-          }
-        ],
-        [
-          "19-217/GHC-YR1S2/3T",
-          1,
-          "LED-0603",
-          "LEDG1",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "EVERLIGHT",
-            "BOM_Manufacturer Part": "19-217/GHC-YR1S2/3T",
-            "BOM_Supplier Part": "C72043",
-            "puuid": "e944ec19815d45acbea002a74d6ffe9a",
-            "uuid": ""
-          }
-        ],
-        [
-          "Red(0603)",
-          1,
-          "LED-0603",
-          "LEDR1",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "LCSC",
-            "BOM_Manufacturer Part": "KT-0603R",
-            "BOM_Supplier Part": "C2286",
-            "puuid": "e944ec19815d45acbea002a74d6ffe9a",
-            "uuid": ""
-          }
-        ],
-        [
-          "10u",
-          1,
-          "0603",
-          "C5",
-          {
-            "BOM_Manufacturer Part": "?",
-            "puuid": "37f403b8f2c64219a86a53bf250027c8",
-            "uuid": ""
-          }
-        ],
-        [
-          "22uF",
-          2,
-          "1812",
-          "C6,C7",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "FH",
-            "BOM_Manufacturer Part": "1812X226K250NT",
-            "BOM_Supplier Part": "C28504",
-            "puuid": "928e1e5a88724d78a8e96de4af4d2cc0",
-            "uuid": ""
-          }
-        ],
-        [
-          "TP4056",
-          1,
-          "SOP-8_EP_150MIL",
-          "U3",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "TOPPOWER",
-            "BOM_Manufacturer Part": "TP4056",
-            "BOM_Supplier Part": "C16581",
-            "puuid": "71fd3f31f7a3ef00a5e0ec6cf54d61e0",
-            "uuid": ""
-          }
-        ],
-        [
           "Toggle Switch",
           1,
           "SW5-2.0-8.8X4.4X4.7MM-90D",
@@ -246,24 +112,10 @@
           }
         ],
         [
-          "MICRO USB",
-          1,
-          "MICRO-USB-1",
-          "USB1",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "LCSC",
-            "BOM_Manufacturer Part": "MICRO USB 5S B",
-            "BOM_Supplier Part": "C10418",
-            "puuid": "899742fced764dc897c6bd25296410e1",
-            "uuid": ""
-          }
-        ],
-        [
           "FS312F-G",
           1,
           "SOT-23-6",
-          "U5",
+          "U2",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "FORTUNE",
@@ -271,6 +123,50 @@
             "BOM_Supplier Part": "C14213",
             "puuid": "c9505f60178b4b09a38c43ffc0b7a6ef",
             "uuid": ""
+          }
+        ],
+        [
+          "2K",
+          2,
+          "R2512",
+          "R3,R4",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C150966",
+            "BOM_Manufacturer": "Uniroyal Elec",
+            "BOM_Manufacturer Part": "25121WF2001T4E",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "904b05bf744941788ee266e1db69f507",
+            "uuid": "0ac3068f3aae4ae48e8e3e5aa0b00c47"
+          }
+        ],
+        [
+          "FTDI",
+          1,
+          "HDR-M-2.54_1X6",
+          "J5",
+          {
+            "BOM_Supplier Part": "C190819",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "df3ca37cb13d499cb713e9aa6fdd0c7b",
+            "uuid": "93b44d62463c4c9c82dd7108c8ee7d73"
+          }
+        ],
+        [
+          "10uF",
+          1,
+          "CAP-SMD_L3.2-W1.6-R-RD",
+          "C1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "AVX",
+            "BOM_Manufacturer Part": "TAJA106K016RNJ",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C7171",
+            "puuid": "61ca4390f2284e11848b2ab1e8ce9766",
+            "uuid": "212e4e7ac253e44d17caceb02663d93c"
           }
         ],
         [
@@ -285,25 +181,213 @@
           }
         ],
         [
-          "100nF",
-          3,
-          "CAP-SMD_L3.2-W1.6-R-RD",
-          "C1,C2,C3",
+          "19-217/GHC-YR1S2/3T",
+          1,
+          "LED0603-R-RD",
+          "LED-G",
           {
             "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "AVX",
-            "BOM_Manufacturer Part": "TAJA104K035RNJ",
-            "BOM_Supplier Part": "C7173",
+            "BOM_Manufacturer": "EVERLIGHT",
+            "BOM_Manufacturer Part": "19-217/GHC-YR1S2/3T",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C72043",
+            "puuid": "50dc3b6111d549ddb6686d77ab1ebdd8",
+            "uuid": "303ea8960e30b8ac9e63b17d909c778d"
+          }
+        ],
+        [
+          "BAT+1",
+          1,
+          "HDR-M-2.54_1X1",
+          "J1",
+          {
+            "BOM_Supplier Part": "C81276",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer Part": "",
+            "puuid": "19c77e72422b43b59c26b9fa67af5de4",
+            "uuid": "404aa9221ff94de597b8734806e7c74f"
+          }
+        ],
+        [
+          "BAT-1",
+          1,
+          "HDR-M-2.54_1X1",
+          "J2",
+          {
+            "BOM_Supplier Part": "C81276",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer Part": "",
+            "puuid": "19c77e72422b43b59c26b9fa67af5de4",
+            "uuid": "404aa9221ff94de597b8734806e7c74f"
+          }
+        ],
+        [
+          "100nF",
+          6,
+          "C0805",
+          "C6,C7,C9,C8,C5,C2",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer Part": "CL21B104JBCNNNC",
+            "BOM_Manufacturer": "SAMSUNG",
+            "BOM_Supplier Part": "C62912",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "bbc61cb2bd3840b290cf4f8db68b3c00",
+            "uuid": "736d336546772c5794576cbf42cabb8b"
+          }
+        ],
+        [
+          "10K",
+          1,
+          "R1206",
+          "R8",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "UniOhm",
+            "BOM_Manufacturer Part": "1206W4F1002T5E",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C17902",
+            "puuid": "0610c91ea88544ecbdf889657d55abcb",
+            "uuid": "4439ff8d4269ac30d55af3439a30f0ec"
+          }
+        ],
+        [
+          "7.5",
+          1,
+          "R2512",
+          "R6",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "UniOhm",
+            "BOM_Manufacturer Part": "25121WF750KT4E",
+            "BOM_Supplier Part": "C35217",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "904b05bf744941788ee266e1db69f507",
+            "uuid": "5647ec5a7aae5fc3415f6524f735cd0c"
+          }
+        ],
+        [
+          "1K",
+          3,
+          "R0603",
+          "R2,R1,R7",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "UniOhm",
+            "BOM_Manufacturer Part": "0603WAD1001T5E",
+            "BOM_Supplier Part": "C51218",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "1bf59dff03ec4233aa077dc7cf0e92a1",
+            "uuid": "55090ee8c30bc22b4cca116cb1960d9d"
+          }
+        ],
+        [
+          "KT-0603R",
+          1,
+          "LED0603-R-RD",
+          "LED-R",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "KENTO",
+            "BOM_Manufacturer Part": "KT-0603R",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C2286",
+            "puuid": "50dc3b6111d549ddb6686d77ab1ebdd8",
+            "uuid": "0806368f73e1232ca543f14a515367b4"
+          }
+        ],
+        [
+          "74HC157AF",
+          1,
+          "SOIC-16_L10.8-W5.5-P1.27-LS7.8-BL",
+          "U6",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "TOSHIBA",
+            "BOM_Manufacturer Part": "74HC157AF",
+            "BOM_Supplier Part": "C8166",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "a319cdc742f448209e0bfc0d636a76c1",
+            "uuid": "289007557929444a9e8874b23820a482"
+          }
+        ],
+        [
+          "100",
+          1,
+          "R0603",
+          "R5",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "UniOhm",
+            "BOM_Manufacturer Part": "TC0325B1000T5E",
+            "BOM_Supplier Part": "C54021",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "1bf59dff03ec4233aa077dc7cf0e92a1",
+            "uuid": "a25fe1f0b81244f181a1f91bd2ae7bde"
+          }
+        ],
+        [
+          "Left Rotary",
+          1,
+          "HDR-M-2.54_1X5",
+          "J6",
+          {
+            "BOM_Supplier Part": "C358687",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "108969f8d9834a9ea23bcec2d43a66e4",
+            "uuid": "a052559478a14ee2b9e3514bee4ff72d"
+          }
+        ],
+        [
+          "Right Rotary",
+          1,
+          "HDR-M-2.54_1X5",
+          "J7",
+          {
+            "BOM_Supplier Part": "C358687",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "108969f8d9834a9ea23bcec2d43a66e4",
+            "uuid": "a052559478a14ee2b9e3514bee4ff72d"
+          }
+        ],
+        [
+          "22uF",
+          2,
+          "CAP-SMD_L3.2-W1.6-R-RD",
+          "C4,C3",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "CEC",
+            "BOM_Manufacturer Part": "CA45-A-6.3V-22uF-M",
+            "BOM_Supplier Part": "C140378",
             "BOM_LCSC Assembly": "Yes",
             "puuid": "61ca4390f2284e11848b2ab1e8ce9766",
-            "uuid": "da53e3076dca7f227f530de614f40169"
+            "uuid": "c593732d1a97474eaf93a564ed29a212"
+          }
+        ],
+        [
+          "USB-310CB",
+          1,
+          "USB-C-SMD_20P-P0.50-L6.5-W11.2",
+          "USB2",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C309373",
+            "BOM_Manufacturer": "HOOYA",
+            "BOM_Manufacturer Part": "USB-310CB",
+            "puuid": "2a93c79133ee476abe41a3880337b608",
+            "uuid": "d97afe882be746cab78c10b35a8148ea"
           }
         ],
         [
           "BMP280",
           1,
           "SENSOR-TH_BMP280-BL",
-          "U2",
+          "U4",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "Bosch",
@@ -312,6 +396,49 @@
             "BOM_LCSC Assembly": "Yes",
             "puuid": "715ac655327e4ef6b01e73dc26df3def",
             "uuid": "dc0fa062e09a41408c16dbb49b24c67b"
+          }
+        ],
+        [
+          "Display 1",
+          1,
+          "HDR-M-2.54_1X4",
+          "J3",
+          {
+            "BOM_Supplier Part": "C124378",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "282f7786cb6144d097ae00194c3e3fb3",
+            "uuid": "f5b1d9403e49471cab43bc5a1bec336f"
+          }
+        ],
+        [
+          "Display 2",
+          1,
+          "HDR-M-2.54_1X4",
+          "J4",
+          {
+            "BOM_Supplier Part": "C124378",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "282f7786cb6144d097ae00194c3e3fb3",
+            "uuid": "f5b1d9403e49471cab43bc5a1bec336f"
+          }
+        ],
+        [
+          "TP4056",
+          1,
+          "ESOP-8_L4.9-W3.9-P1.27-LS6.0-BL-EP",
+          "U1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "TOPPOWER",
+            "BOM_Manufacturer Part": "TP4056",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C16581",
+            "puuid": "7568fee05bc44581b2c32625ae15b3f8",
+            "uuid": "f5fb5a24e9edc515352eb800d4f925df"
           }
         ],
         [
@@ -333,7 +460,7 @@
           "ATMEGA328P-AU",
           1,
           "TQFP-32_L7.0-W7.0-P0.80-LS9.0-BL",
-          "U1",
+          "U5",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "MICROCHIP",
@@ -345,11 +472,11 @@
           }
         ]
       ],
-      "updateTime": 1594615928,
+      "updateTime": 1595223689,
       "createTime": 1594192792,
       "histories": [],
       "created_at": "2020-07-08 00:19:52",
-      "updated_at": "2020-07-12 21:52:08"
+      "updated_at": "2020-07-19 22:41:29"
     }
   ],
   "sort": [
@@ -359,5 +486,5 @@
   "title": "AltitudeHeadingReminder",
   "foldername": "AltitudeHeadingReminder",
   "schfilename": "AltitudeHeadingReminder.json",
-  "schfilemtime": 1594615928247
+  "schfilemtime": 1595223689630
 }
