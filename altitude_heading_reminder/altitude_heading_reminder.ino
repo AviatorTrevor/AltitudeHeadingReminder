@@ -1312,19 +1312,6 @@ void drawRightScreen() {
     gOled.setTextSize(cLabelTextSize);
     gOled.setCursor(106, cLabelTextYpos);
     gOled.print(cFtLabel);
-
-    //show the altitude countdown on the top-left
-    if (gLatchAltitudeReached == false) {
-      char* altitudeCountdownReadout = displayNumber(roundNumber(abs(gTrueAltitudeDouble - gSelectedAltitudeLong), cTrueAltitudeRoundToNearestFt));
-      sprintf(gDisplayTopContent, "%6s", altitudeCountdownReadout);
-      gOled.setCursor(1, cLabelTextYpos);
-      if (gClimbFlag)
-        gOled.print((char)(24));
-      else
-        gOled.print((char)(25));
-      gOled.print(gDisplayTopContent);
-      delete altitudeCountdownReadout;
-    }
   }
 
 
