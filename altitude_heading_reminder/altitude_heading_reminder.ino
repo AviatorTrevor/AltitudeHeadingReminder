@@ -136,7 +136,7 @@ bool            gLegitimate = true;
 #define            cDisableBacklightPriorToAlarm   300
 enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
-BuzzAlarmMode      gClimbOrDescentFlag = AltitudeDeviate;
+bool               gClimbFlag;
 int                gBuzzCountInt; //always a value between [0, cUrgentBuzzNumberOfBeeps]
 volatile bool      gLatchAltitudeReached;
 
@@ -181,7 +181,7 @@ enum Cursor {
     CursorSelectAltimeter,
     CursorViewMinimums,
     CursorSelectTimer,
-    CursorSelectBrightness,
+    CursorSelectBrightness, //starting here, values won't stay on the screen for more than a few seconds unless there is a rotary action
     CursorSelectOffset,
     CursorSelectSensor,
     CursorSelectFlipDevice,
@@ -548,7 +548,7 @@ void loop() {
     handleRightRotaryLongPress();
   }
 
-  if (gCursor != CursorSelectHeading && gCursor != CursorSelectAltimeter && gCursor != CursorSelectTimer && millis() - gLastRotaryActionTs >= cTenSeconds) {
+  if (gCursor > CursorSelectTimer && millis() - gLastRotaryActionTs >= cTenSeconds) {
     gCursor = CursorSelectHeading;
   }
 
@@ -761,6 +761,7 @@ void handleLeftRotaryMovement(int increment) {
       gNeedToWriteToEeprom = true;
       break;
 
+    case CursorViewMinimums:
     case CursorViewBmpTemp:
     case CursorViewBatteryLevel:
       break; //do nothing for these modes, display only
@@ -846,7 +847,7 @@ void handleRightRotaryMovement(int increment) { // +1 indicates rotation to the 
   gRightButtonPossibleLongPress = false;
   gRightRotaryFineTuningPress = (gRightRotaryButton == PRESSED);
 
-  gLatchAltitudeReached = false; //altitude selection reset, so minimums alarm reset
+  gLatchAltitudeReached = false;
   gAlarmModeEnum = DetermineAlarmState; //disable alarm if we change selected altitude
   if (gSelectedAltitudeLong > cHighAltitude || (gSelectedAltitudeLong == cHighAltitude && increment == 1) ) {
     int incrementMagnitude = cAltitudeHighSelectIncrement; //normal increment magnitude indicates the button being released and the current selected altitude being on an interval
@@ -918,7 +919,6 @@ void handleBuzzer() {
     
     case Climbing200ToGo:
     {
-      gClimbOrDescentFlag = Climbing200ToGo;
       if (gTrueAltitudeDouble >= gSelectedAltitudeLong - cAlarm200ToGo) {
         gAlarmModeEnum = UrgentAlarm;
         gNextBuzzTs = millis(); //next buzz time is now
@@ -931,7 +931,6 @@ void handleBuzzer() {
       
     case Descending200ToGo:
     {
-      gClimbOrDescentFlag = Descending200ToGo;
       if (gTrueAltitudeDouble <= gSelectedAltitudeLong + cAlarm200ToGo) {
         gAlarmModeEnum = UrgentAlarm;
         gNextBuzzTs = millis(); //next buzz time is now
@@ -944,9 +943,14 @@ void handleBuzzer() {
     
     case AltitudeDeviate: //We're looking to sound the alarm if pilot deviates from his altitude he already reached
     {
-      if (!gLatchAltitudeReached && gClimbOrDescentFlag == Descending200ToGo && gTrueAltitudeDouble <= gSelectedAltitudeLong) {
-        gLatchAltitudeReached = true;
-        gAlarmModeEnum = MinimumsAlarm;
+      if (!gLatchAltitudeReached) {
+        if (!gClimbFlag && gTrueAltitudeDouble <= gSelectedAltitudeLong) {
+          gLatchAltitudeReached = true;
+          gAlarmModeEnum = MinimumsAlarm;
+        }
+        else if (gClimbFlag && gTrueAltitudeDouble >= gSelectedAltitudeLong) {
+          gLatchAltitudeReached = true;
+        }
         break;
       }
       
@@ -1055,6 +1059,13 @@ void handleBuzzer() {
     case DetermineAlarmState:
     {
       long diffBetweenSelectionAndTrueAltitude = gSelectedAltitudeLong - gTrueAltitudeDouble;
+      if (diffBetweenSelectionAndTrueAltitude < 0) {
+        gClimbFlag = false;
+      }
+      else {
+        gClimbFlag = true;
+      }
+
       if (millis() - gLastRightRotaryActionTs < cDisableAlarmKnobMovementTime) {
         noTone(cBuzzPin); //stop the buzzer
         gFlashRightScreen = false;
@@ -1117,6 +1128,21 @@ void drawLeftScreen() {
   
   gOled.invertDisplay(gFlashLeftScreen);
 
+  //If timer is running while not on timer screen, show the timer
+  if (gCursor != CursorSelectTimer && gTimerStartTs != 0) {
+    unsigned long seconds = (millis() - gTimerStartTs) / 1000;
+    unsigned long minutes = seconds / 60;
+    while (minutes >= 100) {
+      minutes -= 100;
+    }
+    seconds -= minutes * 60;
+    sprintf(gDisplayBottomContent, "%02d:%02d", (int)minutes, (int)seconds);
+    gOled.setTextSize(cLabelTextSize);
+    gOled.setCursor(98, cLabelTextYpos);
+    gOled.print(gDisplayBottomContent);
+  }
+
+
   switch (gCursor) {
     case CursorSelectHeading: //Display Selected Heading
     {
@@ -1134,20 +1160,27 @@ void drawLeftScreen() {
       break;
 
     case CursorViewMinimums:
+    {
       sprintf(gDisplayTopContent, "%s", "Minimums");
-      if (gSensorMode == SensorModeOnShow) {
-        long altitudeDifference = gTrueAltitudeDouble - gSelectedAltitudeLong;
-        char* altitudeCountdownReadout = displayNumber(roundNumber(altitudeDifference, cTrueAltitudeRoundToNearestFt));
-        sprintf(gDisplayBottomContent, "%6s", altitudeCountdownReadout);
-        delete altitudeCountdownReadout;
-        gOled.setTextSize(2);
-        gOled.setCursor(104, cReadoutTextYpos + 7);
-        gOled.print(cFtLabel);
+      long altitudeDifference = gTrueAltitudeDouble - gSelectedAltitudeLong;
+      if (gSensorMode != SensorModeOff) {
+        if (!gLatchAltitudeReached && altitudeDifference < 0) {
+          sprintf(gDisplayBottomContent, "%-6s", "SELECT");
+        }
+        else {
+          char* altitudeCountdownReadout = displayNumber(roundNumber(altitudeDifference, cTrueAltitudeRoundToNearestFt));
+          sprintf(gDisplayBottomContent, "%6s", altitudeCountdownReadout);
+          delete altitudeCountdownReadout;
+          gOled.setTextSize(2);
+          gOled.setCursor(104, cReadoutTextYpos + 7);
+          gOled.print(cFtLabel);
+        }
       }
       else {
-        sprintf(gDisplayBottomContent, "%7s", "OFF");
+        sprintf(gDisplayBottomContent, "%-3s", "OFF");
       }
       break;
+    }
 
     case CursorSelectTimer:
       sprintf(gDisplayTopContent, "%s", "Stopwatch");
@@ -1225,7 +1258,12 @@ void drawLeftScreen() {
   gOled.print(gDisplayTopContent);
 
   gOled.setTextSize(cReadoutTextSize);
-  gOled.setCursor(1, cReadoutTextYpos);
+  if (gCursor == CursorViewMinimums) {
+    gOled.setCursor(0, cReadoutTextYpos);
+  }
+  else {
+    gOled.setCursor(1, cReadoutTextYpos);
+  }
   gOled.print(gDisplayBottomContent);
   
   gOled.display();
@@ -1276,17 +1314,17 @@ void drawRightScreen() {
     gOled.print(cFtLabel);
 
     //show the altitude countdown on the top-left
-    long altitudeDifference = gTrueAltitudeDouble - tempSelectedAltitude;
-    bool climb = altitudeDifference < 0;
-    char* altitudeCountdownReadout = displayNumber(roundNumber(abs(altitudeDifference), cTrueAltitudeRoundToNearestFt));
-    sprintf(gDisplayTopContent, "%6s", altitudeCountdownReadout);
-    gOled.setCursor(1, cLabelTextYpos);
-    if (climb)
-      gOled.print((char)(24));
-    else
-      gOled.print((char)(25));
-    gOled.print(gDisplayTopContent);
-    delete altitudeCountdownReadout;
+    if (gLatchAltitudeReached == false) {
+      char* altitudeCountdownReadout = displayNumber(roundNumber(abs(gTrueAltitudeDouble - gSelectedAltitudeLong), cTrueAltitudeRoundToNearestFt));
+      sprintf(gDisplayTopContent, "%6s", altitudeCountdownReadout);
+      gOled.setCursor(1, cLabelTextYpos);
+      if (gClimbFlag)
+        gOled.print((char)(24));
+      else
+        gOled.print((char)(25));
+      gOled.print(gDisplayTopContent);
+      delete altitudeCountdownReadout;
+    }
   }
 
 
