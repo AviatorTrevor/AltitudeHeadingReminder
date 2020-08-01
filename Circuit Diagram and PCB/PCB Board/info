@@ -4,7 +4,7 @@
   "name": "AltitudeHeadingReminder",
   "content": "",
   "created_at": "2020-07-07 22:56:29",
-  "updated_at": "2020-07-19 22:41:29",
+  "updated_at": "2020-07-25 01:45:58",
   "stick": "",
   "documents": [
     {
@@ -19,23 +19,25 @@
         "280b7685de874215b63ae54f467162de": 1,
         "dc0fa062e09a41408c16dbb49b24c67b": 1,
         "f857a0fcc85544eb9273adf6bcbce8e4": 2,
-        "d97afe882be746cab78c10b35a8148ea": 1,
         "f5fb5a24e9edc515352eb800d4f925df": 1,
         "303ea8960e30b8ac9e63b17d909c778d": 1,
         "0806368f73e1232ca543f14a515367b4": 1,
-        "55090ee8c30bc22b4cca116cb1960d9d": 3,
-        "0ac3068f3aae4ae48e8e3e5aa0b00c47": 2,
-        "5647ec5a7aae5fc3415f6524f735cd0c": 1,
-        "736d336546772c5794576cbf42cabb8b": 6,
         "289007557929444a9e8874b23820a482": 1,
         "4439ff8d4269ac30d55af3439a30f0ec": 1,
-        "a25fe1f0b81244f181a1f91bd2ae7bde": 1,
         "f5b1d9403e49471cab43bc5a1bec336f": 2,
         "93b44d62463c4c9c82dd7108c8ee7d73": 1,
         "a052559478a14ee2b9e3514bee4ff72d": 2,
         "c593732d1a97474eaf93a564ed29a212": 2,
         "212e4e7ac253e44d17caceb02663d93c": 1,
-        "404aa9221ff94de597b8734806e7c74f": 2
+        "404aa9221ff94de597b8734806e7c74f": 2,
+        "169fb5a2c8404ae99fcb660681a2e6b4": 1,
+        "a556f07bd78c4962bef30ffa3268f929": 1,
+        "9eddb0dc64ee9d911fa2d70653f1d71f": 1,
+        "916f0d116494aa802f5bb662d303d039": 1,
+        "0162c93b05c079a4f063ffb73f50c063": 3,
+        "2d1520ae0f6cf0b6d95e17d5112228e7": 2,
+        "ca94110f4544769d36adda4b0515e409": 6,
+        "b4057e9196ec45669ce1fb8dc69e13d9": 1
       },
       "BOM": [
         [
@@ -44,20 +46,6 @@
           "Package",
           "Components",
           "CustomPara"
-        ],
-        [
-          "22uH",
-          1,
-          "7*7*4",
-          "L2",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "LCSC",
-            "BOM_Manufacturer Part": "SMRH74-220MT",
-            "BOM_Supplier Part": "C27442",
-            "puuid": "64c218d3fccaef3eba55d80d6eef5377",
-            "uuid": ""
-          }
         ],
         [
           "SS34",
@@ -90,7 +78,7 @@
           "FS8205",
           1,
           "SOT-23-6",
-          "Q3",
+          "Q1",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "FORTUNE",
@@ -128,16 +116,31 @@
         [
           "2K",
           2,
-          "R2512",
+          "R0402",
           "R3,R4",
           {
             "BOM_Supplier": "LCSC",
-            "BOM_Supplier Part": "C150966",
-            "BOM_Manufacturer": "Uniroyal Elec",
-            "BOM_Manufacturer Part": "25121WF2001T4E",
+            "BOM_Manufacturer Part": "0402WGF2001TCE",
+            "BOM_Manufacturer": "UniOhm",
             "BOM_LCSC Assembly": "Yes",
-            "puuid": "904b05bf744941788ee266e1db69f507",
-            "uuid": "0ac3068f3aae4ae48e8e3e5aa0b00c47"
+            "BOM_Supplier Part": "C4109",
+            "puuid": "cea456c24ca24165b176bcf9114a7b29",
+            "uuid": "2d1520ae0f6cf0b6d95e17d5112228e7"
+          }
+        ],
+        [
+          "22uH",
+          1,
+          "L0805",
+          "L1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "Sunlord",
+            "BOM_Manufacturer Part": "SDFL2012T220KTF",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C32375",
+            "puuid": "8575d4a67a3f4c179607f0acaae4f7e7",
+            "uuid": "9eddb0dc64ee9d911fa2d70653f1d71f"
           }
         ],
         [
@@ -152,6 +155,35 @@
             "BOM_Manufacturer Part": "",
             "puuid": "df3ca37cb13d499cb713e9aa6fdd0c7b",
             "uuid": "93b44d62463c4c9c82dd7108c8ee7d73"
+          }
+        ],
+        [
+          "1K",
+          3,
+          "R0402",
+          "R1,R2,R7",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "UniOhm",
+            "BOM_Manufacturer Part": "0402WGF1001TCE",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C11702",
+            "puuid": "cea456c24ca24165b176bcf9114a7b29",
+            "uuid": "0162c93b05c079a4f063ffb73f50c063"
+          }
+        ],
+        [
+          "TYPE-C-31-M-16",
+          1,
+          "TYPE-C-SMD_TYPE-C-31-M-16",
+          "USB1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C283541",
+            "BOM_Manufacturer": "Korean Hroparts Elec",
+            "BOM_Manufacturer Part": "TYPE-C-31-M-16",
+            "puuid": "cc33f00711a541bfbe7fb0b164318c1f",
+            "uuid": "169fb5a2c8404ae99fcb660681a2e6b4"
           }
         ],
         [
@@ -222,18 +254,18 @@
           }
         ],
         [
-          "100nF",
-          6,
-          "C0805",
-          "C6,C7,C9,C8,C5,C2",
+          "100",
+          1,
+          "R1206",
+          "R5",
           {
             "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer Part": "CL21B104JBCNNNC",
-            "BOM_Manufacturer": "SAMSUNG",
-            "BOM_Supplier Part": "C62912",
+            "BOM_Manufacturer": "UniOhm",
+            "BOM_Manufacturer Part": "1206W4F1000T5E",
             "BOM_LCSC Assembly": "Yes",
-            "puuid": "bbc61cb2bd3840b290cf4f8db68b3c00",
-            "uuid": "736d336546772c5794576cbf42cabb8b"
+            "BOM_Supplier Part": "C17901",
+            "puuid": "0610c91ea88544ecbdf889657d55abcb",
+            "uuid": "916f0d116494aa802f5bb662d303d039"
           }
         ],
         [
@@ -249,36 +281,6 @@
             "BOM_Supplier Part": "C17902",
             "puuid": "0610c91ea88544ecbdf889657d55abcb",
             "uuid": "4439ff8d4269ac30d55af3439a30f0ec"
-          }
-        ],
-        [
-          "7.5",
-          1,
-          "R2512",
-          "R6",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "UniOhm",
-            "BOM_Manufacturer Part": "25121WF750KT4E",
-            "BOM_Supplier Part": "C35217",
-            "BOM_LCSC Assembly": "Yes",
-            "puuid": "904b05bf744941788ee266e1db69f507",
-            "uuid": "5647ec5a7aae5fc3415f6524f735cd0c"
-          }
-        ],
-        [
-          "1K",
-          3,
-          "R0603",
-          "R2,R1,R7",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "UniOhm",
-            "BOM_Manufacturer Part": "0603WAD1001T5E",
-            "BOM_Supplier Part": "C51218",
-            "BOM_LCSC Assembly": "Yes",
-            "puuid": "1bf59dff03ec4233aa077dc7cf0e92a1",
-            "uuid": "55090ee8c30bc22b4cca116cb1960d9d"
           }
         ],
         [
@@ -312,18 +314,17 @@
           }
         ],
         [
-          "100",
+          "7.5K",
           1,
-          "R0603",
-          "R5",
+          "R2010",
+          "R6",
           {
             "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "UniOhm",
-            "BOM_Manufacturer Part": "TC0325B1000T5E",
-            "BOM_Supplier Part": "C54021",
-            "BOM_LCSC Assembly": "Yes",
-            "puuid": "1bf59dff03ec4233aa077dc7cf0e92a1",
-            "uuid": "a25fe1f0b81244f181a1f91bd2ae7bde"
+            "BOM_Supplier Part": "C351751",
+            "BOM_Manufacturer": "ResistorToday",
+            "BOM_Manufacturer Part": "AECR2010F7K50K9",
+            "puuid": "6c0967c5a3bf40c4a53b4a986740818e",
+            "uuid": "a556f07bd78c4962bef30ffa3268f929"
           }
         ],
         [
@@ -355,6 +356,21 @@
           }
         ],
         [
+          "TCA9548APWR",
+          1,
+          "TSSOP-24_L7.8-W4.4-P0.65-LS6.4-BL",
+          "U7",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "TI",
+            "BOM_Manufacturer Part": "TCA9548APWR",
+            "BOM_Supplier Part": "C130026",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "b23a3cd50ffb4bd580712ba1d52d77dd",
+            "uuid": "b4057e9196ec45669ce1fb8dc69e13d9"
+          }
+        ],
+        [
           "22uF",
           2,
           "CAP-SMD_L3.2-W1.6-R-RD",
@@ -370,17 +386,18 @@
           }
         ],
         [
-          "USB-310CB",
-          1,
-          "USB-C-SMD_20P-P0.50-L6.5-W11.2",
-          "USB2",
+          "100nF",
+          6,
+          "C0402",
+          "C8,C9,C5,C6,C7,C2",
           {
             "BOM_Supplier": "LCSC",
-            "BOM_Supplier Part": "C309373",
-            "BOM_Manufacturer": "HOOYA",
-            "BOM_Manufacturer Part": "USB-310CB",
-            "puuid": "2a93c79133ee476abe41a3880337b608",
-            "uuid": "d97afe882be746cab78c10b35a8148ea"
+            "BOM_Manufacturer Part": "CL05B104KO5NNNC",
+            "BOM_Manufacturer": "SAMSUNG",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C1525",
+            "puuid": "f8eca159cd18407f9d5df374a1c2badf",
+            "uuid": "ca94110f4544769d36adda4b0515e409"
           }
         ],
         [
@@ -445,7 +462,7 @@
           "2SC2411KT146R",
           2,
           "SOT-346_L2.9-W1.6-P1.90-LS2.8-TR-CW",
-          "Q1,Q2",
+          "Q2,Q3",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Supplier Part": "C122622",
@@ -472,11 +489,11 @@
           }
         ]
       ],
-      "updateTime": 1595223689,
+      "updateTime": 1595666758,
       "createTime": 1594192792,
       "histories": [],
       "created_at": "2020-07-08 00:19:52",
-      "updated_at": "2020-07-19 22:41:29"
+      "updated_at": "2020-07-25 01:45:58"
     }
   ],
   "sort": [
@@ -486,5 +503,5 @@
   "title": "AltitudeHeadingReminder",
   "foldername": "AltitudeHeadingReminder",
   "schfilename": "AltitudeHeadingReminder.json",
-  "schfilemtime": 1595223689630
+  "schfilemtime": 1595666758905
 }
