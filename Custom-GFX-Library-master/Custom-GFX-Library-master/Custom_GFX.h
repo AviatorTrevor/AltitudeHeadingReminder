@@ -60,12 +60,6 @@ public:
                 uint16_t bg, uint8_t size);
   void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color,
                 uint16_t bg, uint8_t size_x, uint8_t size_y);
-  void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1,
-                     int16_t *y1, uint16_t *w, uint16_t *h);
-  void getTextBounds(const __FlashStringHelper *s, int16_t x, int16_t y,
-                     int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
-  void getTextBounds(const String &str, int16_t x, int16_t y, int16_t *x1,
-                     int16_t *y1, uint16_t *w, uint16_t *h);
   void setTextSize(uint8_t s);
   void setTextSize(uint8_t sx, uint8_t sy);
   void setFont(const GFXfont *f = NULL);
@@ -103,15 +97,6 @@ public:
     textcolor = c;
     textbgcolor = bg;
   }
-
-  /**********************************************************************/
-  /*!
-  @brief  Set whether text that is too long for the screen width should
-          automatically wrap around to the next line (else clip right).
-  @param  w  true for wrapping, false for clipping
-  */
-  /**********************************************************************/
-  void setTextWrap(bool w) { wrap = w; }
 
   /**********************************************************************/
   /*!
@@ -179,8 +164,6 @@ public:
   int16_t getCursorY(void) const { return cursor_y; };
 
 protected:
-  void charBounds(unsigned char c, int16_t *x, int16_t *y, int16_t *minx,
-                  int16_t *miny, int16_t *maxx, int16_t *maxy);
   int16_t WIDTH;        ///< This is the 'raw' display width - never changes
   int16_t HEIGHT;       ///< This is the 'raw' display height - never changes
   int16_t _width;       ///< Display width as modified by current rotation
@@ -192,7 +175,6 @@ protected:
   uint8_t textsize_x;   ///< Desired magnification in X-axis of text to print()
   uint8_t textsize_y;   ///< Desired magnification in Y-axis of text to print()
   uint8_t rotation;     ///< Display rotation (0 thru 3)
-  bool wrap;            ///< If set, 'wrap' text at right edge of display
   bool _cp437;          ///< If set, use correct CP437 charset (default is off)
   GFXfont *gfxFont;     ///< Pointer to special font
 };

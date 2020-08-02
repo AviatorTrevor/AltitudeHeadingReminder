@@ -9,7 +9,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *implement dual OLED displays
   *multiplexer or alternative method
   *test flash/invert screen when alerting
-*when timer is running, show the timer in small font on all left-hand screens
+*save altitude and heading to EEPROM
 *recently changed gFlashScreen to gFlashRightScreen. Look carefully at every existing location and determine how gFlashLeftScreen will fit in there
 *analyze gAlarmMode being set outside of the handleAlarm() function
 *left-display, shows altitude countdown
@@ -18,7 +18,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *test sleeping
 *interrupts causing an interrupt to beeping noises
 *design for battery
-*software for battery level & charging
+*software for battery level
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
@@ -53,20 +53,17 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cOneSecond                     1000 //1000 milliseconds = 1 second
 #define cOneSecondBeforeOverflow       (unsigned long)(pow(2, sizeof(unsigned long) * 8) - cOneSecond)
 #define cTenSeconds                    10000
-#define cMillisecondsInMinute          60000
 #define cFeetInMeters                  3.28084
 #define cSeaLevelPressureHPa           1013.25 //standard sea level pressure in millibars
 #define cSeaLevelPressureInHg          29.92 //standard sea level pressure in inches of mercury
 #define cFtLabel                       "ft"
-#define cFpmLabel                      "fpm" //feet per minute
 #define cInLabel                       "\""
-#define cHPaLabel                      "hPa"
 #define cDegFLabel                     'F'
 #define cAltitudeSelectIncrement       100   //ft
 #define cAltitudeFineSelectIncrement   10    //ft
-#define cInitialSelectedAltitudeOffset 2000  //ft
 #define cAltitudeHighSelectIncrement   1000  //ft
 #define cHighAltitude                  18000 //ft
+#define cDefaultSelectedAltitude       3000  //ft
 #define cLowestAltitudeSelect          -1500 //ft
 #define cHighestAltitudeSelect         60000 //ft
 #define cHighestAltitudeAlert          24000 //ft, the pressure sensor will only measure so high. No point in alerting above a certain pressure level
@@ -77,12 +74,13 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cCalibrationOffsetMax          990   //ft
 #define cCalibrationOffsetInterval     10    //ft
 #define cHeadingSelectIncrement        5     //degrees
+#define cDefaultSelectedHeading        360   //degrees
 #define cTrueAltitudeRoundToNearestFt  10    //ft
 
 //EEPROM
 #define         cSizeOfEeprom                       EEPROM.length() //1024
 #define         cEepromWriteDelay                   5000  //milliseconds
-#define         cEepromMaxWrites                    85000
+#define         cEepromMaxWrites                    100000
 #define         cEepromNextAvailableSlot            12
 #define         cEepromAltimeterAddr                14
 #define         cEepromAltitudeOffsetAddr           16
@@ -90,6 +88,8 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define         cEepromSensorModeAddr               20
 #define         cEepromScreenDimAddr                22
 #define         cEepromScreenOrientationAddr        24
+#define         cEepromSelectedAltitudeAddr         26
+#define         cEepromSelectedHeadingAddr          28
 volatile bool   gNeedToWriteToEeprom;
 
 //BMP180 Sensor variables
@@ -97,7 +97,6 @@ volatile bool   gNeedToWriteToEeprom;
 #define    cSensorLoopPeriod              (cOneSecond / cSensorLoopCycle)
 #define    cBmp180Quality                 3 //highest quality, more electrical draw [0-3]. Wait times are {5ms, 8ms, 14ms, 26ms}. Getting temperature is always 5ms.
 SFE_BMP180 gSensor;
-bool       gInitializedAltitude;
 char       gSensorStatusChar;             //byte value BMP180 pressure sensor returns. Acts as success status as well as time to wait for next state
 int        gSensorProcessStateInt;        //0 = start measuring temperature, 1 = get temperature, 2 = start measuring pressure, 3 = get pressure
 double     gSensorTemperatureDouble;      //celcius
@@ -258,6 +257,7 @@ void initializeValuesFromEeprom() {
   int eepromIndex;
   double tempDouble;
   int tempInt;
+  long tempLong;
   byte tempByte;
   bool tempBool;
 
@@ -315,35 +315,67 @@ void initializeValuesFromEeprom() {
     EEPROM.get(eepromIndex, tempBool);
     gDeviceFlipped = tempBool;
   }
+
+  //Selected Altitude
+  EEPROM.get(cEepromSelectedAltitudeAddr, eepromIndex);
+  if (eepromIndex >= 0 && eepromIndex < cSizeOfEeprom) {
+    EEPROM.get(eepromIndex, tempLong);
+    if (tempLong >= cLowestAltitudeSelect && tempInt <= cHighestAltitudeSelect) {
+      gSelectedAltitudeLong = tempLong;
+    }
+    else {
+      gSelectedAltitudeLong = cDefaultSelectedAltitude;
+    }
+  }
+
+  //Selected Heading
+  EEPROM.get(cEepromSelectedHeadingAddr, eepromIndex);
+  if (eepromIndex >= 0 && eepromIndex < cSizeOfEeprom) {
+    EEPROM.get(eepromIndex, tempInt);
+    if (tempInt < 1 || tempInt > 360) {
+      gCalibratedAltitudeOffsetInt = cDefaultSelectedHeading;
+    }
+    else {
+      gSelectedHeadingInt = tempInt;
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////
-void initializeDefaultEeprom() {
-  EEPROM.put(cEepromNextAvailableSlot, 49);
+void initializeDefaultEeprom() {  
+  EEPROM.put(cEepromAltimeterAddr, 30);
+  EEPROM.put(30, (double)cSeaLevelPressureInHg); //default value for altimeter
+  EEPROM.put(30 + sizeof(double), 0);
   
-  EEPROM.put(cEepromAltimeterAddr, 26);
-  EEPROM.put(26, (double)cSeaLevelPressureInHg); //default value for altimeter
-  EEPROM.put(26 + sizeof(double), 0);
-  
-  EEPROM.put(cEepromAltitudeOffsetAddr, 32);
-  EEPROM.put(32, (int)0); //default value for altitude offset
-  EEPROM.put(32 + sizeof(int), 0);
-  
-  EEPROM.put(cEepromPermanentAltitutdeOffsetAddr, 36);
-  EEPROM.put(36, (int)0); //default value for permanent altitude offset
+  EEPROM.put(cEepromAltitudeOffsetAddr, 36);
+  EEPROM.put(36, (int)0); //default value for altitude offset
   EEPROM.put(36 + sizeof(int), 0);
   
-  EEPROM.put(cEepromSensorModeAddr, 40);
-  EEPROM.put(40, (byte)0); //default value for mode
-  EEPROM.put(40 + sizeof(byte), 0);
+  EEPROM.put(cEepromPermanentAltitutdeOffsetAddr, 40);
+  EEPROM.put(40, (int)0); //default value for permanent altitude offset
+  EEPROM.put(40 + sizeof(int), 0);
   
-  EEPROM.put(cEepromScreenDimAddr, 43);
-  EEPROM.put(43, false);
-  EEPROM.put(43 + sizeof(bool), 0);
+  EEPROM.put(cEepromSensorModeAddr, 44);
+  EEPROM.put(44, static_cast<byte>(SensorModeOnShow)); //default value for mode
+  EEPROM.put(44 + sizeof(byte), 0);
   
-  EEPROM.put(cEepromScreenOrientationAddr, 46);
-  EEPROM.put(46, false);
-  EEPROM.put(46 + sizeof(bool), 0);
+  EEPROM.put(cEepromScreenDimAddr, 47);
+  EEPROM.put(47, false); //default value for screen dim
+  EEPROM.put(47 + sizeof(bool), 0);
+  
+  EEPROM.put(cEepromScreenOrientationAddr, 50);
+  EEPROM.put(50, false); //default value for screen orientation
+  EEPROM.put(50 + sizeof(bool), 0);
+
+  EEPROM.put(cEepromSelectedAltitudeAddr, 53);
+  EEPROM.put(53, cDefaultSelectedAltitude); //default selected altitude
+  EEPROM.put(53 + sizeof(long), 0);
+
+  EEPROM.put(cEepromSelectedHeadingAddr, 59);
+  EEPROM.put(59, cDefaultSelectedHeading); //default selected heading
+  EEPROM.put(59 + sizeof(int), 0);
+
+  EEPROM.put(cEepromNextAvailableSlot, 63);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -602,17 +634,6 @@ void handleBmp180Sensor() {
       }
       else { //only update the true altitude if the pressure reading was valid
         gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
-        //if this is the first pressure reading, initialize selected altitude
-        if (!gInitializedAltitude) {
-          gInitializedAltitude = true; //this if statement only gets called once
-          long initialAltitudeSelection = gTrueAltitudeDouble + cInitialSelectedAltitudeOffset;
-          if (initialAltitudeSelection >= cHighAltitude) {
-            gSelectedAltitudeLong = roundNumber(initialAltitudeSelection + cAltitudeHighSelectIncrement, cAltitudeHighSelectIncrement);
-          }
-          else {
-            gSelectedAltitudeLong = roundNumber(initialAltitudeSelection + cAltitudeSelectIncrement * 5, cAltitudeSelectIncrement * 5);
-          }
-        }
       }
     }
     if (eBMP180Failed) {
@@ -707,6 +728,8 @@ void handleLeftRotaryMovement(int increment) {
         }
         gSelectedHeadingInt = roundNumber((gSelectedHeadingInt + increment * incrementMagnitude + 359) % 360 + 1, cHeadingSelectIncrement);
       }
+      gEepromSaveNeededTs = millis();
+      gNeedToWriteToEeprom = true; //save heading to EEPROM
       break;
     
     case CursorSelectAltimeter:
@@ -873,6 +896,8 @@ void handleRightRotaryMovement(int increment) { // +1 indicates rotation to the 
     }
     gSelectedAltitudeLong = max(roundNumber(gSelectedAltitudeLong + increment * incrementMagnitude, rounding), cLowestAltitudeSelect);
   }
+  gEepromSaveNeededTs = millis();
+  gNeedToWriteToEeprom = true; //save selected altitude to EEPROM
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1040,14 +1065,6 @@ void handleBuzzer() {
     {
       if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime || eBMP180Failed) {
         //if alarm disabled or BMP180 failed, do nothing
-      }
-      else if (!gInitializedAltitude) {
-        /* I don't want it to go into a mode where it can beep unless we've given 
-         * the pressure sensor and arduino a chance to initialize the altitude,
-         * otherwise you'll hear a beep right at start-up */
-        if (millis() > 5000) {
-          gInitializedAltitude = true;
-        }
       }
       else if (gSensorMode != SensorModeOff && gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
         gAlarmModeEnum = DetermineAlarmState;
@@ -1508,6 +1525,48 @@ void writeValuesToEeprom() {
   
     screenFlip = gDeviceFlipped; //this silences a compiler warning
     EEPROM.put(eepromIndex, screenFlip);
+    EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
+  }
+
+
+
+  //Selected Altitude
+  datatypeSize = sizeof(long);
+  dataAddr = cEepromSelectedAltitudeAddr;
+  long selectedAltitude;
+  EEPROM.get(dataAddr, eepromIndex);
+  EEPROM.get(eepromIndex, selectedAltitude);
+  if (selectedAltitude != gSelectedAltitudeLong) {
+    EEPROM.get(eepromIndex + datatypeSize, numOfWrites);
+    if (numOfWrites > cEepromMaxWrites) {
+      EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
+      EEPROM.put(eepromIndex + datatypeSize, 0); //reset write counter
+      EEPROM.put(dataAddr, eepromIndex); //reset address
+      EEPROM.put(cEepromNextAvailableSlot, eepromIndex + datatypeSize + sizeof(int)); //reset next available slot
+    }
+    selectedAltitude = gSelectedAltitudeLong; //this silences a compiler warning
+    EEPROM.put(eepromIndex, selectedAltitude);
+    EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
+  }
+
+
+
+  //Selected Heading
+  datatypeSize = sizeof(int);
+  dataAddr = cEepromSelectedHeadingAddr;
+  long selectedHeading;
+  EEPROM.get(dataAddr, eepromIndex);
+  EEPROM.get(eepromIndex, selectedHeading);
+  if (selectedHeading != gSelectedHeadingInt) {
+    EEPROM.get(eepromIndex + datatypeSize, numOfWrites);
+    if (numOfWrites > cEepromMaxWrites) {
+      EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
+      EEPROM.put(eepromIndex + datatypeSize, 0); //reset write counter
+      EEPROM.put(dataAddr, eepromIndex); //reset address
+      EEPROM.put(cEepromNextAvailableSlot, eepromIndex + datatypeSize + sizeof(int)); //reset next available slot
+    }
+    selectedHeading = gSelectedHeadingInt; //this silences a compiler warning
+    EEPROM.put(eepromIndex, selectedHeading);
     EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
   }
 }
