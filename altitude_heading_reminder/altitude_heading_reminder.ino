@@ -9,12 +9,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *implement dual OLED displays
   *multiplexer or alternative method
   *test flash/invert screen when alerting
-*save altitude and heading to EEPROM
-*recently changed gFlashScreen to gFlashRightScreen. Look carefully at every existing location and determine how gFlashLeftScreen will fit in there
-*analyze gAlarmMode being set outside of the handleAlarm() function
-*left-display, shows altitude countdown
 *adjust pin mapping for PCB board layout
-*add settings to disable 200ft and 1000ft and altitude departure alarms
 *test sleeping
 *interrupts causing an interrupt to beeping noises
 *design for battery
@@ -40,7 +35,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #include <Custom_GFX.h>
 #include <Custom_SSD1306.h>
 
-#define DEBUG //TODO remove
+//#define DEBUG //TODO remove
 
 #define cAppVersion                    "1.0" //[HardwareConfigOrMajorRedesign].[SoftwareRelease]
 #define cAppCodeNumberOfDigits         6
@@ -102,15 +97,15 @@ int        gSensorProcessStateInt;        //0 = start measuring temperature, 1 =
 double     gSensorTemperatureDouble;      //celcius
 double     gSensorPressureDouble;         //millibars
 enum SensorMode {SensorModeOff, SensorModeOnHide, SensorModeOnShow, cNumberOfSensorModes};
-volatile SensorMode gSensorMode = SensorModeOnShow;
+volatile SensorMode gSensorMode;
 
 //Main program variables
 double          gTrueAltitudeDouble;
 volatile long   gSelectedAltitudeLong;
-volatile double gAltimeterSettingInHgDouble = cSeaLevelPressureInHg;
+volatile double gAltimeterSettingInHgDouble;
 volatile int    gCalibratedAltitudeOffsetInt;
 volatile int    gPermanentCalibratedAltitudeOffsetInt;
-volatile int    gSelectedHeadingInt = 360; //degrees
+volatile int    gSelectedHeadingInt; //degrees
 
 //Anti-piracy
 volatile int    gSelectAppCode = 0;
@@ -131,13 +126,16 @@ bool            gLegitimate = true;
 #define            cUrgentBuzzNumberOfBeeps        7
 #define            cDisableAlarmKnobMovementTime   1200
 #define            cDisableAlarmAfterAlarmTime     1800
-#define            cDisableBacklightTimePeriod     200
-#define            cDisableBacklightPriorToAlarm   300
 enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 bool               gClimbFlag;
 int                gBuzzCountInt; //always a value between [0, cUrgentBuzzNumberOfBeeps]
-volatile bool      gLatchAltitudeReached;
+
+//Battery
+#define       cBatteryVoltagePin      A0
+#define       cBatteryUpdateInterval  30000
+int           gBatteryLevel;
+unsigned long gBatteryUpdateTs;
 
 //Timing control
 unsigned long          gNextSensorBeginCycleTs;
@@ -249,6 +247,7 @@ void setup() {
   initializeValuesFromEeprom();
   initializeBmp180Sensor();
   initializeBuzzer();
+  updateBatteryLevel();
   delay(1200); //delay for splash screen (to see version number)
 }
 
@@ -584,6 +583,11 @@ void loop() {
     gCursor = CursorSelectHeading;
   }
 
+  //Update battery level
+  if (millis() - gBatteryUpdateTs >= cBatteryUpdateInterval) {
+    updateBatteryLevel();
+  }
+
   handleBuzzer();
   handleDisplay();
 
@@ -870,7 +874,6 @@ void handleRightRotaryMovement(int increment) { // +1 indicates rotation to the 
   gRightButtonPossibleLongPress = false;
   gRightRotaryFineTuningPress = (gRightRotaryButton == PRESSED);
 
-  gLatchAltitudeReached = false;
   gAlarmModeEnum = DetermineAlarmState; //disable alarm if we change selected altitude
   if (gSelectedAltitudeLong > cHighAltitude || (gSelectedAltitudeLong == cHighAltitude && increment == 1) ) {
     int incrementMagnitude = cAltitudeHighSelectIncrement; //normal increment magnitude indicates the button being released and the current selected altitude being on an interval
@@ -968,14 +971,8 @@ void handleBuzzer() {
     
     case AltitudeDeviate: //We're looking to sound the alarm if pilot deviates from his altitude he already reached
     {
-      if (!gLatchAltitudeReached) {
-        if (!gClimbFlag && gTrueAltitudeDouble <= gSelectedAltitudeLong) {
-          gLatchAltitudeReached = true;
-          gAlarmModeEnum = MinimumsAlarm;
-        }
-        else if (gClimbFlag && gTrueAltitudeDouble >= gSelectedAltitudeLong) {
-          gLatchAltitudeReached = true;
-        }
+      if (gCursor == CursorViewMinimums && !gClimbFlag && gTrueAltitudeDouble <= gSelectedAltitudeLong) {
+        gAlarmModeEnum = MinimumsAlarm;
         break;
       }
       
@@ -1181,8 +1178,10 @@ void drawLeftScreen() {
       sprintf(gDisplayTopContent, "%s", "Minimums");
       long altitudeDifference = gTrueAltitudeDouble - gSelectedAltitudeLong;
       if (gSensorMode != SensorModeOff) {
-        if (!gLatchAltitudeReached && altitudeDifference < 0) {
-          sprintf(gDisplayBottomContent, "%-6s", "SELECT");
+        if (gClimbFlag) {
+          gOled.setTextSize(2);
+          gOled.setCursor(1, cReadoutTextYpos);
+          gOled.print("Select Lower Alt");
         }
         else {
           char* altitudeCountdownReadout = displayNumber(roundNumber(altitudeDifference, cTrueAltitudeRoundToNearestFt));
@@ -1194,7 +1193,9 @@ void drawLeftScreen() {
         }
       }
       else {
-        sprintf(gDisplayBottomContent, "%-3s", "OFF");
+        gOled.setTextSize(2);
+        gOled.setCursor(1, cReadoutTextYpos);
+        gOled.print("Sensor Off");
       }
       break;
     }
@@ -1266,7 +1267,7 @@ void drawLeftScreen() {
 
     case CursorViewBatteryLevel:
       sprintf(gDisplayTopContent, "%s", "Battery");
-      sprintf(gDisplayBottomContent, "%s", "100%"); //TODO implement battery level
+      sprintf(gDisplayBottomContent, "%d%", gBatteryLevel);
       break;
   }
   
@@ -1569,6 +1570,12 @@ void writeValuesToEeprom() {
     EEPROM.put(eepromIndex, selectedHeading);
     EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
   }
+}
+
+//////////////////////////////////////////////////////////////////////////
+void updateBatteryLevel() {
+  gBatteryLevel = analogRead(cBatteryVoltagePin) * 10; //TODO implement actual battery calculation
+  gBatteryUpdateTs = millis();
 }
 
 //////////////////////////////////////////////////////////////////////////
