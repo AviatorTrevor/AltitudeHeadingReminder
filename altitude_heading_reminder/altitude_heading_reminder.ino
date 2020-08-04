@@ -1180,13 +1180,18 @@ void drawLeftScreen() {
       if (gSensorMode != SensorModeOff) {
         if (gClimbFlag) {
           gOled.setTextSize(2);
-          gOled.setCursor(1, cReadoutTextYpos);
-          gOled.print("Select Lower Alt");
+          gOled.setCursor(1, cReadoutTextYpos + 7);
+          gOled.print("Lower Alt");
         }
         else {
           char* altitudeCountdownReadout = displayNumber(roundNumber(altitudeDifference, cTrueAltitudeRoundToNearestFt));
           sprintf(gDisplayBottomContent, "%6s", altitudeCountdownReadout);
           delete altitudeCountdownReadout;
+
+          gOled.setTextSize(cReadoutTextSize);
+          gOled.setCursor(0, cReadoutTextYpos);
+          gOled.print(gDisplayBottomContent);
+
           gOled.setTextSize(2);
           gOled.setCursor(104, cReadoutTextYpos + 7);
           gOled.print(cFtLabel);
@@ -1194,7 +1199,7 @@ void drawLeftScreen() {
       }
       else {
         gOled.setTextSize(2);
-        gOled.setCursor(1, cReadoutTextYpos);
+        gOled.setCursor(1, cReadoutTextYpos + 7);
         gOled.print("Sensor Off");
       }
       break;
@@ -1267,7 +1272,7 @@ void drawLeftScreen() {
 
     case CursorViewBatteryLevel:
       sprintf(gDisplayTopContent, "%s", "Battery");
-      sprintf(gDisplayBottomContent, "%d%", gBatteryLevel);
+      sprintf(gDisplayBottomContent, "%d%%", gBatteryLevel);
       break;
   }
   
@@ -1275,14 +1280,11 @@ void drawLeftScreen() {
   gOled.setCursor(1, cLabelTextYpos);
   gOled.print(gDisplayTopContent);
 
-  gOled.setTextSize(cReadoutTextSize);
-  if (gCursor == CursorViewMinimums) {
-    gOled.setCursor(0, cReadoutTextYpos);
-  }
-  else {
+  if (gCursor != CursorViewMinimums) {
+    gOled.setTextSize(cReadoutTextSize);
     gOled.setCursor(1, cReadoutTextYpos);
+    gOled.print(gDisplayBottomContent);
   }
-  gOled.print(gDisplayBottomContent);
   
   gOled.display();
 }

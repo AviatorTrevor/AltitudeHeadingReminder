@@ -4,7 +4,7 @@
   "name": "AltitudeHeadingReminder",
   "content": "",
   "created_at": "2020-07-07 22:56:29",
-  "updated_at": "2020-07-25 01:45:58",
+  "updated_at": "2020-08-02 18:33:46",
   "stick": "",
   "documents": [
     {
@@ -23,7 +23,7 @@
         "303ea8960e30b8ac9e63b17d909c778d": 1,
         "0806368f73e1232ca543f14a515367b4": 1,
         "289007557929444a9e8874b23820a482": 1,
-        "4439ff8d4269ac30d55af3439a30f0ec": 1,
+        "4439ff8d4269ac30d55af3439a30f0ec": 2,
         "f5b1d9403e49471cab43bc5a1bec336f": 2,
         "93b44d62463c4c9c82dd7108c8ee7d73": 1,
         "a052559478a14ee2b9e3514bee4ff72d": 2,
@@ -31,13 +31,14 @@
         "212e4e7ac253e44d17caceb02663d93c": 1,
         "404aa9221ff94de597b8734806e7c74f": 2,
         "169fb5a2c8404ae99fcb660681a2e6b4": 1,
-        "a556f07bd78c4962bef30ffa3268f929": 1,
         "9eddb0dc64ee9d911fa2d70653f1d71f": 1,
         "916f0d116494aa802f5bb662d303d039": 1,
         "0162c93b05c079a4f063ffb73f50c063": 3,
         "2d1520ae0f6cf0b6d95e17d5112228e7": 2,
         "ca94110f4544769d36adda4b0515e409": 6,
-        "b4057e9196ec45669ce1fb8dc69e13d9": 1
+        "b4057e9196ec45669ce1fb8dc69e13d9": 1,
+        "fffefb2a47c50d7f390a5f5cfb2b4d4d": 1,
+        "bc9a6227f3bcf47e7aef0cdf0df60e2a": 1
       },
       "BOM": [
         [
@@ -270,9 +271,9 @@
         ],
         [
           "10K",
-          1,
+          2,
           "R1206",
-          "R8",
+          "R8,R9",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "UniOhm",
@@ -311,20 +312,6 @@
             "BOM_LCSC Assembly": "Yes",
             "puuid": "a319cdc742f448209e0bfc0d636a76c1",
             "uuid": "289007557929444a9e8874b23820a482"
-          }
-        ],
-        [
-          "7.5K",
-          1,
-          "R2010",
-          "R6",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Supplier Part": "C351751",
-            "BOM_Manufacturer": "ResistorToday",
-            "BOM_Manufacturer Part": "AECR2010F7K50K9",
-            "puuid": "6c0967c5a3bf40c4a53b4a986740818e",
-            "uuid": "a556f07bd78c4962bef30ffa3268f929"
           }
         ],
         [
@@ -368,6 +355,21 @@
             "BOM_LCSC Assembly": "Yes",
             "puuid": "b23a3cd50ffb4bd580712ba1d52d77dd",
             "uuid": "b4057e9196ec45669ce1fb8dc69e13d9"
+          }
+        ],
+        [
+          "4.7K",
+          1,
+          "R0402",
+          "R6",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "UniOhm",
+            "BOM_Manufacturer Part": "0402WGF4701TCE",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C25900",
+            "puuid": "cea456c24ca24165b176bcf9114a7b29",
+            "uuid": "bc9a6227f3bcf47e7aef0cdf0df60e2a"
           }
         ],
         [
@@ -487,13 +489,28 @@
             "puuid": "9c6dab9dc91e4b929269cb3454d6d713",
             "uuid": "fa33d4808b42d46b96893a5da4a98304"
           }
+        ],
+        [
+          "30K",
+          1,
+          "R0603",
+          "R10",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "UniOhm",
+            "BOM_Manufacturer Part": "0603WAF3002T5E",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C22984",
+            "puuid": "e8901072611c4b309f15829075c906c5",
+            "uuid": "fffefb2a47c50d7f390a5f5cfb2b4d4d"
+          }
         ]
       ],
-      "updateTime": 1595666758,
+      "updateTime": 1596418426,
       "createTime": 1594192792,
       "histories": [],
       "created_at": "2020-07-08 00:19:52",
-      "updated_at": "2020-07-25 01:45:58"
+      "updated_at": "2020-08-02 18:33:46"
     }
   ],
   "sort": [
@@ -503,5 +520,5 @@
   "title": "AltitudeHeadingReminder",
   "foldername": "AltitudeHeadingReminder",
   "schfilename": "AltitudeHeadingReminder.json",
-  "schfilemtime": 1595666758905
+  "schfilemtime": 1596418426900
 }
