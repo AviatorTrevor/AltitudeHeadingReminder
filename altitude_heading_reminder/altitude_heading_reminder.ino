@@ -472,17 +472,30 @@ void initializeBmp180Sensor() {
 void initializeDisplayDevice() {
   pinMode(cPinLeftDisplayControl, OUTPUT);
   pinMode(cPinRightDisplayControl, OUTPUT);
+  
   digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
   digitalWrite(cPinRightDisplayControl, CONTROL_ON);
   
   gOled.begin(SSD1306_SWITCHCAPVCC, cOledAddr);
+
+  //common between left & right display
   gOled.invertDisplay(false);
-  gOled.clearDisplay();
   gOled.setTextColor(SSD1306_WHITE);
   gOled.setTextSize(2);
-  gOled.setCursor(15,0);
+
+  //left screen
+  digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
+  digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
+  gOled.clearDisplay();
+  gOled.setCursor(24, 9);
   gOled.print("Version"); //TODO change logic to display "Version" on left screen, "1.0.0" on right screen
-  gOled.setCursor(15, 17);
+  gOled.display();
+
+  //right screen
+  digitalWrite(cPinLeftDisplayControl, CONTROL_OFF);
+  digitalWrite(cPinRightDisplayControl, CONTROL_ON);
+  gOled.clearDisplay();
+  gOled.setCursor(48, 9);
   gOled.print(cAppVersion);
   gOled.display();
 }
