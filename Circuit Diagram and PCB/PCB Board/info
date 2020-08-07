@@ -4,7 +4,7 @@
   "name": "AltitudeHeadingReminder",
   "content": "",
   "created_at": "2020-07-07 22:56:29",
-  "updated_at": "2020-08-02 18:33:46",
+  "updated_at": "2020-08-06 22:58:17",
   "stick": "",
   "documents": [
     {
@@ -18,12 +18,10 @@
         "fa33d4808b42d46b96893a5da4a98304": 1,
         "280b7685de874215b63ae54f467162de": 1,
         "dc0fa062e09a41408c16dbb49b24c67b": 1,
-        "f857a0fcc85544eb9273adf6bcbce8e4": 2,
         "f5fb5a24e9edc515352eb800d4f925df": 1,
         "303ea8960e30b8ac9e63b17d909c778d": 1,
         "0806368f73e1232ca543f14a515367b4": 1,
-        "289007557929444a9e8874b23820a482": 1,
-        "4439ff8d4269ac30d55af3439a30f0ec": 2,
+        "4439ff8d4269ac30d55af3439a30f0ec": 4,
         "f5b1d9403e49471cab43bc5a1bec336f": 2,
         "93b44d62463c4c9c82dd7108c8ee7d73": 1,
         "a052559478a14ee2b9e3514bee4ff72d": 2,
@@ -36,9 +34,9 @@
         "0162c93b05c079a4f063ffb73f50c063": 3,
         "2d1520ae0f6cf0b6d95e17d5112228e7": 2,
         "ca94110f4544769d36adda4b0515e409": 6,
-        "b4057e9196ec45669ce1fb8dc69e13d9": 1,
         "fffefb2a47c50d7f390a5f5cfb2b4d4d": 1,
-        "bc9a6227f3bcf47e7aef0cdf0df60e2a": 1
+        "bc9a6227f3bcf47e7aef0cdf0df60e2a": 1,
+        "3e0fb0c806d434e4d3ee93b3d2cd8f1d": 2
       },
       "BOM": [
         [
@@ -127,6 +125,20 @@
             "BOM_Supplier Part": "C4109",
             "puuid": "cea456c24ca24165b176bcf9114a7b29",
             "uuid": "2d1520ae0f6cf0b6d95e17d5112228e7"
+          }
+        ],
+        [
+          "2N3906",
+          2,
+          "TO-92-3_L4.9-W3.7-P1.27-L",
+          "Q3,Q4",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "CJ",
+            "BOM_Manufacturer Part": "2N3906",
+            "BOM_Supplier Part": "C9809",
+            "puuid": "6924b36489de4921bb29ca14bf27c33f",
+            "uuid": "3e0fb0c806d434e4d3ee93b3d2cd8f1d"
           }
         ],
         [
@@ -271,9 +283,9 @@
         ],
         [
           "10K",
-          2,
+          4,
           "R1206",
-          "R8,R9",
+          "R8,R9,R11,R12",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "UniOhm",
@@ -297,21 +309,6 @@
             "BOM_Supplier Part": "C2286",
             "puuid": "50dc3b6111d549ddb6686d77ab1ebdd8",
             "uuid": "0806368f73e1232ca543f14a515367b4"
-          }
-        ],
-        [
-          "74HC157AF",
-          1,
-          "SOIC-16_L10.8-W5.5-P1.27-LS7.8-BL",
-          "U6",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "TOSHIBA",
-            "BOM_Manufacturer Part": "74HC157AF",
-            "BOM_Supplier Part": "C8166",
-            "BOM_LCSC Assembly": "Yes",
-            "puuid": "a319cdc742f448209e0bfc0d636a76c1",
-            "uuid": "289007557929444a9e8874b23820a482"
           }
         ],
         [
@@ -340,21 +337,6 @@
             "BOM_Manufacturer Part": "",
             "puuid": "108969f8d9834a9ea23bcec2d43a66e4",
             "uuid": "a052559478a14ee2b9e3514bee4ff72d"
-          }
-        ],
-        [
-          "TCA9548APWR",
-          1,
-          "TSSOP-24_L7.8-W4.4-P0.65-LS6.4-BL",
-          "U7",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "TI",
-            "BOM_Manufacturer Part": "TCA9548APWR",
-            "BOM_Supplier Part": "C130026",
-            "BOM_LCSC Assembly": "Yes",
-            "puuid": "b23a3cd50ffb4bd580712ba1d52d77dd",
-            "uuid": "b4057e9196ec45669ce1fb8dc69e13d9"
           }
         ],
         [
@@ -461,21 +443,6 @@
           }
         ],
         [
-          "2SC2411KT146R",
-          2,
-          "SOT-346_L2.9-W1.6-P1.90-LS2.8-TR-CW",
-          "Q2,Q3",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Supplier Part": "C122622",
-            "BOM_Manufacturer": "ROHM Semicon",
-            "BOM_Manufacturer Part": "2SC2411KT146R",
-            "BOM_LCSC Assembly": "Yes",
-            "puuid": "077df2cb8bf048659d42646d7a9c4022",
-            "uuid": "f857a0fcc85544eb9273adf6bcbce8e4"
-          }
-        ],
-        [
           "ATMEGA328P-AU",
           1,
           "TQFP-32_L7.0-W7.0-P0.80-LS9.0-BL",
@@ -506,11 +473,11 @@
           }
         ]
       ],
-      "updateTime": 1596418426,
+      "updateTime": 1596779897,
       "createTime": 1594192792,
       "histories": [],
       "created_at": "2020-07-08 00:19:52",
-      "updated_at": "2020-08-02 18:33:46"
+      "updated_at": "2020-08-06 22:58:17"
     }
   ],
   "sort": [
@@ -520,5 +487,5 @@
   "title": "AltitudeHeadingReminder",
   "foldername": "AltitudeHeadingReminder",
   "schfilename": "AltitudeHeadingReminder.json",
-  "schfilemtime": 1596418426900
+  "schfilemtime": 1596779897127
 }
