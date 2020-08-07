@@ -152,6 +152,10 @@ volatile unsigned long gEepromSaveNeededTs;
 volatile unsigned long gLastRotaryActionTs;
 
 //Display
+#define cPinLeftDisplayControl  5
+#define cPinRightDisplayControl 7
+#define CONTROL_ON       LOW
+#define CONTROL_OFF      HIGH
 #define cOledAddr        0x3C
 #define cOledWidth       128
 #define cOledHeight      32
@@ -167,7 +171,6 @@ volatile bool gOledDim = false;
 volatile bool gDeviceFlipped = false;
 bool gFlashRightScreen = false;
 bool gFlashLeftScreen = false;
-volatile bool gShowLeftScreen = false; //TODO temporary, remove
 
 char gDisplayTopContent[20];
 char gDisplayBottomContent[10];
@@ -467,6 +470,11 @@ void initializeBmp180Sensor() {
 
 //////////////////////////////////////////////////////////////////////////
 void initializeDisplayDevice() {
+  pinMode(cPinLeftDisplayControl, OUTPUT);
+  pinMode(cPinRightDisplayControl, OUTPUT);
+  digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
+  digitalWrite(cPinRightDisplayControl, CONTROL_ON);
+  
   gOled.begin(SSD1306_SWITCHCAPVCC, cOledAddr);
   gOled.invertDisplay(false);
   gOled.clearDisplay();
@@ -651,7 +659,6 @@ void handleBmp180Sensor() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleLeftRotary(int rotaryButton, int rotaryDt, int rotaryClk) {
-  gShowLeftScreen = true;
   //The button being pressed can lead to 1 of 3 outcomes: {Short Press, Long Press, a rotation occuring before the long press time is reached}
   gLeftRotaryButton = digitalRead(rotaryButton); //read button state
   int leftRotaryDt = digitalRead(rotaryDt);
@@ -823,13 +830,10 @@ void handleLeftRotaryLongPress() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleRightRotary(int rotaryButton, int rotaryDt, int rotaryClk) {
-  gShowLeftScreen = false;
   //The button being pressed on the right knob can only be used for fine-tuning mode or altitude-sync (long press). A released state indicates normal altitude selection mode.
   gRightRotaryButton = digitalRead(rotaryButton); //read button state
   int rightRotaryDt = digitalRead(rotaryDt);
   int rightRotaryClk = digitalRead(rotaryClk);
-
-  gLastRotaryActionTs = millis();
 
   if (gRightRotaryButton != gRightRotaryButtonPreviousValue && millis() - gRightRotaryReleaseTs >= cRotaryButtonReleaseDelay) { //if button state changed
     gRightRotaryButtonPreviousValue = gRightRotaryButton;
@@ -1113,11 +1117,20 @@ void handleBuzzer() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleDisplay() {
-  //TODO
-  if (gShowLeftScreen) {
+  if (gDeviceFlipped) {
+    digitalWrite(cPinLeftDisplayControl, CONTROL_OFF);
+    digitalWrite(cPinRightDisplayControl, CONTROL_ON);
     drawLeftScreen();
+    digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
+    digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
+    drawRightScreen();
   }
   else {
+    digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
+    digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
+    drawLeftScreen();
+    digitalWrite(cPinLeftDisplayControl, CONTROL_OFF);
+    digitalWrite(cPinRightDisplayControl, CONTROL_ON);
     drawRightScreen();
   }
 }
