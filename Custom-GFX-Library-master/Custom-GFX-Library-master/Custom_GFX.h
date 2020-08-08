@@ -7,7 +7,6 @@
 #else
 #include "WProgram.h"
 #endif
-#include "gfxfont.h"
 
 /// A generic graphics superclass that can handle all sorts of drawing. At a
 /// minimum you can subclass and provide drawPixel(). At a maximum you can do a
@@ -62,7 +61,6 @@ public:
                 uint16_t bg, uint8_t size_x, uint8_t size_y);
   void setTextSize(uint8_t s);
   void setTextSize(uint8_t sx, uint8_t sy);
-  void setFont(const GFXfont *f = NULL);
 
   /**********************************************************************/
   /*!
@@ -176,7 +174,6 @@ protected:
   uint8_t textsize_y;   ///< Desired magnification in Y-axis of text to print()
   uint8_t rotation;     ///< Display rotation (0 thru 3)
   bool _cp437;          ///< If set, use correct CP437 charset (default is off)
-  GFXfont *gfxFont;     ///< Pointer to special font
 };
 
 #endif // _CUSTOM_GFX_H

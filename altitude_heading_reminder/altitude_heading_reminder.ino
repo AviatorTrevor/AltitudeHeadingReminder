@@ -29,6 +29,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *2400
 *4100 & 4200 alternating?
 */
+unsigned long gTemp;
 #include <EEPROM.h>
 #include <SFE_BMP180.h>
 #include <Wire.h>
@@ -1311,8 +1312,13 @@ void drawLeftScreen() {
     gOled.setCursor(1, cReadoutTextYpos);
     gOled.print(gDisplayBottomContent);
   }
-  
+
   gOled.display();
+  /*gOled.clearDisplay();
+  gOled.setTextSize(2);
+  gOled.print(millis() - gTemp);
+  gOled.display();
+  gTemp = millis();*/
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1601,8 +1607,12 @@ void writeValuesToEeprom() {
 }
 
 //////////////////////////////////////////////////////////////////////////
+//high level estimate = 977.45
+//low level estimate = 558.54
+//difference = 997 - 558 = 419
+//////////////////////////////////////////////////////////////////////////
 void updateBatteryLevel() {
-  gBatteryLevel = analogRead(cBatteryVoltagePin) * 10; //TODO implement actual battery calculation
+  gBatteryLevel = constrain((analogRead(cBatteryVoltagePin) - 558) / 4.19, 0, 100); //TODO implement actual battery calculation
   gBatteryUpdateTs = millis();
 }
 
