@@ -6,7 +6,9 @@ Hardware device to remind pilots of assigned headings & altitudes. Also has buzz
 to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
+*when pressure sensor fails, fix the display for that, as well as the temperature screen
 *adjust pin mapping for PCB board layout
+*adjust code for BMP280 sensor when you get the PCB ordered
 *test sleeping
 *interrupts causing an interrupt to beeping noises
 *design for battery
@@ -27,7 +29,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *4100 & 4200 alternating?
 */
 #include <EEPROM.h>
-#include <SFE_BMP180.h>
+#include <SFE_BMP180.h> //TODO replace
 #include <Wire.h>
 #include <Custom_GFX.h>
 #include <Custom_SSD1306.h>
@@ -167,6 +169,7 @@ Custom_SSD1306 gOled(cOledWidth, cOledHeight, &Wire, cOledReset);
 volatile bool gOledDim = false;
 volatile bool gDeviceFlipped = false;
 volatile bool gUpdateLeftScreen = true;
+volatile bool gUpdateRightScreen = true;
 bool gFlashRightScreen = false;
 bool gFlashLeftScreen = false;
 
@@ -183,7 +186,7 @@ enum Cursor {
     CursorSelectOffset,
     CursorSelectSensor,
     CursorSelectFlipDevice,
-    CursorViewBmpTemp,
+    CursorViewSensorTemp,
     CursorViewBatteryLevel,
     cNumberOfCursorModes }
     gCursor = CursorSelectHeading;
@@ -233,7 +236,7 @@ volatile bool  gLeftRotaryFineTuningPress;
 volatile bool  gDisableLeftRotaryProcessing; //we disable knob processing right after the screen changes pages until the button is released
 
 //Error handling variables
-bool eBMP180Failed;
+bool ePressureSensorFailed;
 
 //////////////////////////////////////////////////////////////////////////
 void setup() {
@@ -246,7 +249,7 @@ void setup() {
   initializeRotaryKnobs();
   initializePiracyCheck();
   initializeValuesFromEeprom();
-  initializeBmp180Sensor();
+  initializePressureSensor();
   initializeBuzzer();
   updateBatteryLevel();
   delay(1200); //delay for splash screen (to see version number)
@@ -462,8 +465,8 @@ void initializePiracyCheck() {
 }
 
 //////////////////////////////////////////////////////////////////////////
-void initializeBmp180Sensor() {
-  eBMP180Failed = !gSensor.begin();
+void initializePressureSensor() {
+  ePressureSensorFailed = !gSensor.begin();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -579,13 +582,13 @@ void initializeBuzzer() {
 //////////////////////////////////////////////////////////////////////////
 void loop() {
   if (millis() > cOneSecondBeforeOverflow) { //this handles the extremely rare case (every ~50 days of uptime) that the clock overflows
-    gNextSensorBeginCycleTs = gNextSensorReadyTs = gNextBuzzTs = 0; //reset timing
+    gNextSensorBeginCycleTs = gNextSensorReadyTs = gNextBuzzTs = 0; //reset timing //TODO add any other timing variables here? Need to check...
     delay(cOneSecond); //we take a 1 second frozen penalty for handling this extremely rare situation
     return; //return so that we grab a new currentTime
   }
 
-  if (gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() >= gNextSensorReadyTs) {
-    handleBmp180Sensor();
+  if (gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() >= gNextSensorReadyTs && gSensorMode != SensorModeOff) {
+    handlePressureSensor();
   }
 
   //check & handle long-press of left rotary knob
@@ -598,6 +601,7 @@ void loop() {
     handleRightRotaryLongPress();
   }
 
+  //if the left screen has been inactive for too long on a non-priority screen, go back to the heading screen
   if (gCursor > CursorSelectTimer && millis() - gLastRotaryActionTs >= cTenSeconds) {
     gCursor = CursorSelectHeading;
     gUpdateLeftScreen = true;
@@ -617,8 +621,8 @@ void loop() {
 }
 
 //////////////////////////////////////////////////////////////////////////
-void handleBmp180Sensor() {
-  if (!eBMP180Failed) {
+void handlePressureSensor() {
+  if (!ePressureSensorFailed) {
     switch (gSensorProcessStateInt) {
       
       
@@ -627,7 +631,7 @@ void handleBmp180Sensor() {
       gSensorStatusChar = gSensor.startTemperature();
       gNextSensorReadyTs = millis() + gSensorStatusChar; //sensor tells us when it's ready for the next step
       if (gSensorStatusChar == 0) {
-        eBMP180Failed = true;
+        ePressureSensorFailed = true;
       }
       break;
       
@@ -636,7 +640,7 @@ void handleBmp180Sensor() {
       gSensorStatusChar = gSensor.getTemperature(gSensorTemperatureDouble);
       gNextSensorReadyTs = millis(); //ready for the next step immediately
       if (gSensorStatusChar == 0) {
-        eBMP180Failed = true;
+        ePressureSensorFailed = true;
       }
       break;
       
@@ -645,7 +649,7 @@ void handleBmp180Sensor() {
       gSensorStatusChar = gSensor.startPressure(cBmp180Quality);
       gNextSensorReadyTs = millis() + gSensorStatusChar;//sensor tells us when it's ready for the next step
       if (gSensorStatusChar == 0) {
-        eBMP180Failed = true;
+        ePressureSensorFailed = true;
       }
       break;
       
@@ -654,13 +658,14 @@ void handleBmp180Sensor() {
       gNextSensorReadyTs = gNextSensorBeginCycleTs; //we'll start the process over again according to the sensor rate we defined in the constants section
       gSensorStatusChar = gSensor.getPressure(gSensorPressureDouble, gSensorTemperatureDouble);
       if (gSensorStatusChar == 0) {
-        eBMP180Failed = true;
+        ePressureSensorFailed = true;
       }
       else { //only update the true altitude if the pressure reading was valid
         gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
+        gUpdateRightScreen = true;
       }
     }
-    if (eBMP180Failed) {
+    if (ePressureSensorFailed) {
       gSensorProcessStateInt = 0;
     }
     else {
@@ -781,6 +786,7 @@ void handleLeftRotaryMovement(int increment) {
       }
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
+      gUpdateRightScreen = true; //we have to also update the right screen in this case (both screens need update)
       break;
     
     case CursorSelectOffset:
@@ -796,6 +802,7 @@ void handleLeftRotaryMovement(int increment) {
       }
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
+      gUpdateRightScreen = true; //we have to also update the right screen in this case (both screens need update)
       break;
 
     case CursorSelectFlipDevice:
@@ -807,10 +814,11 @@ void handleLeftRotaryMovement(int increment) {
       }
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
+      gUpdateRightScreen = true; //we have to also update the right screen in this case (both screens need update)
       break;
 
     case CursorViewMinimums:
-    case CursorViewBmpTemp:
+    case CursorViewSensorTemp:
     case CursorViewBatteryLevel:
       break; //do nothing for these modes, display only
     
@@ -883,6 +891,8 @@ void handleRightRotary(int rotaryButton, int rotaryDt, int rotaryClk) {
     handleRightRotaryMovement(gRightRotaryDirection / cRotaryStates);
     gRightRotaryDirection = 0;
   }
+
+  gUpdateRightScreen = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -942,6 +952,7 @@ void handleRightRotaryLongPress() {
   else { //else, we're below 18k, so round to the nearest 100ft (cAltitudeSelectIncrement) of our true altitude
     gSelectedAltitudeLong = roundNumber(gTrueAltitudeDouble, cAltitudeSelectIncrement);
   }
+  gUpdateRightScreen = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1080,8 +1091,8 @@ void handleBuzzer() {
 
     case AlarmDisabled:
     {
-      if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime || eBMP180Failed) {
-        //if alarm disabled or BMP180 failed, do nothing
+      if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime || ePressureSensorFailed) {
+        //if alarm disabled or pressure sensor failed, do nothing
       }
       else if (gSensorMode != SensorModeOff && gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
         gAlarmModeEnum = DetermineAlarmState;
@@ -1105,7 +1116,7 @@ void handleBuzzer() {
         gFlashRightScreen = false;
         gBuzzCountInt = 0;
       }
-      else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || eBMP180Failed) {
+      else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || ePressureSensorFailed) {
         gAlarmModeEnum = AlarmDisabled;
         noTone(cBuzzPin); //stop the buzzer
         gFlashRightScreen = false;
@@ -1133,10 +1144,6 @@ void handleBuzzer() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleDisplay() {
-  if (gTimerStartTs != 0 || gCursor == CursorViewMinimums || gCursor == CursorViewBmpTemp || gCursor == CursorViewBatteryLevel) { //always update the left screen under these conditions
-    gUpdateLeftScreen = true;
-  }
-
   if (gDeviceFlipped) {
     if (gUpdateLeftScreen) {
       gUpdateLeftScreen = false;
@@ -1144,9 +1151,12 @@ void handleDisplay() {
       digitalWrite(cPinRightDisplayControl, CONTROL_ON);
       drawLeftScreen();
     }
-    digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
-    digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
-    drawRightScreen();
+    if (gUpdateRightScreen) {
+      gUpdateRightScreen = false;
+      digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
+      digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
+      drawRightScreen();
+    }
   }
   else {
     if (gUpdateLeftScreen) {
@@ -1155,9 +1165,16 @@ void handleDisplay() {
       digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
       drawLeftScreen();
     }
-    digitalWrite(cPinLeftDisplayControl, CONTROL_OFF);
-    digitalWrite(cPinRightDisplayControl, CONTROL_ON);
-    drawRightScreen();
+    if (gUpdateRightScreen) {
+      gUpdateRightScreen = false;
+      digitalWrite(cPinLeftDisplayControl, CONTROL_OFF);
+      digitalWrite(cPinRightDisplayControl, CONTROL_ON);
+      drawRightScreen();
+    }
+  }
+
+  if (gTimerStartTs != 0) { //always update the left screen when timer is running
+    gUpdateLeftScreen = true;
   }
 }
 
@@ -1216,7 +1233,12 @@ void drawLeftScreen() {
     {
       sprintf(gDisplayTopContent, "%s", "Minimums");
       long altitudeDifference = gTrueAltitudeDouble - gSelectedAltitudeLong;
-      if (gSensorMode != SensorModeOff) {
+      if (ePressureSensorFailed) {
+        gOled.setTextSize(2);
+        gOled.setCursor(1, cReadoutTextYpos + 7);
+        gOled.print("Failed");
+      }
+      else if (gSensorMode != SensorModeOff) {
         if (gClimbFlag) {
           gOled.setTextSize(2);
           gOled.setCursor(1, cReadoutTextYpos + 7);
@@ -1241,6 +1263,7 @@ void drawLeftScreen() {
         gOled.setCursor(1, cReadoutTextYpos + 7);
         gOled.print("Sensor Off");
       }
+      gUpdateLeftScreen = true; //always update the left screen when in CursorViewMinimums mode
       break;
     }
 
@@ -1293,7 +1316,7 @@ void drawLeftScreen() {
       sprintf(gDisplayBottomContent, "UP%c", (char)(24));
       break;
 
-    case CursorViewBmpTemp:
+    case CursorViewSensorTemp:
     {
       sprintf(gDisplayTopContent, "%s", "Temperature");
       double temperatureFarenheit = gSensorTemperatureDouble * 9 / 5 + 32;
@@ -1306,12 +1329,14 @@ void drawLeftScreen() {
         gOled.setCursor(76, 11);
       }
       gOled.print((char)(247));
+      gUpdateLeftScreen = true; //always update the left screen when in CursorViewSensorTemp mode
       break;
     }
 
     case CursorViewBatteryLevel:
       sprintf(gDisplayTopContent, "%s", "Battery");
       sprintf(gDisplayBottomContent, "%d%%", gBatteryLevel);
+      gUpdateLeftScreen = true; //always update the left screen when in CursorViewBatteryLevel mode
       break;
   }
   
@@ -1352,7 +1377,7 @@ void drawRightScreen() {
   long tempSelectedAltitude = gSelectedAltitudeLong; //doing this here because it's used inside of 2 scopes
 
   //show the sensor true altitude in top-right corner, show altitude count-down in top-left corner
-  if (eBMP180Failed) { //if there's a sensor error, the top line should be the error message
+  if (ePressureSensorFailed) { //if there's a sensor error, the top line should be the error message
     sprintf(gDisplayTopContent, "%6s", "FAIL");
   }
   else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
