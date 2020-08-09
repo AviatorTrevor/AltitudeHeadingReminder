@@ -6,9 +6,6 @@ Hardware device to remind pilots of assigned headings & altitudes. Also has buzz
 to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
-*implement dual OLED displays
-  *multiplexer or alternative method
-  *test flash/invert screen when alerting
 *adjust pin mapping for PCB board layout
 *test sleeping
 *interrupts causing an interrupt to beeping noises
@@ -603,6 +600,7 @@ void loop() {
 
   if (gCursor > CursorSelectTimer && millis() - gLastRotaryActionTs >= cTenSeconds) {
     gCursor = CursorSelectHeading;
+    gUpdateLeftScreen = true;
   }
 
   //Update battery level
