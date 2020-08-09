@@ -29,7 +29,6 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 *2400
 *4100 & 4200 alternating?
 */
-unsigned long gTemp;
 #include <EEPROM.h>
 #include <SFE_BMP180.h>
 #include <Wire.h>
@@ -170,6 +169,7 @@ volatile unsigned long gLastRotaryActionTs;
 Custom_SSD1306 gOled(cOledWidth, cOledHeight, &Wire, cOledReset);
 volatile bool gOledDim = false;
 volatile bool gDeviceFlipped = false;
+volatile bool gUpdateLeftScreen = true;
 bool gFlashRightScreen = false;
 bool gFlashLeftScreen = false;
 
@@ -724,6 +724,8 @@ void handleLeftRotary(int rotaryButton, int rotaryDt, int rotaryClk) {
     handleLeftRotaryMovement(gLeftRotaryDirection / cRotaryStates);
     gLeftRotaryDirection = 0;
   }
+
+  gUpdateLeftScreen = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -840,6 +842,8 @@ void handleLeftRotaryLongPress() {
   else if (gSelectedHeadingInt == 111 && gSelectedAltitudeLong == -1500) { //magic numbers to reset EEPROM
     initializeDefaultEeprom();
   }
+
+  gUpdateLeftScreen = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1131,18 +1135,28 @@ void handleBuzzer() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleDisplay() {
+  if (gTimerStartTs != 0 || gCursor == CursorViewMinimums || gCursor == CursorViewBmpTemp || gCursor == CursorViewBatteryLevel) { //always update the left screen under these conditions
+    gUpdateLeftScreen = true;
+  }
+
   if (gDeviceFlipped) {
-    digitalWrite(cPinLeftDisplayControl, CONTROL_OFF);
-    digitalWrite(cPinRightDisplayControl, CONTROL_ON);
-    drawLeftScreen();
+    if (gUpdateLeftScreen) {
+      gUpdateLeftScreen = false;
+      digitalWrite(cPinLeftDisplayControl, CONTROL_OFF);
+      digitalWrite(cPinRightDisplayControl, CONTROL_ON);
+      drawLeftScreen();
+    }
     digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
     digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
     drawRightScreen();
   }
   else {
-    digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
-    digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
-    drawLeftScreen();
+    if (gUpdateLeftScreen) {
+      gUpdateLeftScreen = false;
+      digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
+      digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
+      drawLeftScreen();
+    }
     digitalWrite(cPinLeftDisplayControl, CONTROL_OFF);
     digitalWrite(cPinRightDisplayControl, CONTROL_ON);
     drawRightScreen();
@@ -1314,11 +1328,6 @@ void drawLeftScreen() {
   }
 
   gOled.display();
-  /*gOled.clearDisplay();
-  gOled.setTextSize(2);
-  gOled.print(millis() - gTemp);
-  gOled.display();
-  gTemp = millis();*/
 }
 
 //////////////////////////////////////////////////////////////////////////
