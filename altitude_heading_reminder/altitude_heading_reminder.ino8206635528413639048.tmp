@@ -1358,10 +1358,6 @@ void drawLeftScreen() {
           gOled.setCursor(76, 11);
         }
         gOled.print((char)(247));
-
-        gOled.setTextSize(cReadoutTextSize);
-        gOled.setCursor(1, cReadoutTextYpos);
-        gOled.print(gDisplayBottomContent);
       }
       break;
     }
@@ -1377,7 +1373,7 @@ void drawLeftScreen() {
   gOled.setCursor(1, cLabelTextYpos);
   gOled.print(gDisplayTopContent);
 
-  if (gCursor != CursorViewMinimums && gCursor != CursorViewSensorTemp) {
+  if (gCursor != CursorViewMinimums) {
     gOled.setTextSize(cReadoutTextSize);
     gOled.setCursor(1, cReadoutTextYpos);
     gOled.print(gDisplayBottomContent);
@@ -1413,7 +1409,7 @@ void drawRightScreen() {
   if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
     sprintf(gDisplayTopContent, "%6s", "OFF");
     gOled.setTextSize(cLabelTextSize);
-    gOled.setCursor(92, cLabelTextYpos);
+    gOled.setCursor(70, cLabelTextYpos);
     gOled.print(gDisplayTopContent);
   }
   else if (ePressureSensorFailed) { //if there's a sensor error, the top line should be the error message
