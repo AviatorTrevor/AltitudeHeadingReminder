@@ -34,7 +34,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #include <Custom_GFX.h>
 #include <Custom_SSD1306.h>
 
-//#define DEBUG //TODO remove
+#define DEBUG //TODO remove
 
 #define cAppVersion                    "1.0" //[HardwareConfigOrMajorRedesign].[SoftwareRelease]
 #define cAppCodeNumberOfDigits         6
@@ -632,6 +632,10 @@ void handlePressureSensor() {
       gNextSensorReadyTs = millis() + gSensorStatusChar; //sensor tells us when it's ready for the next step
       if (gSensorStatusChar == 0) {
         ePressureSensorFailed = true;
+        gUpdateRightScreen = true;
+        if (gCursor == CursorViewMinimums || gCursor == CursorViewSensorTemp) {
+          gUpdateLeftScreen = true;
+        }
       }
       break;
       
@@ -641,6 +645,10 @@ void handlePressureSensor() {
       gNextSensorReadyTs = millis(); //ready for the next step immediately
       if (gSensorStatusChar == 0) {
         ePressureSensorFailed = true;
+        gUpdateRightScreen = true;
+        if (gCursor == CursorViewMinimums || gCursor == CursorViewSensorTemp) {
+          gUpdateLeftScreen = true;
+        }
       }
       break;
       
@@ -650,6 +658,10 @@ void handlePressureSensor() {
       gNextSensorReadyTs = millis() + gSensorStatusChar;//sensor tells us when it's ready for the next step
       if (gSensorStatusChar == 0) {
         ePressureSensorFailed = true;
+        gUpdateRightScreen = true;
+        if (gCursor == CursorViewMinimums || gCursor == CursorViewSensorTemp) {
+          gUpdateLeftScreen = true;
+        }
       }
       break;
       
@@ -659,6 +671,10 @@ void handlePressureSensor() {
       gSensorStatusChar = gSensor.getPressure(gSensorPressureDouble, gSensorTemperatureDouble);
       if (gSensorStatusChar == 0) {
         ePressureSensorFailed = true;
+        gUpdateRightScreen = true;
+        if (gCursor == CursorViewMinimums || gCursor == CursorViewSensorTemp) {
+          gUpdateLeftScreen = true;
+        }
       }
       else { //only update the true altitude if the pressure reading was valid
         gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
@@ -1385,6 +1401,7 @@ void drawRightScreen() {
   //show the sensor true altitude in top-right corner, show altitude count-down in top-left corner
   if (ePressureSensorFailed) { //if there's a sensor error, the top line should be the error message
     sprintf(gDisplayTopContent, "%6s", "FAIL");
+    //TODO bizarre behavior. value is true, but it's not entering the if-statement
   }
   else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || gTrueAltitudeDouble > cHighestAltitudeAlert + cAlarm200ToGo) {
     sprintf(gDisplayTopContent, "%6s", "OFF");
