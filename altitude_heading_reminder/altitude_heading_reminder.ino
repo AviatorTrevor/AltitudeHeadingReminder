@@ -663,6 +663,9 @@ void handlePressureSensor() {
       else { //only update the true altitude if the pressure reading was valid
         gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
         gUpdateRightScreen = true;
+        if (gCursor == CursorViewMinimums) {
+          gUpdateLeftScreen = true;
+        }
       }
     }
     if (ePressureSensorFailed) {
@@ -1173,7 +1176,8 @@ void handleDisplay() {
     }
   }
 
-  if (gTimerStartTs != 0) { //always update the left screen when timer is running
+  //always update the left screen once a second when timer is running. I am giving it a 70 millisecond window at the beginning of each second to allow updates
+  if (gTimerStartTs != 0 && (millis() - gTimerStartTs) % 1000 < 70) {
     gUpdateLeftScreen = true;
   }
 }
@@ -1263,7 +1267,6 @@ void drawLeftScreen() {
         gOled.setCursor(1, cReadoutTextYpos + 7);
         gOled.print("Sensor Off");
       }
-      gUpdateLeftScreen = true; //always update the left screen when in CursorViewMinimums mode
       break;
     }
 
