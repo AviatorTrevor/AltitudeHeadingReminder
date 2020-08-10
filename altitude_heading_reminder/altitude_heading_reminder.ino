@@ -663,7 +663,7 @@ void handlePressureSensor() {
       else { //only update the true altitude if the pressure reading was valid
         gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
         gUpdateRightScreen = true;
-        if (gCursor == CursorViewMinimums) {
+        if (gCursor == CursorViewMinimums || gCursor == CursorViewSensorTemp) {
           gUpdateLeftScreen = true;
         }
       }
@@ -1336,7 +1336,6 @@ void drawLeftScreen() {
         gOled.setCursor(76, 11);
       }
       gOled.print((char)(247));
-      gUpdateLeftScreen = true; //always update the left screen when in CursorViewSensorTemp mode
       break;
     }
 
