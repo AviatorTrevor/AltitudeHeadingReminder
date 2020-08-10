@@ -827,6 +827,7 @@ void handleLeftRotaryMovement(int increment) {
     
     default:
       println("Unexpected default case for handling left rotary knob rotation");
+      break;
   }
 }
 
@@ -1040,6 +1041,7 @@ void handleBuzzer() {
           noTone(cBuzzPin);
           gFlashRightScreen = false;
         }
+        gUpdateRightScreen = true;
       }
       break;
     }
@@ -1067,6 +1069,7 @@ void handleBuzzer() {
           noTone(cBuzzPin);
           gFlashLeftScreen = false;
         }
+        gUpdateLeftScreen = true;
       }
       break;
     }
@@ -1089,6 +1092,7 @@ void handleBuzzer() {
           noTone(cBuzzPin);
           gFlashRightScreen = false;
         }
+        gUpdateRightScreen = true;
       }
       break;
 
