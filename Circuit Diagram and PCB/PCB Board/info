@@ -4,7 +4,7 @@
   "name": "AltitudeHeadingReminder",
   "content": "",
   "created_at": "2020-07-07 22:56:29",
-  "updated_at": "2020-08-09 22:46:54",
+  "updated_at": "2020-08-20 00:23:09",
   "stick": "",
   "documents": [
     {
@@ -21,27 +21,25 @@
         "f5fb5a24e9edc515352eb800d4f925df": 1,
         "303ea8960e30b8ac9e63b17d909c778d": 1,
         "0806368f73e1232ca543f14a515367b4": 1,
-        "4439ff8d4269ac30d55af3439a30f0ec": 4,
         "f5b1d9403e49471cab43bc5a1bec336f": 2,
         "93b44d62463c4c9c82dd7108c8ee7d73": 1,
         "a052559478a14ee2b9e3514bee4ff72d": 2,
         "c593732d1a97474eaf93a564ed29a212": 2,
-        "212e4e7ac253e44d17caceb02663d93c": 3,
+        "212e4e7ac253e44d17caceb02663d93c": 2,
         "404aa9221ff94de597b8734806e7c74f": 2,
         "169fb5a2c8404ae99fcb660681a2e6b4": 1,
         "9eddb0dc64ee9d911fa2d70653f1d71f": 1,
-        "916f0d116494aa802f5bb662d303d039": 2,
-        "0162c93b05c079a4f063ffb73f50c063": 5,
+        "916f0d116494aa802f5bb662d303d039": 1,
+        "0162c93b05c079a4f063ffb73f50c063": 3,
         "2d1520ae0f6cf0b6d95e17d5112228e7": 2,
         "ca94110f4544769d36adda4b0515e409": 5,
         "fffefb2a47c50d7f390a5f5cfb2b4d4d": 1,
         "3e0fb0c806d434e4d3ee93b3d2cd8f1d": 2,
         "f9320447cefe8840d4d854b157da9204": 1,
-        "1f07e882c2b742e0acdb06ef77f285a2": 1,
         "8fe851a670ed419e91bb3fe99231e0a1": 1,
-        "20ef06c5d818a5ba5fe6c83cb3e1163d": 1,
-        "6f76d1cf93cad23f1fcbeb26ffcc17f8": 1,
-        "ddd13dcccf0fd46ce54b9f3e6cd8d705": 1
+        "22afc3b6b9f5465fab92a825dd343145": 1,
+        "6c2bedbae9fbd358441dfb9948555b9c": 5,
+        "b115fc3265004bdeac1e77a99429dfa1": 1
       },
       "BOM": [
         [
@@ -50,19 +48,6 @@
           "Package",
           "Components",
           "CustomPara"
-        ],
-        [
-          "SS34",
-          1,
-          "SMA(DO-214AC)",
-          "D1",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer Part": "SS34",
-            "BOM_Supplier Part": "C8678",
-            "puuid": "ed2608fb878c01f3500a9ec0a517fd5d",
-            "uuid": ""
-          }
         ],
         [
           "MT3608",
@@ -93,17 +78,6 @@
           }
         ],
         [
-          "Toggle Switch",
-          1,
-          "SW5-2.0-8.8X4.4X4.7MM-90D",
-          "SW1",
-          {
-            "BOM_Manufacturer Part": "3P-2.0-90D-REINFORCE;",
-            "puuid": "5b2021ef46f644b2b963a971ad0994bd",
-            "uuid": ""
-          }
-        ],
-        [
           "FS312F-G",
           1,
           "SOT-23-6",
@@ -118,24 +92,23 @@
           }
         ],
         [
-          "TPS63036YFGR",
+          "SS34",
           1,
-          "DSBGA-8_L1.8-W1.1-R2-C4-P0.40-BR",
-          "U7",
+          "SMA(DO-214AC)",
+          "D1",
           {
             "BOM_Supplier": "LCSC",
-            "BOM_Supplier Part": "C283955",
-            "BOM_Manufacturer": "Texas Instruments",
-            "BOM_Manufacturer Part": "TPS63036YFGR",
-            "puuid": "08ddd6cb5326415bbb83541cafc3e4bf",
-            "uuid": "1f07e882c2b742e0acdb06ef77f285a2"
+            "BOM_Manufacturer Part": "SS34",
+            "BOM_Supplier Part": "C8678",
+            "puuid": "ed2608fb878c01f3500a9ec0a517fd5d",
+            "uuid": ""
           }
         ],
         [
           "2K",
           2,
           "R0402",
-          "R3,R4",
+          "R4,R3",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer Part": "0402WGF2001TCE",
@@ -161,18 +134,18 @@
           }
         ],
         [
-          "5.6K",
-          1,
+          "10K",
+          5,
           "R0402",
-          "R14",
+          "R11,R12,R17,R8,R9",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "UniOhm",
-            "BOM_Manufacturer Part": "0402WGF5601TCE",
+            "BOM_Manufacturer Part": "0402WGF1002TCE",
             "BOM_LCSC Assembly": "Yes",
-            "BOM_Supplier Part": "C25908",
+            "BOM_Supplier Part": "C25744",
             "puuid": "cea456c24ca24165b176bcf9114a7b29",
-            "uuid": "6f76d1cf93cad23f1fcbeb26ffcc17f8"
+            "uuid": "6c2bedbae9fbd358441dfb9948555b9c"
           }
         ],
         [
@@ -205,18 +178,17 @@
           }
         ],
         [
-          "1.5uH",
+          "SSSS916400",
           1,
-          "L0805",
-          "L2",
+          "SW-TH_SSSS916400",
+          "SW1",
           {
             "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer Part": "MLP2016S1R5MT0S1",
-            "BOM_Manufacturer": "TDK",
-            "BOM_Supplier Part": "C76794",
-            "BOM_LCSC Assembly": "Yes",
-            "puuid": "8575d4a67a3f4c179607f0acaae4f7e7",
-            "uuid": "20ef06c5d818a5ba5fe6c83cb3e1163d"
+            "BOM_Supplier Part": "C129102",
+            "BOM_Manufacturer": "ALPS Electric",
+            "BOM_Manufacturer Part": "SSSS916400",
+            "puuid": "a3d5c2dda4a34d6d9de93d8e06f3e188",
+            "uuid": "22afc3b6b9f5465fab92a825dd343145"
           }
         ],
         [
@@ -235,9 +207,9 @@
         ],
         [
           "1K",
-          5,
+          3,
           "R0402",
-          "R1,R2,R7,R13,R15",
+          "R2,R1,R7",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "UniOhm",
@@ -264,9 +236,9 @@
         ],
         [
           "10uF",
-          3,
+          2,
           "CAP-SMD_L3.2-W1.6-R-RD",
-          "C1,C10,C11",
+          "C1,C11",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "AVX",
@@ -307,7 +279,7 @@
           "BAT+1",
           1,
           "HDR-M-2.54_1X1",
-          "J1",
+          "B+",
           {
             "BOM_Supplier Part": "C81276",
             "BOM_Supplier": "LCSC",
@@ -320,7 +292,7 @@
           "BAT-1",
           1,
           "HDR-M-2.54_1X1",
-          "J2",
+          "B-",
           {
             "BOM_Supplier Part": "C81276",
             "BOM_Supplier": "LCSC",
@@ -331,9 +303,9 @@
         ],
         [
           "100",
-          2,
+          1,
           "R1206",
-          "R5,R16",
+          "R5",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "UniOhm",
@@ -342,21 +314,6 @@
             "BOM_Supplier Part": "C17901",
             "puuid": "0610c91ea88544ecbdf889657d55abcb",
             "uuid": "916f0d116494aa802f5bb662d303d039"
-          }
-        ],
-        [
-          "10K",
-          4,
-          "R1206",
-          "R8,R9,R11,R12",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "UniOhm",
-            "BOM_Manufacturer Part": "1206W4F1002T5E",
-            "BOM_LCSC Assembly": "Yes",
-            "BOM_Supplier Part": "C17902",
-            "puuid": "0610c91ea88544ecbdf889657d55abcb",
-            "uuid": "4439ff8d4269ac30d55af3439a30f0ec"
           }
         ],
         [
@@ -375,20 +332,6 @@
           }
         ],
         [
-          "Left Rotary",
-          1,
-          "HDR-M-2.54_1X5",
-          "J6",
-          {
-            "BOM_Supplier Part": "C358687",
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "",
-            "BOM_Manufacturer Part": "",
-            "puuid": "108969f8d9834a9ea23bcec2d43a66e4",
-            "uuid": "a052559478a14ee2b9e3514bee4ff72d"
-          }
-        ],
-        [
           "Right Rotary",
           1,
           "HDR-M-2.54_1X5",
@@ -403,10 +346,38 @@
           }
         ],
         [
+          "Left Rotary",
+          1,
+          "HDR-M-2.54_1X5",
+          "J6",
+          {
+            "BOM_Supplier Part": "C358687",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "108969f8d9834a9ea23bcec2d43a66e4",
+            "uuid": "a052559478a14ee2b9e3514bee4ff72d"
+          }
+        ],
+        [
+          "1K",
+          1,
+          "AXIAL-0.3",
+          "R13",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C119870",
+            "BOM_Manufacturer": "Chian Chia Elec",
+            "BOM_Manufacturer Part": "-",
+            "puuid": "b9efc06d0fb742f99a478d48de211eb9",
+            "uuid": "b115fc3265004bdeac1e77a99429dfa1"
+          }
+        ],
+        [
           "22uF",
           2,
           "CAP-SMD_L3.2-W1.6-R-RD",
-          "C4,C3",
+          "C3,C4",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "CEC",
@@ -421,7 +392,7 @@
           "100nF",
           5,
           "C0402",
-          "C8,C9,C5,C6,C2",
+          "C6,C5,C2,C9,C8",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer Part": "CL05B104KO5NNNC",
@@ -448,25 +419,10 @@
           }
         ],
         [
-          "10pF",
-          1,
-          "C0603",
-          "C7",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer Part": "CL10C100JB8NNNC",
-            "BOM_Manufacturer": "SAMSUNG",
-            "BOM_LCSC Assembly": "Yes",
-            "BOM_Supplier Part": "C1634",
-            "puuid": "9796ce52d844439588f46357e429be00",
-            "uuid": "ddd13dcccf0fd46ce54b9f3e6cd8d705"
-          }
-        ],
-        [
-          "Display 1",
+          "Display 2",
           1,
           "HDR-M-2.54_1X4",
-          "J3",
+          "J4",
           {
             "BOM_Supplier Part": "C124378",
             "BOM_Supplier": "LCSC",
@@ -477,10 +433,10 @@
           }
         ],
         [
-          "Display 2",
+          "Display 1",
           1,
           "HDR-M-2.54_1X4",
-          "J4",
+          "J3",
           {
             "BOM_Supplier Part": "C124378",
             "BOM_Supplier": "LCSC",
@@ -551,11 +507,51 @@
           }
         ]
       ],
-      "updateTime": 1597038414,
+      "updateTime": 1597878203,
       "createTime": 1594192792,
       "histories": [],
       "created_at": "2020-07-08 00:19:52",
-      "updated_at": "2020-08-09 22:46:54"
+      "updated_at": "2020-08-19 16:03:23"
+    },
+    {
+      "uuid": "20a312a855db8bf5c635c113bc2a264b",
+      "puuid": "0dd7d562cfd39c06789fe5bb33d02b26",
+      "title": "AltitudeHeadingReminder_PCB",
+      "filename": "AltitudeHeadingReminder_PCB.json",
+      "description": "",
+      "docType": "3",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "19c77e72422b43b59c26b9fa67af5de4": 2,
+        "cea456c24ca24165b176bcf9114a7b29": 11,
+        "ed2608fb878c01f3500a9ec0a517fd5d": 1,
+        "c9505f60178b4b09a38c43ffc0b7a6ef": 3,
+        "6924b36489de4921bb29ca14bf27c33f": 2,
+        "619489e674074de888fe8dd8f6b9799e": 1,
+        "8575d4a67a3f4c179607f0acaae4f7e7": 1,
+        "a3d5c2dda4a34d6d9de93d8e06f3e188": 1,
+        "df3ca37cb13d499cb713e9aa6fdd0c7b": 1,
+        "cc33f00711a541bfbe7fb0b164318c1f": 1,
+        "61ca4390f2284e11848b2ab1e8ce9766": 4,
+        "95b694801b43434aaa24ff5c53669890": 1,
+        "50dc3b6111d549ddb6686d77ab1ebdd8": 2,
+        "0610c91ea88544ecbdf889657d55abcb": 1,
+        "108969f8d9834a9ea23bcec2d43a66e4": 2,
+        "f8eca159cd18407f9d5df374a1c2badf": 5,
+        "715ac655327e4ef6b01e73dc26df3def": 1,
+        "282f7786cb6144d097ae00194c3e3fb3": 2,
+        "7568fee05bc44581b2c32625ae15b3f8": 1,
+        "9c6dab9dc91e4b929269cb3454d6d713": 1,
+        "e8901072611c4b309f15829075c906c5": 1,
+        "b9efc06d0fb742f99a478d48de211eb9": 1
+      },
+      "BOM": [],
+      "updateTime": 1597908189,
+      "createTime": 1597046156,
+      "histories": [],
+      "created_at": "2020-08-10 00:55:56",
+      "updated_at": "2020-08-20 00:23:09"
     }
   ],
   "sort": [
@@ -565,5 +561,5 @@
   "title": "AltitudeHeadingReminder",
   "foldername": "AltitudeHeadingReminder",
   "schfilename": "AltitudeHeadingReminder.json",
-  "schfilemtime": 1597038414444
+  "schfilemtime": 1597878204040
 }

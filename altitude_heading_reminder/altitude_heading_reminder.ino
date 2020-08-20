@@ -171,7 +171,6 @@ volatile bool gDeviceFlipped = false;
 volatile bool gUpdateLeftScreen = true;
 volatile bool gUpdateRightScreen = true;
 bool gFlashRightScreen = false;
-bool gFlashLeftScreen = false;
 
 char gDisplayTopContent[20];
 char gDisplayBottomContent[10];
@@ -1072,20 +1071,16 @@ void handleBuzzer() {
         gBuzzCountInt--;
         if (gBuzzCountInt != 0 && gBuzzCountInt % 2 == 0) { //every other cycle, change frequency
           tone(cBuzzPin, cBuzzFrequencyA);
-          gFlashLeftScreen = true;
           gNextBuzzTs = millis() + cMinimumsBuzzOnFreqADuration;
         }
         else if (gBuzzCountInt % 2 == 1) {
           tone(cBuzzPin, cBuzzFrequencyB);
-          gFlashLeftScreen = true;
           gNextBuzzTs = millis() + cMinimumsBuzzOnFreqBDuration;
         }
         else {
           gAlarmModeEnum = AlarmDisabled;
           noTone(cBuzzPin);
-          gFlashLeftScreen = false;
         }
-        gUpdateLeftScreen = true;
       }
       break;
     }
@@ -1219,8 +1214,9 @@ void drawLeftScreen() {
   else {
     gOled.dim(false, 255);
   }
-  
-  gOled.invertDisplay(gFlashLeftScreen);
+
+  //logic for turning on the inverted display is in the CursorViewMinimums section of this function
+  gOled.invertDisplay(false);
 
   //If timer is running while not on timer screen, show the timer
   if (gCursor != CursorSelectTimer && gTimerStartTs != 0) {
@@ -1262,11 +1258,18 @@ void drawLeftScreen() {
         gOled.setCursor(1, cReadoutTextYpos + 7);
         gOled.print("Failed");
       }
-      else if (gSensorMode != SensorModeOff) {
-        if (gClimbFlag) {
+      else if (gSensorMode == SensorModeOff) {
+        gOled.setTextSize(2);
+        gOled.setCursor(1, cReadoutTextYpos + 7);
+        gOled.print("Sensor Off");
+      }
+      else {
+        if (altitudeDifference < 0) {
+          sprintf(gDisplayTopContent, "%s", "");
+          gOled.invertDisplay(true);
           gOled.setTextSize(2);
-          gOled.setCursor(1, cReadoutTextYpos + 7);
-          gOled.print("Lower Alt");
+          gOled.setCursor(19, cReadoutTextYpos);
+          gOled.print("MINIMUMS");
         }
         else {
           char* altitudeCountdownReadout = displayNumber(roundNumber(altitudeDifference, cTrueAltitudeRoundToNearestFt));
@@ -1281,11 +1284,6 @@ void drawLeftScreen() {
           gOled.setCursor(104, cReadoutTextYpos + 7);
           gOled.print(cFtLabel);
         }
-      }
-      else {
-        gOled.setTextSize(2);
-        gOled.setCursor(1, cReadoutTextYpos + 7);
-        gOled.print("Sensor Off");
       }
       break;
     }

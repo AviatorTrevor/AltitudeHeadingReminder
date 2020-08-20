@@ -30,11 +30,13 @@ knobSupportWidth = 12 + 2 * knobSupportWallThickness;
 knobSupportHeight = 12.3 + 2 * knobSupportWallThickness;
 knobSupportDepth = 2;
 mountingHoleRadius = 2.78;
-pcbScrewMountHeight = 3;
+mountingHoleX = mainDepth - mainShellThickness - mountingHoleRadius - 3.1;
+pcbScrewMountHeight = 12;
 pcbScrewCylinderRadius = 1.8;
 pcbScrewHoleCylinderRadius = 0.8;
-pcbBoardThickness = 1.6;
-usbSlotWidth = 20;
+pcbBoardThickness = 0.8;
+pcbOffsetFromFront = 19;
+usbSlotWidth = 29;
 usbSlotHeight = 7;
 usbSlotYoffset = pcbScrewMountHeight + pcbBoardThickness;
 
@@ -72,12 +74,12 @@ union() {
     };
     
     //usb cable slot right side
-    translate([7, mainWidth - mainShellThickness, mainShellThickness + usbSlotYoffset]) {
+    translate([screwCylinderRadius * 2, mainWidth - mainShellThickness, mainShellThickness + usbSlotYoffset]) {
       cube([usbSlotWidth, mainShellThickness, usbSlotHeight]);
     };
     
     //bottom mounting hole
-    translate([mainDepth - mainShellThickness - mountingHoleRadius - 13, mainWidth/2, 0]) {
+    translate([mountingHoleX, mainWidth/2, 0]) {
       cylinder(mainShellThickness, mountingHoleRadius, mountingHoleRadius, $fn=cylinderFragments);
     };
     
@@ -175,42 +177,43 @@ union() {
     cube([mainShellThickness, resolution, displayHeight]);
   };
   
-  //PCB center screw/mount
-  difference() {
-    translate([mainDepth - mainShellThickness - pcbScrewCylinderRadius - 2, mainWidth/2, mainShellThickness]) {
-      cylinder(pcbScrewMountHeight, pcbScrewCylinderRadius, pcbScrewCylinderRadius, $fn=cylinderFragments);
-    }; //TODO: this causes warning message about "2-manifold"
-    translate([mainDepth - mainShellThickness - pcbScrewCylinderRadius - 2, mainWidth/2, mainShellThickness]) {
-      cylinder(pcbScrewMountHeight, pcbScrewHoleCylinderRadius, pcbScrewHoleCylinderRadius, $fn=cylinderFragments);
-    };
-  };
   
-  //PCB left side screw/mount
+  //PCB left-front side screw/mount
   difference() {
-    translate([mainDepth/2 + 2, mainShellThickness + pcbScrewCylinderRadius + 2, mainShellThickness]) {
+    translate([mountingHoleX + 3.175, mainWidth/2 - 34.798, mainShellThickness]) {
       cylinder(pcbScrewMountHeight, pcbScrewCylinderRadius, pcbScrewCylinderRadius, $fn=cylinderFragments);
     };
-    translate([mainDepth/2 + 2, mainShellThickness + pcbScrewCylinderRadius + 2, mainShellThickness]) {
-      cylinder(pcbScrewMountHeight, pcbScrewHoleCylinderRadius, pcbScrewHoleCylinderRadius, $fn=cylinderFragments);
-    };
-  };
-  
-  //PCB right-rear side screw/mount
-  difference() {
-    translate([mainShellThickness + pcbScrewCylinderRadius + 2, mainWidth - pcbScrewCylinderRadius - 6, mainShellThickness]) {
-      cylinder(pcbScrewMountHeight, pcbScrewCylinderRadius, pcbScrewCylinderRadius, $fn=cylinderFragments);
-    };
-    translate([mainShellThickness + pcbScrewCylinderRadius + 2, mainWidth - pcbScrewCylinderRadius - 6, mainShellThickness]) {
+    translate([mountingHoleX + 3.175, mainWidth/2 - 34.798, mainShellThickness]) {
       cylinder(pcbScrewMountHeight, pcbScrewHoleCylinderRadius, pcbScrewHoleCylinderRadius, $fn=cylinderFragments);
     };
   };
   
   //PCB right-front side screw/mount
   difference() {
-    translate([mainDepth/2 + 4, mainWidth - mainShellThickness - pcbScrewCylinderRadius - 2, mainShellThickness]) {
+    translate([mountingHoleX + 3.175, mainWidth/2 + 29.337, mainShellThickness]) {
       cylinder(pcbScrewMountHeight, pcbScrewCylinderRadius, pcbScrewCylinderRadius, $fn=cylinderFragments);
     };
-    translate([mainDepth/2 + 4, mainWidth - mainShellThickness - pcbScrewCylinderRadius - 2, mainShellThickness]) {
+    translate([mountingHoleX + 3.175, mainWidth/2 + 29.337, mainShellThickness]) {
+      cylinder(pcbScrewMountHeight, pcbScrewHoleCylinderRadius, pcbScrewHoleCylinderRadius, $fn=cylinderFragments);
+    };
+  };
+  
+  //PCB right-rear side screw/mount
+  difference() {
+    translate([mountingHoleX - 37.592, mainWidth/2 + 22.352, mainShellThickness]) {
+      cylinder(pcbScrewMountHeight, pcbScrewCylinderRadius, pcbScrewCylinderRadius, $fn=cylinderFragments);
+    };
+    translate([mountingHoleX - 37.592, mainWidth/2 + 22.352, mainShellThickness]) {
+      cylinder(pcbScrewMountHeight, pcbScrewHoleCylinderRadius, pcbScrewHoleCylinderRadius, $fn=cylinderFragments);
+    };
+  };
+  
+  //PCB left-rear side screw/mount
+  difference() {
+    translate([mountingHoleX - 37.592, mainWidth/2 - 34.798, mainShellThickness]) {
+      cylinder(pcbScrewMountHeight, pcbScrewCylinderRadius, pcbScrewCylinderRadius, $fn=cylinderFragments);
+    };
+    translate([mountingHoleX - 37.592, mainWidth/2 - 34.798, mainShellThickness]) {
       cylinder(pcbScrewMountHeight, pcbScrewHoleCylinderRadius, pcbScrewHoleCylinderRadius, $fn=cylinderFragments);
     };
   };
