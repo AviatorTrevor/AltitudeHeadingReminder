@@ -2,7 +2,7 @@
 resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
-mainDepth = 50;
+mainDepth = 65;
 mainWidth = 85;
 mainHeight = 40;
 mainShellThickness = 5 * resolution;

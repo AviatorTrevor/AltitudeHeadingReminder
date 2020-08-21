@@ -3,7 +3,7 @@
 resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
-mainDepth = 50;
+mainDepth = 63;
 mainWidth = 85;
 mainHeight = 40;
 mainShellThickness = 5 * resolution;
@@ -30,7 +30,7 @@ knobSupportWidth = 12 + 2 * knobSupportWallThickness;
 knobSupportHeight = 12.3 + 2 * knobSupportWallThickness;
 knobSupportDepth = 2;
 mountingHoleRadius = 2.78;
-mountingHoleX = mainDepth - mainShellThickness - mountingHoleRadius - 3.1;
+mountingHoleX = mainDepth - mainShellThickness - mountingHoleRadius - 16.5;
 pcbScrewMountHeight = 7.5;
 pcbScrewCylinderRadius = 1.8;
 pcbScrewHoleCylinderRadius = 0.8;
@@ -200,10 +200,10 @@ union() {
   
   //PCB right-rear side screw/mount
   difference() {
-    translate([mountingHoleX - 37.592, mainWidth/2 + 22.352, mainShellThickness]) {
+    translate([mountingHoleX - 37.592, mainWidth/2 + 26.92, mainShellThickness]) {
       cylinder(pcbScrewMountHeight, pcbScrewCylinderRadius, pcbScrewCylinderRadius, $fn=cylinderFragments);
     };
-    translate([mountingHoleX - 37.592, mainWidth/2 + 22.352, mainShellThickness]) {
+    translate([mountingHoleX - 37.592, mainWidth/2 + 26.92, mainShellThickness]) {
       cylinder(pcbScrewMountHeight, pcbScrewHoleCylinderRadius, pcbScrewHoleCylinderRadius, $fn=cylinderFragments);
     };
   };

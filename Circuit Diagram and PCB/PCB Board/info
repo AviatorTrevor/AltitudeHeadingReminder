@@ -4,7 +4,7 @@
   "name": "AltitudeHeadingReminder",
   "content": "",
   "created_at": "2020-07-07 22:56:29",
-  "updated_at": "2020-08-20 11:16:40",
+  "updated_at": "2020-08-20 22:34:28",
   "stick": "",
   "documents": [
     {
@@ -16,15 +16,12 @@
       "thumb": "/images/thumb-default.png",
       "components": {
         "fa33d4808b42d46b96893a5da4a98304": 1,
-        "280b7685de874215b63ae54f467162de": 1,
-        "dc0fa062e09a41408c16dbb49b24c67b": 1,
         "f5fb5a24e9edc515352eb800d4f925df": 1,
         "303ea8960e30b8ac9e63b17d909c778d": 1,
         "0806368f73e1232ca543f14a515367b4": 1,
         "f5b1d9403e49471cab43bc5a1bec336f": 2,
         "93b44d62463c4c9c82dd7108c8ee7d73": 1,
         "a052559478a14ee2b9e3514bee4ff72d": 2,
-        "c593732d1a97474eaf93a564ed29a212": 2,
         "212e4e7ac253e44d17caceb02663d93c": 2,
         "404aa9221ff94de597b8734806e7c74f": 2,
         "169fb5a2c8404ae99fcb660681a2e6b4": 1,
@@ -36,10 +33,13 @@
         "fffefb2a47c50d7f390a5f5cfb2b4d4d": 1,
         "3e0fb0c806d434e4d3ee93b3d2cd8f1d": 2,
         "f9320447cefe8840d4d854b157da9204": 1,
-        "8fe851a670ed419e91bb3fe99231e0a1": 1,
         "22afc3b6b9f5465fab92a825dd343145": 1,
-        "6c2bedbae9fbd358441dfb9948555b9c": 5,
-        "b115fc3265004bdeac1e77a99429dfa1": 1
+        "6c2bedbae9fbd358441dfb9948555b9c": 6,
+        "b115fc3265004bdeac1e77a99429dfa1": 1,
+        "c73c917a5efd0eb668693c71350984d5": 2,
+        "b5095166eee442de9c6e0b98deabc931": 1,
+        "72a1f072224748d48af03606ba8f2526": 1,
+        "868011bcb59840aaa82f682a5639957f": 1
       },
       "BOM": [
         [
@@ -123,7 +123,7 @@
           "2N3906",
           2,
           "TO-92-3_L4.9-W3.7-P1.27-L",
-          "Q3,Q4",
+          "Q4,Q3",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "CJ",
@@ -135,9 +135,9 @@
         ],
         [
           "10K",
-          5,
+          6,
           "R0402",
-          "R11,R12,R17,R8,R9",
+          "R12,R9,R14,R17,R8,R11",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "UniOhm",
@@ -146,20 +146,6 @@
             "BOM_Supplier Part": "C25744",
             "puuid": "cea456c24ca24165b176bcf9114a7b29",
             "uuid": "6c2bedbae9fbd358441dfb9948555b9c"
-          }
-        ],
-        [
-          "2N3904TFR",
-          1,
-          "TO-92-3_L4.8-W3.7-P2.54-L",
-          "Q2",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Supplier Part": "C258185",
-            "BOM_Manufacturer": "ON Semicon",
-            "BOM_Manufacturer Part": "2N3904TFR",
-            "puuid": "619489e674074de888fe8dd8f6b9799e",
-            "uuid": "8fe851a670ed419e91bb3fe99231e0a1"
           }
         ],
         [
@@ -192,6 +178,20 @@
           }
         ],
         [
+          "2N3904",
+          1,
+          "TO-92(TO-92-3)",
+          "Q2",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "SEMTECH",
+            "BOM_Manufacturer Part": "2N3904",
+            "BOM_Supplier Part": "C118538",
+            "puuid": "cd3b409a11704b5090bebb894dca3ac7",
+            "uuid": "72a1f072224748d48af03606ba8f2526"
+          }
+        ],
+        [
           "FTDI",
           1,
           "HDR-M-2.54_1X6",
@@ -209,7 +209,7 @@
           "1K",
           3,
           "R0402",
-          "R2,R1,R7",
+          "R7,R2,R1",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "UniOhm",
@@ -238,7 +238,7 @@
           "10uF",
           2,
           "CAP-SMD_L3.2-W1.6-R-RD",
-          "C1,C11",
+          "C11,C1",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "AVX",
@@ -247,17 +247,6 @@
             "BOM_Supplier Part": "C7171",
             "puuid": "61ca4390f2284e11848b2ab1e8ce9766",
             "uuid": "212e4e7ac253e44d17caceb02663d93c"
-          }
-        ],
-        [
-          "Piezo Buzzer",
-          1,
-          "BUZZER-12MM",
-          "SG1",
-          {
-            "BOM_Manufacturer Part": "",
-            "puuid": "95b694801b43434aaa24ff5c53669890",
-            "uuid": "280b7685de874215b63ae54f467162de"
           }
         ],
         [
@@ -276,10 +265,10 @@
           }
         ],
         [
-          "BAT+1",
+          "BAT-1",
           1,
           "HDR-M-2.54_1X1",
-          "B+",
+          "B-",
           {
             "BOM_Supplier Part": "C81276",
             "BOM_Supplier": "LCSC",
@@ -289,10 +278,10 @@
           }
         ],
         [
-          "BAT-1",
+          "BAT+1",
           1,
           "HDR-M-2.54_1X1",
-          "B-",
+          "B+",
           {
             "BOM_Supplier Part": "C81276",
             "BOM_Supplier": "LCSC",
@@ -332,10 +321,25 @@
           }
         ],
         [
-          "Right Rotary",
+          "SPL06-007",
+          1,
+          "SENSOR-SMD_SPL06-007",
+          "U4",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C233787",
+            "BOM_Manufacturer": "Goertek",
+            "BOM_Manufacturer Part": "SPL06-007",
+            "BOM_LCSC Assembly": "Yes",
+            "puuid": "488ee76418a44ca185c0d11e12db2ab7",
+            "uuid": "868011bcb59840aaa82f682a5639957f"
+          }
+        ],
+        [
+          "Left Rotary",
           1,
           "HDR-M-2.54_1X5",
-          "J7",
+          "J6",
           {
             "BOM_Supplier Part": "C358687",
             "BOM_Supplier": "LCSC",
@@ -346,10 +350,10 @@
           }
         ],
         [
-          "Left Rotary",
+          "Right Rotary",
           1,
           "HDR-M-2.54_1X5",
-          "J6",
+          "J7",
           {
             "BOM_Supplier Part": "C358687",
             "BOM_Supplier": "LCSC",
@@ -374,25 +378,36 @@
           }
         ],
         [
+          "PIEZO17MM",
+          1,
+          "PS1740P02E",
+          "LS1",
+          {
+            "BOM_Manufacturer Part": "",
+            "puuid": "a606346ec84544f0a2c68c91dcb4f326",
+            "uuid": "b5095166eee442de9c6e0b98deabc931"
+          }
+        ],
+        [
           "22uF",
           2,
           "CAP-SMD_L3.2-W1.6-R-RD",
-          "C3,C4",
+          "C4,C3",
           {
             "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "CEC",
-            "BOM_Manufacturer Part": "CA45-A-6.3V-22uF-M",
-            "BOM_Supplier Part": "C140378",
+            "BOM_Manufacturer": "AVX",
+            "BOM_Manufacturer Part": "TAJA226K010RNJ",
+            "BOM_Supplier Part": "C11366",
             "BOM_LCSC Assembly": "Yes",
             "puuid": "61ca4390f2284e11848b2ab1e8ce9766",
-            "uuid": "c593732d1a97474eaf93a564ed29a212"
+            "uuid": "c73c917a5efd0eb668693c71350984d5"
           }
         ],
         [
           "100nF",
           5,
           "C0402",
-          "C6,C5,C2,C9,C8",
+          "C8,C5,C2,C9,C6",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer Part": "CL05B104KO5NNNC",
@@ -404,25 +419,10 @@
           }
         ],
         [
-          "BMP280",
-          1,
-          "SENSOR-TH_BMP280-BL",
-          "U4",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "Bosch",
-            "BOM_Manufacturer Part": "BMP280",
-            "BOM_Supplier Part": "C83291",
-            "BOM_LCSC Assembly": "Yes",
-            "puuid": "715ac655327e4ef6b01e73dc26df3def",
-            "uuid": "dc0fa062e09a41408c16dbb49b24c67b"
-          }
-        ],
-        [
-          "Display 2",
+          "Display 1",
           1,
           "HDR-M-2.54_1X4",
-          "J4",
+          "J3",
           {
             "BOM_Supplier Part": "C124378",
             "BOM_Supplier": "LCSC",
@@ -433,10 +433,10 @@
           }
         ],
         [
-          "Display 1",
+          "Display 2",
           1,
           "HDR-M-2.54_1X4",
-          "J3",
+          "J4",
           {
             "BOM_Supplier Part": "C124378",
             "BOM_Supplier": "LCSC",
@@ -507,11 +507,11 @@
           }
         ]
       ],
-      "updateTime": 1597878203,
+      "updateTime": 1597985286,
       "createTime": 1594192792,
       "histories": [],
       "created_at": "2020-07-08 00:19:52",
-      "updated_at": "2020-08-19 16:03:23"
+      "updated_at": "2020-08-20 21:48:06"
     },
     {
       "uuid": "20a312a855db8bf5c635c113bc2a264b",
@@ -523,35 +523,35 @@
       "master": "",
       "thumb": "/images/thumb-default.png",
       "components": {
+        "488ee76418a44ca185c0d11e12db2ab7": 1,
         "19c77e72422b43b59c26b9fa67af5de4": 2,
-        "cea456c24ca24165b176bcf9114a7b29": 11,
+        "cea456c24ca24165b176bcf9114a7b29": 12,
         "ed2608fb878c01f3500a9ec0a517fd5d": 1,
         "c9505f60178b4b09a38c43ffc0b7a6ef": 3,
         "6924b36489de4921bb29ca14bf27c33f": 2,
-        "619489e674074de888fe8dd8f6b9799e": 1,
         "8575d4a67a3f4c179607f0acaae4f7e7": 1,
         "a3d5c2dda4a34d6d9de93d8e06f3e188": 1,
         "df3ca37cb13d499cb713e9aa6fdd0c7b": 1,
         "cc33f00711a541bfbe7fb0b164318c1f": 1,
         "61ca4390f2284e11848b2ab1e8ce9766": 4,
-        "95b694801b43434aaa24ff5c53669890": 1,
         "50dc3b6111d549ddb6686d77ab1ebdd8": 2,
         "0610c91ea88544ecbdf889657d55abcb": 1,
         "108969f8d9834a9ea23bcec2d43a66e4": 2,
         "f8eca159cd18407f9d5df374a1c2badf": 5,
-        "715ac655327e4ef6b01e73dc26df3def": 1,
         "282f7786cb6144d097ae00194c3e3fb3": 2,
         "7568fee05bc44581b2c32625ae15b3f8": 1,
         "9c6dab9dc91e4b929269cb3454d6d713": 1,
         "e8901072611c4b309f15829075c906c5": 1,
-        "b9efc06d0fb742f99a478d48de211eb9": 1
+        "b9efc06d0fb742f99a478d48de211eb9": 1,
+        "a606346ec84544f0a2c68c91dcb4f326": 1,
+        "cd3b409a11704b5090bebb894dca3ac7": 1
       },
       "BOM": [],
-      "updateTime": 1597947400,
+      "updateTime": 1597988068,
       "createTime": 1597046156,
       "histories": [],
       "created_at": "2020-08-10 00:55:56",
-      "updated_at": "2020-08-20 11:16:40"
+      "updated_at": "2020-08-20 22:34:28"
     }
   ],
   "sort": [
@@ -561,5 +561,5 @@
   "title": "AltitudeHeadingReminder",
   "foldername": "AltitudeHeadingReminder",
   "schfilename": "AltitudeHeadingReminder.json",
-  "schfilemtime": 1597878204040
+  "schfilemtime": 1597985286094
 }
