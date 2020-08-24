@@ -134,6 +134,7 @@ int                gBuzzCountInt; //always a value between [0, cUrgentBuzzNumber
 //Battery
 #define       cBatteryVoltagePin      A0
 #define       cBatteryUpdateInterval  30000
+#define       cBatteryAlertLevel      20
 int           gBatteryLevel;
 unsigned long gBatteryUpdateTs;
 
@@ -1404,20 +1405,13 @@ void drawRightScreen() {
     gOled.dim(false, 255);
   }
 
-  //Battery symbol
-  /*TODO:
-  gOled.writeLine( 4, 0, 30,  0, SSD1306_WHITE); //top horizontal line
-  gOled.writeLine( 4, 7, 30,  7, SSD1306_WHITE); //bottom horizontal line
-  gOled.writeLine( 4, 0,  4,  7, SSD1306_WHITE); //vertical line, left side
-  gOled.writeLine(30, 0, 30,  7, SSD1306_WHITE); //vertical line, right side
-  gOled.writeLine( 4, 1,  0,  1, SSD1306_WHITE); //battery notch top side (horizontal line)
-  gOled.writeLine( 0, 1,  0,  6, SSD1306_WHITE); //battery notch left side (vertical line)
-  gOled.writeLine( 0, 6,  4,  6, SSD1306_WHITE); //battery notch bottom side (horizontal line)*/
-  sprintf(gDisplayTopContent, "%d%%", gBatteryLevel);
-  gOled.setTextSize(cLabelTextSize);
-  gOled.setCursor(1, cLabelTextYpos);
-  gOled.print(gDisplayTopContent);
-    
+  //Battery status
+  if (gBatteryLevel <= cBatteryAlertLevel) {
+    sprintf(gDisplayTopContent, "%d%%", gBatteryLevel);
+    gOled.setTextSize(cLabelTextSize);
+    gOled.setCursor(1, cLabelTextYpos);
+    gOled.print(gDisplayTopContent);
+  }
 
   long tempSelectedAltitude = gSelectedAltitudeLong; //doing this here because it's used inside of 2 scopes
 
@@ -1700,7 +1694,9 @@ void updateBatteryLevel() {
   if (gCursor == CursorViewBatteryLevel) {
     gUpdateLeftScreen = true;
   }
-  gUpdateRightScreen = true;
+  if (gBatteryLevel <= cBatteryAlertLevel) {
+    gUpdateRightScreen = true;
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////
