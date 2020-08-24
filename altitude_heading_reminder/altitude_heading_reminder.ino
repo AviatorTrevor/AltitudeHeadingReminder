@@ -7,6 +7,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
 *when pressure sensor fails, fix the display for that, as well as the temperature screen
+*add low-battery graphic for when battery is less than 10%?
 *adjust pin mapping for PCB board layout
 *adjust code for BMP280 sensor when you get the PCB ordered
 *test sleeping
@@ -1367,7 +1368,6 @@ void drawLeftScreen() {
     case CursorViewBatteryLevel:
       sprintf(gDisplayTopContent, "%s", "Battery");
       sprintf(gDisplayBottomContent, "%d%%", gBatteryLevel);
-      gUpdateLeftScreen = true; //always update the left screen when in CursorViewBatteryLevel mode
       break;
   }
   
@@ -1403,7 +1403,21 @@ void drawRightScreen() {
   else {
     gOled.dim(false, 255);
   }
-  
+
+  //Battery symbol
+  /*TODO:
+  gOled.writeLine( 4, 0, 30,  0, SSD1306_WHITE); //top horizontal line
+  gOled.writeLine( 4, 7, 30,  7, SSD1306_WHITE); //bottom horizontal line
+  gOled.writeLine( 4, 0,  4,  7, SSD1306_WHITE); //vertical line, left side
+  gOled.writeLine(30, 0, 30,  7, SSD1306_WHITE); //vertical line, right side
+  gOled.writeLine( 4, 1,  0,  1, SSD1306_WHITE); //battery notch top side (horizontal line)
+  gOled.writeLine( 0, 1,  0,  6, SSD1306_WHITE); //battery notch left side (vertical line)
+  gOled.writeLine( 0, 6,  4,  6, SSD1306_WHITE); //battery notch bottom side (horizontal line)*/
+  sprintf(gDisplayTopContent, "%d%%", gBatteryLevel);
+  gOled.setTextSize(cLabelTextSize);
+  gOled.setCursor(1, cLabelTextYpos);
+  gOled.print(gDisplayTopContent);
+    
 
   long tempSelectedAltitude = gSelectedAltitudeLong; //doing this here because it's used inside of 2 scopes
 
@@ -1683,6 +1697,10 @@ void writeValuesToEeprom() {
 void updateBatteryLevel() {
   gBatteryLevel = constrain((analogRead(cBatteryVoltagePin) - 558) / 4.19, 0, 100); //TODO implement actual battery calculation
   gBatteryUpdateTs = millis();
+  if (gCursor == CursorViewBatteryLevel) {
+    gUpdateLeftScreen = true;
+  }
+  gUpdateRightScreen = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
