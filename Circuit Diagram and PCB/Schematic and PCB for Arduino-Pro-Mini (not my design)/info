@@ -1,0 +1,259 @@
+{
+  "uuid": "f6713250fe98a1231c55010b49a82ce2",
+  "path": "Offline/Arduino-Pro-Mini SCH",
+  "name": "Arduino-Pro-Mini SCH",
+  "content": "",
+  "created_at": "2020-07-08 01:09:38",
+  "updated_at": "2020-08-09 19:53:41",
+  "stick": "",
+  "documents": [
+    {
+      "uuid": "93db60538c357b8c98b067c282e37abd",
+      "title": "Arduino-Pro-Mini SCH copy",
+      "description": "",
+      "docType": "1",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {},
+      "BOM": [
+        [
+          "Value",
+          "Quantity",
+          "Package",
+          "Components",
+          "CustomPara"
+        ],
+        [
+          "0.1uF",
+          4,
+          "0603-CAP",
+          "C10,C3,C1,C2",
+          {
+            "puuid": "a3e6453a59824123bf4d62dd7fe86225",
+            "uuid": ""
+          }
+        ],
+        [
+          "10uF",
+          2,
+          "EIA3216",
+          "C13,C19",
+          {
+            "puuid": "5c0b7bbe2b83451e8c24396c36ab7024",
+            "uuid": ""
+          }
+        ],
+        [
+          "10K",
+          2,
+          "0603-RES",
+          "R11,R2",
+          {
+            "puuid": "ee9454430f3e424ca64697f854490218",
+            "uuid": ""
+          }
+        ],
+        [
+          "Red",
+          1,
+          "0603-LED-ALT1",
+          "LED1",
+          {
+            "puuid": "",
+            "uuid": ""
+          }
+        ],
+        [
+          "330",
+          1,
+          "0603-RES",
+          "R6",
+          {
+            "puuid": "ee9454430f3e424ca64697f854490218",
+            "uuid": ""
+          }
+        ],
+        [
+          "Green",
+          1,
+          "0603-LED-ALT1",
+          "D3",
+          {
+            "puuid": "",
+            "uuid": ""
+          }
+        ],
+        [
+          "LOGO-SFE",
+          1,
+          "SFE-NEW-WEBLOGO",
+          "U$11",
+          {
+            "puuid": "6b5fae5e91124a58b149a20b0f53df99",
+            "uuid": ""
+          }
+        ],
+        [
+          "MIC5205",
+          1,
+          "SOT23-5",
+          "U2",
+          {
+            "puuid": "c68bbcdcc62b4ee5820ddf4a9c0a7c85",
+            "uuid": ""
+          }
+        ],
+        [
+          "M12",
+          2,
+          "1X12",
+          "JP6,JP7",
+          {
+            "puuid": "8d348c1fce3f419381602a70eb775e34",
+            "uuid": ""
+          }
+        ],
+        [
+          "LOGO-SFE",
+          1,
+          "SFE-LOGO-FLAME",
+          "U$1",
+          {
+            "puuid": "3a41757b0a27454caf7ea448bbc13881",
+            "uuid": ""
+          }
+        ],
+        [
+          "M02",
+          2,
+          "1X02",
+          "JP2,JP3",
+          {
+            "puuid": "632485ffe2624eb487e86c74c14a39e4",
+            "uuid": ""
+          }
+        ],
+        [
+          "ATMEGA328",
+          1,
+          "TQFP32-08",
+          "U1",
+          {
+            "puuid": "d5f7f12600c64bd8a1532b4d1bcdc2fd",
+            "uuid": ""
+          }
+        ],
+        [
+          "FTDI Basic",
+          1,
+          "1X06",
+          "JP1",
+          {
+            "puuid": "04ed46d84e1847fab1c6ba578c999751",
+            "uuid": ""
+          }
+        ],
+        [
+          "OSHW-LOGO",
+          1,
+          "OSHW-LOGO-S",
+          "U$3",
+          {
+            "puuid": "e21921a049794a5c973bed19373cb3cc",
+            "uuid": ""
+          }
+        ],
+        [
+          "RESISTOR",
+          2,
+          "0603-RES",
+          "R1,R3",
+          {
+            "puuid": "ee9454430f3e424ca64697f854490218",
+            "uuid": ""
+          }
+        ],
+        [
+          "FIDUCIAL",
+          2,
+          "MICRO-FIDUCIAL",
+          "JP5,JP8",
+          {
+            "puuid": "d38b51d22d604beb853a9d816dbc987e",
+            "uuid": ""
+          }
+        ],
+        [
+          "SOLDERJUMPER",
+          1,
+          "SJ_2S",
+          "SJ1",
+          {
+            "puuid": "ebfea44ad47240f9a814f7942f91eb6a",
+            "uuid": ""
+          }
+        ],
+        [
+          "Reset",
+          1,
+          "TACTILE-SWITCH-SMD-ALT01",
+          "S1",
+          {
+            "puuid": "",
+            "uuid": ""
+          }
+        ],
+        [
+          "81620MHz",
+          1,
+          "RESONATOR-SMD-1:1",
+          "Q1",
+          {
+            "puuid": "",
+            "uuid": ""
+          }
+        ],
+        [
+          "FRAME-LETTER",
+          1,
+          "CREATIVE_COMMONS",
+          "FRAME1",
+          {
+            "puuid": "21bea77c4d9e4d97baa3138ca0b39ecb",
+            "uuid": ""
+          }
+        ]
+      ],
+      "updateTime": 1597028021,
+      "createTime": 1594195791,
+      "histories": [],
+      "created_at": "2020-07-08 01:09:51",
+      "updated_at": "2020-08-09 19:53:41"
+    },
+    {
+      "uuid": "74ad3e51ad0a22566641e7d1ccd136cb",
+      "puuid": "0dd7d562cfd39c06789fe5bb33d02b26",
+      "title": "Arduino-Pro-Mini PCB copy",
+      "filename": "Arduino-Pro-Mini PCB copy.json",
+      "description": "",
+      "docType": "3",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {},
+      "BOM": [],
+      "updateTime": 1594196500,
+      "createTime": 1594196500,
+      "histories": [],
+      "created_at": "2020-07-08 01:21:40",
+      "updated_at": "2020-07-08 01:21:40"
+    }
+  ],
+  "sort": [
+    "ca8fbbf69b5511eb97c11f9d519896fc",
+    "93db60538c357b8c98b067c282e37abd"
+  ],
+  "title": "Arduino-Pro-Mini SCH",
+  "foldername": "Arduino-Pro-Mini SCH",
+  "schfilename": "Arduino-Pro-Mini SCH.json",
+  "schfilemtime": 1597028021814
+}
