@@ -6,14 +6,9 @@ Hardware device to remind pilots of assigned headings & altitudes. Also has buzz
 to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
-*when pressure sensor fails, fix the display for that, as well as the temperature screen
-*add low-battery graphic for when battery is less than 10%?
 *adjust pin mapping for PCB board layout
-*adjust code for BMP280 sensor when you get the PCB ordered
-*test sleeping
+*adjust code for new pressure sensor when you get the PCB ordered
 *interrupts causing an interrupt to beeping noises
-*design for battery
-*software for battery level
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
@@ -35,7 +30,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #include <Custom_GFX.h>
 #include <Custom_SSD1306.h>
 
-#define DEBUG //TODO remove
+//#define DEBUG //TODO remove
 
 #define cAppVersion                    "1.0" //[HardwareConfigOrMajorRedesign].[SoftwareRelease]
 #define cAppCodeNumberOfDigits         6
@@ -87,7 +82,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define         cEepromSelectedHeadingAddr          28
 volatile bool   gNeedToWriteToEeprom;
 
-//BMP180 Sensor variables
+//BMP180 Sensor variables //TODO replace reference to BMP180 with new pressure sensor
 #define    cSensorLoopCycle               2 //2Hz
 #define    cSensorLoopPeriod              (cOneSecond / cSensorLoopCycle)
 #define    cBmp180Quality                 3 //highest quality, more electrical draw [0-3]. Wait times are {5ms, 8ms, 14ms, 26ms}. Getting temperature is always 5ms.
@@ -113,23 +108,24 @@ volatile int    gAppCodeSequence = 0;
 bool            gLegitimate = true;
 
 //Buzzer
-#define            cAlarm200ToGo                   200  //ft
-#define            cAlarm1000ToGo                  1000 //ft
-#define            cBuzzPin                        6
-#define            cBuzzFrequencyA                 4100 //Hz frequency for the Musical Note B-7 is 3951 (which is what Garmin uses??). 4000 & 4100Hz seems to resonate better with this speaker
-#define            cBuzzFrequencyB                 2400 //Hz
-#define            cLongBuzzDuration               1000
-#define            cShortBuzzOnFreqADuration       150
-#define            cShortBuzzOnFreqBDuration       150
-#define            cMinimumsBuzzOnFreqADuration    400
-#define            cMinimumsBuzzOnFreqBDuration    100
-#define            cUrgentBuzzNumberOfBeeps        7
-#define            cDisableAlarmKnobMovementTime   1200
-#define            cDisableAlarmAfterAlarmTime     1800
+#define            cAlarm200ToGo                     200  //ft
+#define            cAlarm1000ToGo                    1000 //ft
+#define            cBuzzPin                          6
+#define            cLongBuzzDuration                 1000
+#define            cShortBuzzOnDuration              250
+#define            cShortBuzzOffDuration             100
+#define            cMinimumsLongBuzzOnDuration       400
+#define            cMinimumsShortBuzzOnDuration      100
+#define            cMinimumsBuzzOffDuration          100
+#define            cMinimumsOffBetweenCycleDuration  50
+#define            cMinimumsNumberOfBeepCylces       4
+#define            cUrgentBuzzNumberOfBeeps          3
+#define            cDisableAlarmKnobMovementTime     1200
+#define            cDisableAlarmAfterAlarmTime       1800
 enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 bool               gClimbFlag;
-int                gBuzzCountInt; //always a value between [0, cUrgentBuzzNumberOfBeeps]
+int                gBuzzCountInt;
 
 //Battery
 #define       cBatteryVoltagePin      A0
@@ -172,6 +168,7 @@ volatile bool gOledDim = false;
 volatile bool gDeviceFlipped = false;
 volatile bool gUpdateLeftScreen = true;
 volatile bool gUpdateRightScreen = true;
+bool gFlashLeftScreen = false;
 bool gFlashRightScreen = false;
 
 char gDisplayTopContent[20];
@@ -1039,23 +1036,22 @@ void handleBuzzer() {
     {
       if (gBuzzCountInt == 0) {
         gLastAlarmTs = millis();
-        gBuzzCountInt = cUrgentBuzzNumberOfBeeps + 1;
+        gBuzzCountInt = cUrgentBuzzNumberOfBeeps * 2;
+        gFlashRightScreen = true;
       }
       if (millis() >= gNextBuzzTs) {
         gBuzzCountInt--;
-        if (gBuzzCountInt != 0 && gBuzzCountInt % 2 == 0) { //every other cycle, change frequency
-          tone(cBuzzPin, cBuzzFrequencyB);
-          gFlashRightScreen = true;
-          gNextBuzzTs = millis() + cShortBuzzOnFreqBDuration;
+        if (gBuzzCountInt % 2 == 1) {
+          digitalWrite(cBuzzPin, HIGH);
+          gNextBuzzTs = millis() + cShortBuzzOnDuration;
         }
-        else if (gBuzzCountInt % 2 == 1) {
-          tone(cBuzzPin, cBuzzFrequencyA);
-          gFlashRightScreen = true;
-          gNextBuzzTs = millis() + cShortBuzzOnFreqADuration;
+        else if (gBuzzCountInt != 0 && gBuzzCountInt % 2 == 0) {
+          digitalWrite(cBuzzPin, LOW);
+          gNextBuzzTs = millis() + cShortBuzzOffDuration;
         }
-        else {
+        else { //last cycle, turning everything off
           gAlarmModeEnum = AlarmDisabled;
-          noTone(cBuzzPin);
+          digitalWrite(cBuzzPin, LOW);
           gFlashRightScreen = false;
         }
         gUpdateRightScreen = true;
@@ -1067,21 +1063,35 @@ void handleBuzzer() {
     {
       if (gBuzzCountInt == 0) {
         gLastAlarmTs = millis();
-        gBuzzCountInt = cUrgentBuzzNumberOfBeeps + 1;
+        /* each cycle of the pattern has 4 elements to it. short beep, short pause, long beep, pause between
+         * the next cycle of beeps. subtract 1 for the last cycle not having a long pause at the end */
+        gBuzzCountInt = cMinimumsNumberOfBeepCylces * 4;
+        gFlashLeftScreen = true;
+        gUpdateLeftScreen = true;
       }
       if (millis() >= gNextBuzzTs) {
         gBuzzCountInt--;
-        if (gBuzzCountInt != 0 && gBuzzCountInt % 2 == 0) { //every other cycle, change frequency
-          tone(cBuzzPin, cBuzzFrequencyA);
-          gNextBuzzTs = millis() + cMinimumsBuzzOnFreqADuration;
+        if (gBuzzCountInt % 4 == 3) {
+          digitalWrite(cBuzzPin, HIGH);
+          gNextBuzzTs = millis() + cMinimumsShortBuzzOnDuration;
         }
-        else if (gBuzzCountInt % 2 == 1) {
-          tone(cBuzzPin, cBuzzFrequencyB);
-          gNextBuzzTs = millis() + cMinimumsBuzzOnFreqBDuration;
+        else if (gBuzzCountInt % 4 == 2) {
+          digitalWrite(cBuzzPin, LOW);
+          gNextBuzzTs = millis() + cMinimumsBuzzOffDuration;
+        }
+        else if (gBuzzCountInt % 4 == 1) {
+          digitalWrite(cBuzzPin, HIGH);
+          gNextBuzzTs = millis() + cMinimumsLongBuzzOnDuration;
+        }
+        else if (gBuzzCountInt != 0 && gBuzzCountInt % 4 == 0) {
+          digitalWrite(cBuzzPin, LOW);
+          gNextBuzzTs = millis() + cMinimumsOffBetweenCycleDuration;
         }
         else {
           gAlarmModeEnum = AlarmDisabled;
-          noTone(cBuzzPin);
+          digitalWrite(cBuzzPin, LOW);
+          gFlashLeftScreen = false;
+          gUpdateLeftScreen = true;
         }
       }
       break;
@@ -1093,16 +1103,15 @@ void handleBuzzer() {
         gBuzzCountInt = 2;
       }
       if (millis() >= gNextBuzzTs) {
-        if (gBuzzCountInt == 2) {
-          gBuzzCountInt = 1;
-          tone(cBuzzPin, cBuzzFrequencyA);
+        gBuzzCountInt--;
+        if (gBuzzCountInt == 1) {
+          digitalWrite(cBuzzPin, HIGH);
           gNextBuzzTs = millis() + cLongBuzzDuration;
           gFlashRightScreen = true;
         }
         else {
-          gBuzzCountInt = 0;
           gAlarmModeEnum = AlarmDisabled;
-          noTone(cBuzzPin);
+          digitalWrite(cBuzzPin, LOW);
           gFlashRightScreen = false;
         }
         gUpdateRightScreen = true;
@@ -1217,8 +1226,7 @@ void drawLeftScreen() {
     gOled.dim(false, 255);
   }
 
-  //logic for turning on the inverted display is in the CursorViewMinimums section of this function
-  gOled.invertDisplay(false);
+  gOled.invertDisplay(gFlashLeftScreen);
 
   //If timer is running while not on timer screen, show the timer
   if (gCursor != CursorSelectTimer && gTimerStartTs != 0) {
@@ -1268,7 +1276,6 @@ void drawLeftScreen() {
       else {
         if (altitudeDifference < 0) {
           sprintf(gDisplayTopContent, "%s", "");
-          gOled.invertDisplay(true);
           gOled.setTextSize(2);
           gOled.setCursor(19, cReadoutTextYpos);
           gOled.print("MINIMUMS");
