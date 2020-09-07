@@ -6,23 +6,11 @@ Hardware device to remind pilots of assigned headings & altitudes. Also has buzz
 to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 *TODO:
-*adjust pin mapping for PCB board layout
 *adjust code for new pressure sensor when you get the PCB ordered
-*interrupts causing an interrupt to beeping noises
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
 *     https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
-*buy louder buzzer? Try different frequencies using
-*
-*
-*LOUD FREQUENCIES TO USE?
-*1400
-*2000
-*2100
-*2300
-*2400
-*4100 & 4200 alternating?
 */
 #include <EEPROM.h>
 #include <SFE_BMP180.h> //TODO replace
