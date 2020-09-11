@@ -2,10 +2,10 @@
 resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
-mainDepth = 65;
-mainWidth = 85;
-mainHeight = 40;
 mainShellThickness = 5 * resolution;
+mainDepth = 50;
+mainWidth = 82;
+mainHeight = 30 + mainShellThickness;
 screwCylinderRadius = 2.5;
 screwHoleCylinderRadius = 0.8;
 screwHoleCylinderOffsetFromFloor = mainHeight / 2;
@@ -15,6 +15,9 @@ margin = mainShellThickness + resolution;
 lidThickness = resolution * 5; //z-axis
 lidWidth = resolution * 2; //x & y axis thickness of the wall
 innerLipHeight = resolution * 10;
+
+screwHeadCylinderRadius = 1.8;
+screwHeadSinkDepth = lidThickness * 0.6;
 
 difference() {
   union() {
@@ -82,6 +85,26 @@ difference() {
     cube([screwHoleCylinderRadius*2, screwHoleCylinderRadius*2, lidThickness]);
   };
   
+  //place for screw to sink into, rear-left (keep this in sync with section below)
+  translate([screwCylinderRadius, screwCylinderRadius, 0]) {
+    cylinder(screwHeadSinkDepth, screwHeadCylinderRadius, screwHeadCylinderRadius, $fn=cylinderFragments);
+  };
+  
+  //place for screw to sink into, front-left (keep this in sync with section below)
+  translate([mainDepth - screwCylinderRadius, screwCylinderRadius, 0]) {
+    cylinder(screwHeadSinkDepth, screwHeadCylinderRadius, screwHeadCylinderRadius, $fn=cylinderFragments);
+  };
+  
+  //place for screw to sink into, front-right (keep this in sync with section below)
+  translate([mainDepth - screwCylinderRadius, mainWidth - screwCylinderRadius, 0]) {
+    cylinder(screwHeadSinkDepth, screwHeadCylinderRadius, screwHeadCylinderRadius, $fn=cylinderFragments);
+  };
+  
+  //place for screw to sink into, rear-right (keep this in sync with section below)
+  translate([screwCylinderRadius, mainWidth - screwCylinderRadius, 0]) {
+    cylinder(screwHeadSinkDepth, screwHeadCylinderRadius, screwHeadCylinderRadius, $fn=cylinderFragments);
+  };
+  
   linear_extrude(resolution) {
     translate([mainDepth / 2 + 3, mainWidth / 2, resolution]) {
       rotate([180, 0, 90]){
@@ -110,6 +133,10 @@ difference() {
   translate([screwCylinderRadius, screwCylinderRadius, 0]) {
     cylinder(lidThickness, screwHoleCylinderRadius, screwHoleCylinderRadius, $fn=cylinderFragments);
   };
+  //place for screw to sink into, rear-left (keep this in sync with section above)
+  translate([screwCylinderRadius, screwCylinderRadius, 0]) {
+    cylinder(screwHeadSinkDepth, screwHeadCylinderRadius, screwHeadCylinderRadius, $fn=cylinderFragments);
+  };
 };
 
 
@@ -121,6 +148,10 @@ difference() {
   //screw hole, front-left
   translate([mainDepth - screwCylinderRadius, screwCylinderRadius, 0]) {
     cylinder(lidThickness, screwHoleCylinderRadius, screwHoleCylinderRadius, $fn=cylinderFragments);
+  };
+  //place for screw to sink into, front-left (keep this in sync with section above)
+  translate([mainDepth - screwCylinderRadius, screwCylinderRadius, 0]) {
+    cylinder(screwHeadSinkDepth, screwHeadCylinderRadius, screwHeadCylinderRadius, $fn=cylinderFragments);
   };
 };
   
@@ -134,6 +165,10 @@ difference() {
   translate([mainDepth - screwCylinderRadius, mainWidth - screwCylinderRadius, 0]) {
     cylinder(lidThickness, screwHoleCylinderRadius, screwHoleCylinderRadius, $fn=cylinderFragments);
   };
+  //place for screw to sink into, front-right (keep this in sync with section above)
+  translate([mainDepth - screwCylinderRadius, mainWidth - screwCylinderRadius, 0]) {
+    cylinder(screwHeadSinkDepth, screwHeadCylinderRadius, screwHeadCylinderRadius, $fn=cylinderFragments);
+  };
 };
 
 difference() {
@@ -144,6 +179,10 @@ difference() {
   //screw hole, rear-right
   translate([screwCylinderRadius, mainWidth - screwCylinderRadius, 0]) {
     cylinder(lidThickness, screwHoleCylinderRadius, screwHoleCylinderRadius, $fn=cylinderFragments);
+  };
+  //place for screw to sink into, rear-right (keep this in sync with section above)
+  translate([screwCylinderRadius, mainWidth - screwCylinderRadius, 0]) {
+    cylinder(screwHeadSinkDepth, screwHeadCylinderRadius, screwHeadCylinderRadius, $fn=cylinderFragments);
   };
 };
 
