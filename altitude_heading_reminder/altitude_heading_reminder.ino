@@ -57,7 +57,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 
 //EEPROM
 #define         cSizeOfEeprom                       EEPROM.length() //1024
-#define         cEepromWriteDelay                   5000  //milliseconds
+#define         cEepromWriteDelay                   3000  //milliseconds
 #define         cEepromMaxWrites                    100000
 #define         cEepromNextAvailableSlot            12
 #define         cEepromAltimeterAddr                14
@@ -749,7 +749,6 @@ void handleLeftRotaryMovement(int increment) {
   
   gLeftButtonPossibleLongPress = false;
   gLeftRotaryFineTuningPress = (gLeftRotaryButton == PRESSED); //not all states have a fine-tuning press, but we still have to set this here because we don't want a short-press to register and move cursor
-  int incrementMagnitude;
 
   switch (gCursor) {
     case CursorSelectHeading:
@@ -757,11 +756,11 @@ void handleLeftRotaryMovement(int increment) {
         gSelectedHeadingInt = (gSelectedHeadingInt + increment + 359) % 360 + 1;
       }
       else {
-        incrementMagnitude = cHeadingSelectIncrement;
+        int incrementMagnitude = cHeadingSelectIncrement;
         if (gSelectedHeadingInt % cHeadingSelectIncrement != 0) {
           incrementMagnitude = cHeadingSelectIncrement / 2; //we are at an in-between cHeadingSelectIncrement state, so the knob movement will increment or decement to the nearest cHeadingSelectIncrement
         }
-        gSelectedHeadingInt = roundNumber((gSelectedHeadingInt + increment * incrementMagnitude + 359) % 360 + 1, cHeadingSelectIncrement);
+        gSelectedHeadingInt = (roundNumber((gSelectedHeadingInt + increment * incrementMagnitude), cHeadingSelectIncrement) + 359) % 360 + 1;
       }
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true; //save heading to EEPROM
