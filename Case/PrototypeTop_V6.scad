@@ -16,6 +16,12 @@ lidThickness = resolution * 5; //z-axis
 lidWidth = resolution * 2; //x & y axis thickness of the wall
 innerLipHeight = resolution * 10;
 
+buzzerRadius = 28.5 / 2; //28.5 is diameter
+buzzerScrewOffset = 20.5; //20.5 mm from center of buzzer hole to center of screw hole
+buzzerScrewRadius = 1.9;
+buzzerX = mainDepth - buzzerRadius * 1.4;
+buzzerY = mainWidth / 2;
+
 screwHeadCylinderRadius = 1.8;
 screwHeadSinkDepth = lidThickness * 0.6;
 
@@ -85,6 +91,21 @@ difference() {
     cube([screwHoleCylinderRadius*2, screwHoleCylinderRadius*2, lidThickness]);
   };
   
+  //buzzer alarm hole
+  translate([buzzerX, buzzerY, 0]) {
+    cylinder(lidThickness, buzzerRadius, buzzerRadius, $fn=cylinderFragments);
+  };
+  
+  //buzzer left-screw
+  translate([buzzerX, buzzerY - buzzerScrewOffset, 0]) {
+    cylinder(lidThickness, buzzerScrewRadius, buzzerScrewRadius, $fn=cylinderFragments);
+  };
+  
+  //buzzer right-screw
+  translate([buzzerX, buzzerY + buzzerScrewOffset, 0]) {
+    cylinder(lidThickness, buzzerScrewRadius, buzzerScrewRadius, $fn=cylinderFragments);
+  };
+  
   //place for screw to sink into, rear-left (keep this in sync with section below)
   translate([screwCylinderRadius, screwCylinderRadius, 0]) {
     cylinder(screwHeadSinkDepth, screwHeadCylinderRadius, screwHeadCylinderRadius, $fn=cylinderFragments);
@@ -106,7 +127,7 @@ difference() {
   };
   
   linear_extrude(resolution) {
-    translate([mainDepth / 2 + 3, mainWidth / 2, resolution]) {
+    translate([11, mainWidth / 2, resolution]) {
       rotate([180, 0, 90]){
         text("Altitude/Heading Reminder", size = 4, halign = "center", valign = "center", font="Impact:style=Regular");
       }
@@ -114,7 +135,7 @@ difference() {
   };
   
   linear_extrude(resolution) {
-    translate([mainDepth / 2 - 3, mainWidth / 2, resolution]) {
+    translate([5, mainWidth / 2, resolution]) {
       rotate([180, 0, 90]){
         text("Made by: Trevor Bartlett", size = 3, halign = "center", valign = "center", font="Impact:style=Regular");
       }

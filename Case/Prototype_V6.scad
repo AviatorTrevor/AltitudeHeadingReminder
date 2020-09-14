@@ -185,6 +185,13 @@ union() {
   translate([mainDepth - mainShellThickness, mainWidth/2 + 24, mainHeight - displayTopOffset]) {
     cube([mainShellThickness, resolution, displayHeight]);
   };
+  //jail-bar over USB slot:
+  translate([screwCylinderRadius * 2 + usbSlotWidth/3, mainWidth - mainShellThickness, mainShellThickness + usbSlotYoffset]) {
+    cube([resolution, mainShellThickness, usbSlotHeight]);
+  };
+  translate([screwCylinderRadius * 2 + usbSlotWidth/3 * 2, mainWidth - mainShellThickness, mainShellThickness + usbSlotYoffset]) {
+    cube([resolution, mainShellThickness, usbSlotHeight]);
+  };
   
   
   //PCB left-front side screw/mount
