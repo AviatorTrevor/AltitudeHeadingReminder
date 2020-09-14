@@ -380,7 +380,7 @@ void initializePiracyCheck() {
   int eepromIndex = 0;
   int codeValue;
 
-  /*EEPROM.get(eepromIndex, codeValue);
+  EEPROM.get(eepromIndex, codeValue);
   if (codeValue != cAppCodeOne) {
     gLegitimate = false;
   }
@@ -413,7 +413,7 @@ void initializePiracyCheck() {
   EEPROM.get(eepromIndex, codeValue);
   if (codeValue != cAppCodeSix) {
     gLegitimate = false;
-  } TODO*/
+  }
 
   if (gLegitimate) {
     return;
@@ -869,11 +869,8 @@ void handleLeftRotaryMovement(int increment) {
 
     case CursorViewSensorTemp:
     case CursorViewBatteryLevel:
-      break; //do nothing for these modes, display only
-    
     default:
-      println("Unexpected default case for handling left rotary knob rotation");
-      break;
+      break; //do nothing for these modes, display only
   }
 }
 
@@ -1273,8 +1270,6 @@ void drawLeftScreen() {
     gOled.print(gDisplayBottomContent);
   }
 
-  Serial.print("Cursor ");
-  Serial.println(gCursor);
   switch (gCursor) {
     case CursorSelectHeading: //Display Selected Heading
     {
