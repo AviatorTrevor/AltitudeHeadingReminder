@@ -241,7 +241,7 @@ void setup() {
   initializePressureSensor();
   initializeBuzzer();
   updateBatteryLevel();
-  delay(500); //delay for splash screen (to see version number)
+  delay(900); //delay for splash screen (to see version number)
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1289,12 +1289,12 @@ void drawLeftScreen() {
         long minimumtsAltitudeLong = gMinimumsAltitudeLong;
         char* minimumsAltitude = displayNumber(roundNumber(minimumtsAltitudeLong, cTrueAltitudeRoundToNearestFt), false);
         sprintf(gDisplayBottomContent, "%6s", minimumsAltitude);
-        gOled.setCursor(40, cReadoutTextYpos + 5);
+        gOled.setCursor(43, cReadoutTextYpos + 5);
         gOled.print(gDisplayBottomContent);
         delete minimumsAltitude;
 
         gOled.setTextSize(1);
-        gOled.setCursor(115, cReadoutTextYpos + 10);
+        gOled.setCursor(116, cReadoutTextYpos + 12);
         gOled.print(cFtLabel);
       }
       else {
@@ -1319,17 +1319,17 @@ void drawLeftScreen() {
       else { //we only reach this if minimums are turned ON
         gOled.setCursor(6, cReadoutTextYpos + 5);
         gOled.print("ON");
-        gOled.writeLine(36, 31, 122, 31, SSD1306_WHITE); //line for selection
+        gOled.writeLine(42, 31, 126, 31, SSD1306_WHITE); //line for selection
 
         long minimumtsAltitudeLong = gMinimumsAltitudeLong;
         char* minimumsAltitude = displayNumber(roundNumber(minimumtsAltitudeLong, cTrueAltitudeRoundToNearestFt), false);
         sprintf(gDisplayBottomContent, "%6s", minimumsAltitude);
-        gOled.setCursor(40, cReadoutTextYpos + 5);
+        gOled.setCursor(43, cReadoutTextYpos + 5);
         gOled.print(gDisplayBottomContent);
         delete minimumsAltitude;
 
         gOled.setTextSize(1);
-        gOled.setCursor(115, cReadoutTextYpos + 10);
+        gOled.setCursor(116, cReadoutTextYpos + 12);
         gOled.print(cFtLabel);
       }
       break;
@@ -1767,35 +1767,27 @@ char* displayNumber(const long &number, bool sign) {
   int thousands = static_cast<int>(number / 1000);
   int ones = static_cast<int>(number % 1000);
 
-  if (sign) {
-    char* result = new char[9];
-    if (number >= 1000) {
-      sprintf(result, "%c%01d,%03d", '+', thousands, ones);
-    }
-    else if (number <= -1000) {
-      sprintf(result, "%01d,%03d", thousands, abs(ones));
-    }
-    else if (number < 0) {
-      sprintf(result, "%01d", ones);
-    }
-    else {
-      sprintf(result, "%c%01d", '+', ones);
-    }
-    return result;
+  char* result = new char[8];
+  if (number >= 1000) {
+    sprintf(result, "%01d,%03d", thousands, ones);
+  }
+  else if (number <= -1000) {
+    sprintf(result, "%01d,%03d", thousands, abs(ones));
   }
   else {
-    char* result = new char[8];
-    if (number >= 1000) {
-      sprintf(result, "%01d,%03d", thousands, ones);
-    }
-    else if (number <= -1000) {
-      sprintf(result, "%01d,%03d", thousands, abs(ones));
-    }
-    else {
-      sprintf(result, "%01d", ones);
-    }
-    return result;
+    sprintf(result, "%01d", ones);
   }
+
+  if (sign) {
+    char* signedResult = new char[9];
+    if (number >= 0) {
+      sprintf(signedResult, "%c%s", '+', result);
+    }
+    delete result;
+    return signedResult;
+  }
+
+  return result;
 }
 
 //////////////////////////////////////////////////////////////////////////
