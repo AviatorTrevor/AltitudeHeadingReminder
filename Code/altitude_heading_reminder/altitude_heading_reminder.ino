@@ -89,6 +89,8 @@ volatile double gAltimeterSettingInHgDouble;
 volatile int    gCalibratedAltitudeOffsetInt;
 volatile int    gPermanentCalibratedAltitudeOffsetInt;
 volatile int    gSelectedHeadingInt; //degrees
+volatile bool   gMinimumsOn;
+volatile long   gMinimumsAltitudeLong;
 
 //Anti-piracy
 volatile int    gSelectAppCode = 0;
@@ -112,13 +114,13 @@ bool            gLegitimate = true;
 #define            cDisableAlarmAfterAlarmTime       1800
 enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
-bool               gClimbFlag;
+volatile bool      gMinimumsTriggered;
 int                gBuzzCountInt;
 
 //Battery
 #define       cBatteryVoltagePin      A0
 #define       cBatteryUpdateInterval  30000
-#define       cBatteryAlertLevel      20
+#define       cBatteryAlertLevel      15
 int           gBatteryLevel;
 unsigned long gBatteryUpdateTs;
 
@@ -166,7 +168,8 @@ char gDisplayBottomContent[10];
 enum Cursor {
     CursorSelectHeading,
     CursorSelectAltimeter,
-    CursorViewMinimums,
+    CursorSelectMinimumsOn,
+    CursorSelectMinimumsAltitude,
     CursorSelectTimer,
     CursorSelectBrightness, //starting here, values won't stay on the screen for more than a few seconds unless there is a rotary action
     CursorSelectOffset,
@@ -619,9 +622,6 @@ void handlePressureSensor() {
       if (gSensorStatusChar == 0) {
         ePressureSensorFailed = true;
         gUpdateRightScreen = true;
-        if (gCursor == CursorViewMinimums || gCursor == CursorViewSensorTemp) {
-          gUpdateLeftScreen = true;
-        }
       }
       break;
       
@@ -632,7 +632,7 @@ void handlePressureSensor() {
       if (gSensorStatusChar == 0) {
         ePressureSensorFailed = true;
         gUpdateRightScreen = true;
-        if (gCursor == CursorViewMinimums || gCursor == CursorViewSensorTemp) {
+        if (gCursor == CursorViewSensorTemp) {
           gUpdateLeftScreen = true;
         }
       }
@@ -645,9 +645,6 @@ void handlePressureSensor() {
       if (gSensorStatusChar == 0) {
         ePressureSensorFailed = true;
         gUpdateRightScreen = true;
-        if (gCursor == CursorViewMinimums || gCursor == CursorViewSensorTemp) {
-          gUpdateLeftScreen = true;
-        }
       }
       break;
       
@@ -658,16 +655,10 @@ void handlePressureSensor() {
       if (gSensorStatusChar == 0) {
         ePressureSensorFailed = true;
         gUpdateRightScreen = true;
-        if (gCursor == CursorViewMinimums || gCursor == CursorViewSensorTemp) {
-          gUpdateLeftScreen = true;
-        }
       }
       else { //only update the true altitude if the pressure reading was valid
         gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
         gUpdateRightScreen = true;
-        if (gCursor == CursorViewMinimums || gCursor == CursorViewSensorTemp) {
-          gUpdateLeftScreen = true;
-        }
       }
     }
     if (ePressureSensorFailed) {
@@ -752,6 +743,7 @@ void handleLeftRotaryMovement(int increment) {
 
   switch (gCursor) {
     case CursorSelectHeading:
+    {
       if (gLeftRotaryFineTuningPress) {
         gSelectedHeadingInt = (gSelectedHeadingInt + increment + 359) % 360 + 1;
       }
@@ -765,12 +757,46 @@ void handleLeftRotaryMovement(int increment) {
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true; //save heading to EEPROM
       break;
+    }
     
     case CursorSelectAltimeter:
       gAltimeterSettingInHgDouble = constrain(gAltimeterSettingInHgDouble + cAltimeterSettingInHgInterval * increment, cAltimeterSettingInHgMin, cAltimeterSettingInHgMax);
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
+
+    case CursorSelectMinimumsOn:
+      if (gMinimumsOn) {
+        gMinimumsOn = false;
+      }
+      else {
+        gMinimumsOn = true;
+      }
+      break;
+
+    case CursorSelectMinimumsAltitude:
+    {
+      int incrementMagnitude = cAltitudeSelectIncrement;
+      int rounding = cAltitudeSelectIncrement;
+      if (gLeftRotaryFineTuningPress) {
+        incrementMagnitude = cAltitudeFineSelectIncrement;
+        rounding = cAltitudeFineSelectIncrement;
+      }
+      else if (gMinimumsAltitudeLong % cAltitudeSelectIncrement != 0) {
+        incrementMagnitude = cAltitudeSelectIncrement / 2; //we are at an in-between cAltitudeSelectIncrement state, so the knob movement will increment or decement to the nearest cAltitudeSelectIncrement
+      }
+      gMinimumsAltitudeLong = max(roundNumber(gMinimumsAltitudeLong + increment * incrementMagnitude, rounding), cLowestAltitudeSelect);
+      if (gMinimumsAltitudeLong > cHighAltitude) {
+        gMinimumsAltitudeLong = cHighAltitude;
+      }
+      if (gMinimumsAltitudeLong < gTrueAltitudeDouble) {
+        gMinimumsTriggered = false;
+      }
+      else {
+        gMinimumsTriggered = true;
+      }
+      break;
+    }
 
     case CursorSelectTimer:
       if (increment > 0 && gTimerStartTs == 0) {
@@ -821,7 +847,6 @@ void handleLeftRotaryMovement(int increment) {
       gUpdateRightScreen = true; //we have to also update the right screen in this case (both screens need update)
       break;
 
-    case CursorViewMinimums:
     case CursorViewSensorTemp:
     case CursorViewBatteryLevel:
       break; //do nothing for these modes, display only
@@ -835,6 +860,9 @@ void handleLeftRotaryMovement(int increment) {
 //////////////////////////////////////////////////////////////////////////
 void handleLeftRotaryShortPress() {
   gCursor = static_cast<Cursor>((gCursor + 1 + cNumberOfCursorModes) % cNumberOfCursorModes);
+  if (gCursor == CursorSelectMinimumsAltitude && !gMinimumsOn) {
+    gCursor = static_cast<Cursor>((gCursor + 1 + cNumberOfCursorModes) % cNumberOfCursorModes);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -962,6 +990,11 @@ void handleRightRotaryLongPress() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleBuzzer() {
+  if (!gMinimumsTriggered && gTrueAltitudeDouble <= gMinimumsAltitudeLong) {
+    gAlarmModeEnum = MinimumsAlarm;
+    gMinimumsTriggered = true;
+  }
+
   switch (gAlarmModeEnum) {
     case Climbing1000ToGo:
     {
@@ -1007,11 +1040,6 @@ void handleBuzzer() {
     
     case AltitudeDeviate: //We're looking to sound the alarm if pilot deviates from his altitude he already reached
     {
-      if (gCursor == CursorViewMinimums && !gClimbFlag && gTrueAltitudeDouble <= gSelectedAltitudeLong) {
-        gAlarmModeEnum = MinimumsAlarm;
-        break;
-      }
-      
       if (gTrueAltitudeDouble > gSelectedAltitudeLong + cAlarm200ToGo || gTrueAltitudeDouble < gSelectedAltitudeLong - cAlarm200ToGo) {
         gAlarmModeEnum = UrgentAlarm; //initiate beeping the alarm on the next pass
         gNextBuzzTs = millis(); //next buzz time is now
@@ -1120,12 +1148,6 @@ void handleBuzzer() {
     case DetermineAlarmState:
     {
       long diffBetweenSelectionAndTrueAltitude = gSelectedAltitudeLong - gTrueAltitudeDouble;
-      if (diffBetweenSelectionAndTrueAltitude < 0) {
-        gClimbFlag = false;
-      }
-      else {
-        gClimbFlag = true;
-      }
 
       if (millis() - gLastRightRotaryActionTs < cDisableAlarmKnobMovementTime) {
         noTone(cBuzzPin); //stop the buzzer
@@ -1229,7 +1251,8 @@ void drawLeftScreen() {
     gOled.print(gDisplayBottomContent);
   }
 
-
+  Serial.print("Cursor ");
+  Serial.println(gCursor);
   switch (gCursor) {
     case CursorSelectHeading: //Display Selected Heading
     {
@@ -1246,40 +1269,57 @@ void drawLeftScreen() {
       sprintf(gDisplayBottomContent, "%d.%02d" cInLabel, (int)gAltimeterSettingInHgDouble, (int)(gAltimeterSettingInHgDouble*100)%100);
       break;
 
-    case CursorViewMinimums:
+    case CursorSelectMinimumsOn:
     {
       sprintf(gDisplayTopContent, "%s", "Minimums");
       long altitudeDifference = gTrueAltitudeDouble - gSelectedAltitudeLong;
+      gOled.setTextSize(2);
+      gOled.setCursor(1, cReadoutTextYpos + 7);
       if (ePressureSensorFailed) {
-        gOled.setTextSize(2);
-        gOled.setCursor(1, cReadoutTextYpos + 7);
-        gOled.print("Failed");
+        gOled.print("SensorFail");
       }
       else if (gSensorMode == SensorModeOff) {
-        gOled.setTextSize(2);
-        gOled.setCursor(1, cReadoutTextYpos + 7);
         gOled.print("Sensor Off");
       }
+      else if (gMinimumsOn) {
+        gOled.print("ON");
+        gOled.writeLine(0, 32, 30, 32, SSD1306_WHITE); //line for selection
+
+        long minimumtsAltitudeLong = gMinimumsAltitudeLong;
+        char* minimumsAltitude = displayNumber(roundNumber(minimumtsAltitudeLong, cTrueAltitudeRoundToNearestFt), false);
+        sprintf(gDisplayBottomContent, "%6s", minimumsAltitude);
+        gOled.setCursor(60, cReadoutTextYpos + 7);
+        gOled.print(gDisplayBottomContent);
+        delete minimumsAltitude;
+      }
       else {
-        if (altitudeDifference < 0) {
-          sprintf(gDisplayTopContent, "%s", "");
-          gOled.setTextSize(2);
-          gOled.setCursor(19, cReadoutTextYpos);
-          gOled.print("MINIMUMS");
-        }
-        else {
-          char* altitudeCountdownReadout = displayNumber(roundNumber(altitudeDifference, cTrueAltitudeRoundToNearestFt));
-          sprintf(gDisplayBottomContent, "%6s", altitudeCountdownReadout);
-          delete altitudeCountdownReadout;
+        gOled.print("OFF");
+        gOled.writeLine(0, 32, 30, 32, SSD1306_WHITE); //line for selection
+      }
+      break;
+    }
 
-          gOled.setTextSize(cReadoutTextSize);
-          gOled.setCursor(0, cReadoutTextYpos);
-          gOled.print(gDisplayBottomContent);
+    case CursorSelectMinimumsAltitude:
+    {
+      sprintf(gDisplayTopContent, "%s", "Minimums");
+      long altitudeDifference = gTrueAltitudeDouble - gSelectedAltitudeLong;
+      gOled.setTextSize(2);
+      gOled.setCursor(1, cReadoutTextYpos + 7);
+      if (ePressureSensorFailed) {
+        gOled.print("SensorFail");
+      }
+      else if (gSensorMode == SensorModeOff) {
+        gOled.print("Sensor Off");
+      }
+      else { //we only reach this if minimums are turned ON
+        gOled.print("ON");
 
-          gOled.setTextSize(2);
-          gOled.setCursor(104, cReadoutTextYpos + 7);
-          gOled.print(cFtLabel);
-        }
+        long minimumtsAltitudeLong = gMinimumsAltitudeLong;
+        char* minimumsAltitude = displayNumber(roundNumber(minimumtsAltitudeLong, cTrueAltitudeRoundToNearestFt), false);
+        sprintf(gDisplayBottomContent, "%6s", minimumsAltitude);
+        gOled.setCursor(40, cReadoutTextYpos + 7);
+        gOled.print(gDisplayBottomContent);
+        delete minimumsAltitude;
       }
       break;
     }
@@ -1370,7 +1410,7 @@ void drawLeftScreen() {
   gOled.setCursor(1, cLabelTextYpos);
   gOled.print(gDisplayTopContent);
 
-  if (gCursor != CursorViewMinimums && gCursor != CursorViewSensorTemp) {
+  if (gCursor != CursorSelectMinimumsOn && gCursor != CursorSelectMinimumsAltitude && gCursor != CursorViewSensorTemp) {
     gOled.setTextSize(cReadoutTextSize);
     gOled.setCursor(1, cReadoutTextYpos);
     gOled.print(gDisplayBottomContent);
@@ -1399,12 +1439,23 @@ void drawRightScreen() {
     gOled.dim(false, 255);
   }
 
-  //Battery status
-  if (gBatteryLevel <= cBatteryAlertLevel) {
-    sprintf(gDisplayTopContent, "%d%%", gBatteryLevel);
-    gOled.setTextSize(cLabelTextSize);
-    gOled.setCursor(1, cLabelTextYpos);
-    gOled.print(gDisplayTopContent);
+  gOled.setTextSize(cLabelTextYpos);
+  gOled.setCursor(1, cLabelTextYpos);
+  if (gMinimumsOn) {
+    long altitudeDifference = gTrueAltitudeDouble - gMinimumsAltitudeLong;
+    if (altitudeDifference >= 0) {
+      char* altitudeCountdownReadout = displayNumber(roundNumber(altitudeDifference, cTrueAltitudeRoundToNearestFt), true);
+      sprintf(gDisplayTopContent, "%6s", altitudeCountdownReadout);
+      delete altitudeCountdownReadout;
+
+      
+      gOled.print(gDisplayTopContent);
+      gOled.setCursor(45, cLabelTextYpos);
+      gOled.print(cFtLabel);
+    }
+  }
+  else if (gBatteryLevel <= cBatteryAlertLevel) { //low battery
+    gOled.print("LOW BATT");
   }
 
   long tempSelectedAltitude = gSelectedAltitudeLong; //doing this here because it's used inside of 2 scopes
@@ -1424,7 +1475,7 @@ void drawRightScreen() {
   }
   else if (gSensorMode == SensorModeOnShow) {
     //show the current altitude top-right
-    char* trueAltitudeReadout = displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearestFt));
+    char* trueAltitudeReadout = displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearestFt), false);
     sprintf(gDisplayTopContent, "%6s", trueAltitudeReadout);
     gOled.setTextSize(cLabelTextSize);
     gOled.setCursor(70, cLabelTextYpos);
@@ -1439,7 +1490,7 @@ void drawRightScreen() {
 
 
   //Selected Altitude
-  char* selectedAltitudeReadout = displayNumber(tempSelectedAltitude);
+  char* selectedAltitudeReadout = displayNumber(tempSelectedAltitude, false);
   sprintf(gDisplayBottomContent, "%6s", selectedAltitudeReadout);
   delete selectedAltitudeReadout;
 
@@ -1701,19 +1752,35 @@ double altitudeCorrected(double pressureAltitude) {
 //////////////////////////////////////////////////////////////////////////
 // Prints number with commas, but only supports [0, 999999]
 //////////////////////////////////////////////////////////////////////////
-char* displayNumber(const long &number) {
+char* displayNumber(const long &number, bool sign) {
   int thousands = static_cast<int>(number / 1000);
   int ones = static_cast<int>(number % 1000);
   char* result = new char[8];
 
-  if (number >= 1000) {
-    sprintf(result, "%01d,%03d", thousands, ones);
-  }
-  else if (number <= -1000) {
-    sprintf(result, "%01d,%03d", thousands, abs(ones));
+  if (sign) {
+    if (number >= 1000) {
+      sprintf(result, "%c%01d,%03d", '+', thousands, ones);
+    }
+    else if (number <= -1000) {
+      sprintf(result, "%01d,%03d", thousands, abs(ones));
+    }
+    else if (number < 0) {
+      sprintf(result, "%01d", ones);
+    }
+    else {
+      sprintf(result, "%c%01d", '+', ones);
+    }
   }
   else {
-    sprintf(result, "%01d", ones);
+    if (number >= 1000) {
+      sprintf(result, "%01d,%03d", thousands, ones);
+    }
+    else if (number <= -1000) {
+      sprintf(result, "%01d,%03d", thousands, abs(ones));
+    }
+    else {
+      sprintf(result, "%01d", ones);
+    }
   }
 
   return result;
