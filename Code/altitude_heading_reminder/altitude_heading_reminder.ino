@@ -93,6 +93,7 @@ volatile int    gSelectedHeadingInt; //degrees
 volatile bool   gMinimumsOn;
 volatile long   gMinimumsAltitudeLong = 1000;
 volatile bool   gMinimumsTriggered = true;
+volatile bool   gMinimumsSilenced = true;
 
 //Anti-piracy
 volatile int    gSelectAppCode = 0;
@@ -677,6 +678,9 @@ void handlePressureSensor() {
             gUpdateLeftScreen = true;
           }
         }
+        if (gMinimumsSilenced && gTrueAltitudeDouble - gMinimumsAltitudeLong >= cMinimumsTriggeredResetAltitudeDiff) {
+          gMinimumsSilenced = false;
+        }
         gUpdateRightScreen = true;
       }
     }
@@ -790,10 +794,9 @@ void handleLeftRotaryMovement(int increment) {
       }
       else {
         gMinimumsOn = true;
+        gMinimumsTriggered = false;
         gLastMinimumsAltitudeTs = millis(); //note the time the minimums altitude changed so we silence the alarm/buzzer for a short time
-
-        //set the triggered flag
-        gMinimumsTriggered = gMinimumsAltitudeLong > gTrueAltitudeDouble;
+        gMinimumsSilenced = gMinimumsAltitudeLong > gTrueAltitudeDouble;
       }
       break;
 
@@ -817,7 +820,8 @@ void handleLeftRotaryMovement(int increment) {
       }
 
       //set the triggered flag
-      gMinimumsTriggered = gMinimumsAltitudeLong > gTrueAltitudeDouble;
+      gMinimumsTriggered = false;
+      gMinimumsSilenced = gMinimumsAltitudeLong > gTrueAltitudeDouble;
       break;
     }
 
@@ -1012,7 +1016,7 @@ void handleRightRotaryLongPress() {
 void handleBuzzer() {
   
   //Handle changing of minimums altitude selection
-  if (gSensorMode != SensorModeOff && gMinimumsOn && !gMinimumsTriggered && gTrueAltitudeDouble <= gMinimumsAltitudeLong && millis() - gLastMinimumsAltitudeTs >= cDisableAlarmKnobMovementTime) {
+  if (gSensorMode != SensorModeOff && gMinimumsOn && !gMinimumsSilenced && !gMinimumsTriggered && gTrueAltitudeDouble <= gMinimumsAltitudeLong && millis() - gLastMinimumsAltitudeTs >= cDisableAlarmKnobMovementTime) {
     gAlarmModeEnum = MinimumsAlarm;
     gMinimumsTriggered = true;
   }
@@ -1474,7 +1478,7 @@ void drawRightScreen() {
   gOled.setCursor(1, cLabelTextYpos);
   if (gMinimumsOn) {
     long altitudeDifference = gTrueAltitudeDouble - gMinimumsAltitudeLong;
-    if (!gMinimumsTriggered) {
+    if (!gMinimumsTriggered && !gMinimumsSilenced) {
       char* altitudeCountdownReadout = displayNumber(roundNumber(altitudeDifference, cTrueAltitudeRoundToNearestFt), true);
       sprintf(gDisplayTopContent, "%6s", altitudeCountdownReadout);
       delete altitudeCountdownReadout;
