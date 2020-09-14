@@ -100,21 +100,21 @@ volatile int    gAppCodeSequence = 0;
 bool            gLegitimate = true;
 
 //Buzzer
-#define            cAlarm200ToGo                     200  //ft
-#define            cAlarm1000ToGo                    1000 //ft
-#define            cBuzzPin                          6
-#define            cLongBuzzDuration                 1000
-#define            cShortBuzzOnDuration              250
-#define            cShortBuzzOffDuration             100
-#define            cMinimumsLongBuzzOnDuration       500
-#define            cMinimumsShortBuzzOnDuration      100
-#define            cMinimumsBuzzOffDuration          100
-#define            cMinimumsOffBetweenCycleDuration  50
-#define            cMinimumsNumberOfBeepCylces       8
-#define            cMinimumsTriggeredResetAltitude   200 //ft
-#define            cUrgentBuzzNumberOfBeeps          3
-#define            cDisableAlarmKnobMovementTime     1200
-#define            cDisableAlarmAfterAlarmTime       1800
+#define            cAlarm200ToGo                         200  //ft
+#define            cAlarm1000ToGo                        1000 //ft
+#define            cBuzzPin                              6
+#define            cLongBuzzDuration                     1000
+#define            cShortBuzzOnDuration                  250
+#define            cShortBuzzOffDuration                 100
+#define            cMinimumsLongBuzzOnDuration           450
+#define            cMinimumsShortBuzzOnDuration          100
+#define            cMinimumsBuzzOffDuration              50
+#define            cMinimumsOffBetweenCycleDuration      100
+#define            cMinimumsNumberOfBeepCylces           5
+#define            cMinimumsTriggeredResetAltitudeDiff   200 //ft
+#define            cUrgentBuzzNumberOfBeeps              3
+#define            cDisableAlarmKnobMovementTime         1200
+#define            cDisableAlarmAfterAlarmTime           1800
 enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 int                gBuzzCountInt;
@@ -671,8 +671,11 @@ void handlePressureSensor() {
       }
       else { //only update the true altitude if the pressure reading was valid
         gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
-        if (gMinimumsTriggered && gTrueAltitudeDouble - gMinimumsAltitudeLong >= cMinimumsTriggeredResetAltitude) {
-          gMinimumsTriggered = false;
+        if (gMinimumsTriggered && abs(gTrueAltitudeDouble - gMinimumsAltitudeLong) >= cMinimumsTriggeredResetAltitudeDiff) {
+          gMinimumsOn = false;
+          if (gCursor == CursorSelectMinimumsOn || gCursor == CursorSelectMinimumsAltitude) {
+            gUpdateLeftScreen = true;
+          }
         }
         gUpdateRightScreen = true;
       }
