@@ -802,7 +802,6 @@ void handleLeftRotaryMovement(int increment) {
 
     case CursorSelectMinimumsAltitude:
     {
-      gUpdateRightScreen = true;
       gLastMinimumsAltitudeTs = millis(); //note the time the minimums altitude changed so we silence the alarm/buzzer for a short time
 
       int incrementMagnitude = cAltitudeSelectIncrement;
