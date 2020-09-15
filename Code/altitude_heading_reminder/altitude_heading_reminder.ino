@@ -112,13 +112,16 @@ bool            gLegitimate = true;
 #define            cMinimumsBuzzOffDuration              50
 #define            cMinimumsOffBetweenCycleDuration      100
 #define            cMinimumsNumberOfBeepCylces           5
-#define            cMinimumsTriggeredResetAltitudeDiff   200 //ft
 #define            cUrgentBuzzNumberOfBeeps              3
 #define            cDisableAlarmKnobMovementTime         1200
 #define            cDisableAlarmAfterAlarmTime           1800
 enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 int                gBuzzCountInt;
+
+//Minimums
+#define            cMinimumsSilencedAutoOnAltitudeDiff   100 //ft
+#define            cMinimumsTriggeredAutoOffTime         10000 //10 seconds
 
 //Battery
 #define       cBatteryVoltagePin      A0
@@ -133,6 +136,7 @@ unsigned long          gNextSensorReadyTs;
 unsigned long          gNextBuzzTs;
 unsigned long          gLastAlarmTs;
 unsigned long          gTimerStartTs;
+unsigned long          gMinimumsTriggeredTs;
 volatile unsigned long gLeftButtonPressedTs;
 volatile unsigned long gRightButtonPressedTs;
 volatile unsigned long gLastRightRotaryActionTs;
@@ -615,6 +619,11 @@ void loop() {
     updateBatteryLevel();
   }
 
+  //Automatically turn off minimums if these conditions are met
+  if (gMinimumsTriggered && millis() - gMinimumsTriggeredTs >= cMinimumsTriggeredAutoOffTime) {
+    gMinimumsOn = false;
+  }
+
   handleBuzzer();
   handleDisplay();
 
@@ -672,13 +681,7 @@ void handlePressureSensor() {
       }
       else { //only update the true altitude if the pressure reading was valid
         gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
-        if (gMinimumsTriggered && abs(gTrueAltitudeDouble - gMinimumsAltitudeLong) >= cMinimumsTriggeredResetAltitudeDiff) {
-          gMinimumsOn = false;
-          if (gCursor == CursorSelectMinimumsOn || gCursor == CursorSelectMinimumsAltitude) {
-            gUpdateLeftScreen = true;
-          }
-        }
-        if (gMinimumsSilenced && gTrueAltitudeDouble - gMinimumsAltitudeLong >= cMinimumsTriggeredResetAltitudeDiff) {
+        if (gMinimumsSilenced && gTrueAltitudeDouble - gMinimumsAltitudeLong >= cMinimumsSilencedAutoOnAltitudeDiff) {
           gMinimumsSilenced = false;
         }
         gUpdateRightScreen = true;
@@ -791,6 +794,7 @@ void handleLeftRotaryMovement(int increment) {
       gUpdateRightScreen = true;
       if (gMinimumsOn) {
         gMinimumsOn = false;
+        gMinimumsSilenced = false;
       }
       else {
         gMinimumsOn = true;
@@ -1018,6 +1022,7 @@ void handleBuzzer() {
   if (gSensorMode != SensorModeOff && gMinimumsOn && !gMinimumsSilenced && !gMinimumsTriggered && gTrueAltitudeDouble <= gMinimumsAltitudeLong && millis() - gLastMinimumsAltitudeTs >= cDisableAlarmKnobMovementTime) {
     gAlarmModeEnum = MinimumsAlarm;
     gMinimumsTriggered = true;
+    gMinimumsTriggeredTs = millis();
   }
 
   switch (gAlarmModeEnum) {
