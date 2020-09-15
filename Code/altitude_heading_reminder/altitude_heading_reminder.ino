@@ -109,7 +109,7 @@ bool            gLegitimate = true;
 #define            cShortBuzzOffDuration                 100
 #define            cMinimumsLongBuzzOnDuration           450
 #define            cMinimumsShortBuzzOnDuration          100
-#define            cMinimumsBuzzOffDuration              50
+#define            cMinimumsBuzzOffDuration              70
 #define            cMinimumsOffBetweenCycleDuration      100
 #define            cMinimumsNumberOfBeepCylces           5
 #define            cUrgentBuzzNumberOfBeeps              3
@@ -622,6 +622,10 @@ void loop() {
   //Automatically turn off minimums if these conditions are met
   if (gMinimumsTriggered && millis() - gMinimumsTriggeredTs >= cMinimumsTriggeredAutoOffTime) {
     gMinimumsOn = false;
+    if (gCursor == CursorSelectMinimumsOn || gCursor == CursorSelectMinimumsAltitude) {
+      gUpdateLeftScreen = true;
+      gCursor = CursorSelectMinimumsOn; //kick us back to this mode, because the "MinimumsAltitude" always says "ON"
+    }
   }
 
   handleBuzzer();
@@ -1481,8 +1485,15 @@ void drawRightScreen() {
   gOled.setTextSize(cLabelTextYpos);
   gOled.setCursor(1, cLabelTextYpos);
   if (gMinimumsOn) {
-    long altitudeDifference = gTrueAltitudeDouble - gMinimumsAltitudeLong;
-    if (!gMinimumsTriggered && !gMinimumsSilenced) {
+    if (gMinimumsTriggered && gFlashRightScreen) {
+      gOled.setTextSize(2);
+      gOled.setCursor(18, 9);
+      gOled.print("MINIMUMS");
+      gOled.display();
+      return;
+    }
+    else if (!gMinimumsTriggered && !gMinimumsSilenced) {
+      long altitudeDifference = gTrueAltitudeDouble - gMinimumsAltitudeLong;
       char* altitudeCountdownReadout = displayNumber(roundNumber(altitudeDifference, cTrueAltitudeRoundToNearestFt), true);
       sprintf(gDisplayTopContent, "%6s", altitudeCountdownReadout);
       delete altitudeCountdownReadout;
