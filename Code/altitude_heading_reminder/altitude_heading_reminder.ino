@@ -41,9 +41,10 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #define cAltitudeSelectIncrement       100   //ft
 #define cAltitudeFineSelectIncrement   10    //ft
 #define cAltitudeHighSelectIncrement   1000  //ft
+#define cMinimumsSelectIncrement       50    //ft
 #define cHighAltitude                  18000 //ft
 #define cDefaultSelectedAltitude       3000  //ft
-#define cLowestAltitudeSelect          -1500 //ft
+#define cLowestAltitudeSelect          -1000 //ft
 #define cHighestAltitudeSelect         60000 //ft
 #define cHighestAltitudeAlert          24000 //ft, the pressure sensor will only measure so high. No point in alerting above a certain pressure level
 #define cAltimeterSettingInHgMin       27.50 //inHg
@@ -812,14 +813,14 @@ void handleLeftRotaryMovement(int increment) {
     {
       gLastMinimumsAltitudeTs = millis(); //note the time the minimums altitude changed so we silence the alarm/buzzer for a short time
 
-      int incrementMagnitude = cAltitudeSelectIncrement;
-      int rounding = cAltitudeSelectIncrement;
+      int incrementMagnitude = cMinimumsSelectIncrement;
+      int rounding = cMinimumsSelectIncrement;
       if (gLeftRotaryFineTuningPress) {
         incrementMagnitude = cAltitudeFineSelectIncrement;
         rounding = cAltitudeFineSelectIncrement;
       }
-      else if (gMinimumsAltitudeLong % cAltitudeSelectIncrement != 0) {
-        incrementMagnitude = cAltitudeSelectIncrement / 2; //we are at an in-between cAltitudeSelectIncrement state, so the knob movement will increment or decement to the nearest cAltitudeSelectIncrement
+      else if (gMinimumsAltitudeLong % cMinimumsSelectIncrement != 0) {
+        incrementMagnitude = cMinimumsSelectIncrement / 2; //we are at an in-between cMinimumsSelectIncrement state, so the knob movement will increment or decement to the nearest cAltitudeSelectIncrement
       }
       gMinimumsAltitudeLong = max(roundNumber(gMinimumsAltitudeLong + increment * incrementMagnitude, rounding), cLowestAltitudeSelect);
       if (gMinimumsAltitudeLong > cHighAltitude) {
