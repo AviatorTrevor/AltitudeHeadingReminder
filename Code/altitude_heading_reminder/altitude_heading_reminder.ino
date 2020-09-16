@@ -2,12 +2,16 @@
 Author: Trevor Bartlett
 Email: aviatortrevor@gmail.com
 
-Hardware device to remind pilots of assigned headings & altitudes. Also has buzzer feature
-to alert the pilot of when he/she is approaching altitude, or departed from it.
+Hardware device to remind pilots of assigned headings, altitudes, IFR procedure minimums, and other features.
+The device measures atmospheric pressure to present to the pilot what their altitude is. Cabin altitude can
+be slightly different from static pressure used by the aircraft's altimeter, so there is a calibration offset
+provided to the user. It also has buzzer feature to alert the pilot of when he/she is approaching altitude,
+or departed from it.
 
 *TODO:
 *adjust code for new pressure sensor when you get the PCB ordered
 *volume control?
+*print "LOW BATTERY" for brief periods of time even when Minimums is turned on
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
@@ -19,7 +23,7 @@ to alert the pilot of when he/she is approaching altitude, or departed from it.
 #include <Custom_GFX.h>
 #include <Custom_SSD1306.h>
 
-#define DEBUG //TODO remove
+//#define DEBUG //TODO remove
 
 #define cAppVersion                    "1.0" //[HardwareConfigOrMajorRedesign].[SoftwareRelease]
 #define cAppCodeNumberOfDigits         6
@@ -1503,8 +1507,11 @@ void drawRightScreen() {
       gOled.setCursor(43, cLabelTextYpos);
       gOled.print(cFtLabel);
     }
-    else {
+    else if (gMinimumsTriggered) {
       gOled.print("MINIMUMS");
+    }
+    else { //gMinimumsSilenced
+      gOled.print("--------");
     }
   }
   else if (gBatteryLevel <= cBatteryAlertLevel) { //low battery
