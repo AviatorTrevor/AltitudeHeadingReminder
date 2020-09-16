@@ -126,7 +126,7 @@ int                gBuzzCountInt;
 
 //Minimums
 #define            cMinimumsSilencedAutoOnAltitudeDiff   100 //ft
-#define            cMinimumsTriggeredAutoOffTime         10000 //10 seconds
+#define            cMinimumsTriggeredAutoOffTime         30000 //30 seconds
 
 //Battery
 #define       cBatteryVoltagePin      A0
