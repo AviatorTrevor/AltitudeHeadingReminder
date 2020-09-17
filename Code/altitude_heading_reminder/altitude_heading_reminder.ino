@@ -12,6 +12,7 @@ or departed from it.
 *adjust code for new pressure sensor when you get the PCB ordered
 *volume control?
 *print "LOW BATTERY" for brief periods of time even when Minimums is turned on
+*investigate why there is a ghost image when the screen colors are "inverted". Perhaps send an update twice?
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
