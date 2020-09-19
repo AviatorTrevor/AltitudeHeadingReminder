@@ -4,7 +4,7 @@
   "name": "AltitudeHeadingReminder",
   "content": "",
   "created_at": "2020-07-07 22:56:29",
-  "updated_at": "2020-09-10 19:42:24",
+  "updated_at": "2020-09-19 02:04:17",
   "stick": "",
   "documents": [
     {
@@ -22,7 +22,6 @@
         "f5b1d9403e49471cab43bc5a1bec336f": 2,
         "93b44d62463c4c9c82dd7108c8ee7d73": 1,
         "a052559478a14ee2b9e3514bee4ff72d": 2,
-        "212e4e7ac253e44d17caceb02663d93c": 3,
         "404aa9221ff94de597b8734806e7c74f": 4,
         "169fb5a2c8404ae99fcb660681a2e6b4": 1,
         "9eddb0dc64ee9d911fa2d70653f1d71f": 1,
@@ -31,18 +30,19 @@
         "ca94110f4544769d36adda4b0515e409": 6,
         "fffefb2a47c50d7f390a5f5cfb2b4d4d": 1,
         "3e0fb0c806d434e4d3ee93b3d2cd8f1d": 2,
-        "f9320447cefe8840d4d854b157da9204": 1,
         "22afc3b6b9f5465fab92a825dd343145": 1,
         "6c2bedbae9fbd358441dfb9948555b9c": 6,
         "b115fc3265004bdeac1e77a99429dfa1": 1,
-        "c73c917a5efd0eb668693c71350984d5": 5,
         "72a1f072224748d48af03606ba8f2526": 1,
         "868011bcb59840aaa82f682a5639957f": 1,
         "f54990f485ef45639861155b276c1b2c": 1,
         "3d14293efe3587dbfb9a183922e8a55e": 1,
         "739ad43e70f87969aa0056ebc970a314": 1,
         "b7f4011708b1ff11d3519755a9eef170": 1,
-        "2291b26429a0a53b9787e50172e9245c": 1
+        "2291b26429a0a53b9787e50172e9245c": 1,
+        "ee3f2b66a3de5b5b8bb94df95674677b": 1,
+        "3eed98608c2542ad840aa25932b95975": 5,
+        "b585d92194385de14506b560a4a27e20": 3
       },
       "BOM": [
         [
@@ -53,15 +53,16 @@
           "CustomPara"
         ],
         [
-          "SS34",
+          "FS8205",
           1,
-          "SMA(DO-214AC)",
-          "D1",
+          "SOT-23-6",
+          "Q1",
           {
             "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer Part": "SS34",
-            "BOM_Supplier Part": "C8678",
-            "puuid": "ed2608fb878c01f3500a9ec0a517fd5d",
+            "BOM_Manufacturer": "FORTUNE",
+            "BOM_Manufacturer Part": "FS8205",
+            "BOM_Supplier Part": "C32254",
+            "puuid": "c9505f60178b4b09a38c43ffc0b7a6ef",
             "uuid": ""
           }
         ],
@@ -80,6 +81,19 @@
           }
         ],
         [
+          "SS34",
+          1,
+          "SMA(DO-214AC)",
+          "D1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer Part": "SS34",
+            "BOM_Supplier Part": "C8678",
+            "puuid": "ed2608fb878c01f3500a9ec0a517fd5d",
+            "uuid": ""
+          }
+        ],
+        [
           "MT3608",
           1,
           "SOT-23-6",
@@ -89,20 +103,6 @@
             "BOM_Manufacturer": "LCSC",
             "BOM_Manufacturer Part": "MT3608",
             "BOM_Supplier Part": "C84817",
-            "puuid": "c9505f60178b4b09a38c43ffc0b7a6ef",
-            "uuid": ""
-          }
-        ],
-        [
-          "FS8205",
-          1,
-          "SOT-23-6",
-          "Q1",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "FORTUNE",
-            "BOM_Manufacturer Part": "FS8205",
-            "BOM_Supplier Part": "C32254",
             "puuid": "c9505f60178b4b09a38c43ffc0b7a6ef",
             "uuid": ""
           }
@@ -141,7 +141,7 @@
           "2N3906",
           2,
           "TO-92-3_L4.9-W3.7-P1.27-L",
-          "Q4,Q3",
+          "Q3,Q4",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "CJ",
@@ -152,10 +152,25 @@
           }
         ],
         [
+          "22uF",
+          5,
+          "C0805",
+          "C14,C12,C13,C3,C4",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "SAMSUNG",
+            "BOM_Manufacturer Part": "CL21A226MAQNNNE",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C45783",
+            "puuid": "bbc61cb2bd3840b290cf4f8db68b3c00",
+            "uuid": "3eed98608c2542ad840aa25932b95975"
+          }
+        ],
+        [
           "10K",
           6,
           "R0402",
-          "R8,R17,R14,R9,R12,R11",
+          "R12,R9,R14,R17,R8,R11",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "UniOhm",
@@ -253,25 +268,10 @@
           }
         ],
         [
-          "10uF",
-          3,
-          "CAP-SMD_L3.2-W1.6-R-RD",
-          "C1,C10,C11",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "AVX",
-            "BOM_Manufacturer Part": "TAJA106K016RNJ",
-            "BOM_LCSC Assembly": "Yes",
-            "BOM_Supplier Part": "C7171",
-            "puuid": "61ca4390f2284e11848b2ab1e8ce9766",
-            "uuid": "212e4e7ac253e44d17caceb02663d93c"
-          }
-        ],
-        [
           "19-217/GHC-YR1S2/3T",
           1,
           "LED0603-R-RD",
-          "LED-G",
+          "G",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "EVERLIGHT",
@@ -283,10 +283,10 @@
           }
         ],
         [
-          "HDR-M-2.54_1x1",
-          2,
+          "BAT+1",
+          1,
           "HDR-M-2.54_1X1",
-          "BUZ-,BUZ+",
+          "B+",
           {
             "BOM_Supplier Part": "C81276",
             "BOM_Supplier": "LCSC",
@@ -296,10 +296,10 @@
           }
         ],
         [
-          "BAT+1",
-          1,
+          "HDR-M-2.54_1x1",
+          2,
           "HDR-M-2.54_1X1",
-          "B+",
+          "BUZ-,BUZ+",
           {
             "BOM_Supplier Part": "C81276",
             "BOM_Supplier": "LCSC",
@@ -355,7 +355,7 @@
           "KT-0603R",
           1,
           "LED0603-R-RD",
-          "LED-R",
+          "R",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "KENTO",
@@ -439,25 +439,25 @@
           }
         ],
         [
-          "22uF",
-          5,
-          "CAP-SMD_L3.2-W1.6-R-RD",
-          "C4,C13,C12,C14,C3",
+          "10uF",
+          3,
+          "C0402",
+          "C1,C11,C10",
           {
             "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "AVX",
-            "BOM_Manufacturer Part": "TAJA226K010RNJ",
-            "BOM_Supplier Part": "C11366",
+            "BOM_Manufacturer Part": "CL05A106MQ5NUNC",
+            "BOM_Manufacturer": "SAMSUNG",
             "BOM_LCSC Assembly": "Yes",
-            "puuid": "61ca4390f2284e11848b2ab1e8ce9766",
-            "uuid": "c73c917a5efd0eb668693c71350984d5"
+            "BOM_Supplier Part": "C15525",
+            "puuid": "f8eca159cd18407f9d5df374a1c2badf",
+            "uuid": "b585d92194385de14506b560a4a27e20"
           }
         ],
         [
           "100nF",
           6,
           "C0402",
-          "C8,C2,C6,C7,C5,C9",
+          "C5,C7,C8,C2,C9,C6",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer Part": "CL05B104KO5NNNC",
@@ -469,10 +469,25 @@
           }
         ],
         [
-          "Display 1",
+          "39K",
+          1,
+          "R0402",
+          "R6",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "UniOhm",
+            "BOM_Manufacturer Part": "0402WGF3902TCE",
+            "BOM_LCSC Assembly": "Yes",
+            "BOM_Supplier Part": "C25783",
+            "puuid": "cea456c24ca24165b176bcf9114a7b29",
+            "uuid": "ee3f2b66a3de5b5b8bb94df95674677b"
+          }
+        ],
+        [
+          "Display 2",
           1,
           "HDR-M-2.54_1X4",
-          "J3",
+          "J4",
           {
             "BOM_Supplier Part": "C124378",
             "BOM_Supplier": "LCSC",
@@ -483,10 +498,10 @@
           }
         ],
         [
-          "Display 2",
+          "Display 1",
           1,
           "HDR-M-2.54_1X4",
-          "J4",
+          "J3",
           {
             "BOM_Supplier Part": "C124378",
             "BOM_Supplier": "LCSC",
@@ -527,21 +542,6 @@
           }
         ],
         [
-          "20K",
-          1,
-          "R0402",
-          "R6",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer": "UniOhm",
-            "BOM_Manufacturer Part": "0402WGF2002TCE",
-            "BOM_LCSC Assembly": "Yes",
-            "BOM_Supplier Part": "C25765",
-            "puuid": "cea456c24ca24165b176bcf9114a7b29",
-            "uuid": "f9320447cefe8840d4d854b157da9204"
-          }
-        ],
-        [
           "ATMEGA328P-AU",
           1,
           "TQFP-32_L7.0-W7.0-P0.80-LS9.0-BL",
@@ -572,11 +572,11 @@
           }
         ]
       ],
-      "updateTime": 1599792144,
+      "updateTime": 1600505986,
       "createTime": 1594192792,
       "histories": [],
       "created_at": "2020-07-08 00:19:52",
-      "updated_at": "2020-09-10 19:42:24"
+      "updated_at": "2020-09-19 01:59:46"
     },
     {
       "uuid": "20a312a855db8bf5c635c113bc2a264b",
@@ -588,12 +588,13 @@
       "master": "",
       "thumb": "/images/thumb-default.png",
       "components": {
+        "50dc3b6111d549ddb6686d77ab1ebdd8": 2,
+        "cea456c24ca24165b176bcf9114a7b29": 12,
+        "bbc61cb2bd3840b290cf4f8db68b3c00": 5,
+        "f8eca159cd18407f9d5df374a1c2badf": 9,
         "e8901072611c4b309f15829075c906c5": 4,
         "19c77e72422b43b59c26b9fa67af5de4": 4,
-        "cea456c24ca24165b176bcf9114a7b29": 12,
-        "f8eca159cd18407f9d5df374a1c2badf": 6,
         "c97065da658549e98f95ac59a402a593": 1,
-        "61ca4390f2284e11848b2ab1e8ce9766": 8,
         "928ebed0de7448b6ae94ba2da5e32f47": 1,
         "488ee76418a44ca185c0d11e12db2ab7": 1,
         "ed2608fb878c01f3500a9ec0a517fd5d": 1,
@@ -603,7 +604,6 @@
         "a3d5c2dda4a34d6d9de93d8e06f3e188": 1,
         "df3ca37cb13d499cb713e9aa6fdd0c7b": 1,
         "cc33f00711a541bfbe7fb0b164318c1f": 1,
-        "50dc3b6111d549ddb6686d77ab1ebdd8": 2,
         "108969f8d9834a9ea23bcec2d43a66e4": 2,
         "282f7786cb6144d097ae00194c3e3fb3": 2,
         "7568fee05bc44581b2c32625ae15b3f8": 1,
@@ -612,11 +612,11 @@
         "cd3b409a11704b5090bebb894dca3ac7": 1
       },
       "BOM": [],
-      "updateTime": 1599791994,
+      "updateTime": 1600506257,
       "createTime": 1597046156,
       "histories": [],
       "created_at": "2020-08-10 00:55:56",
-      "updated_at": "2020-09-10 19:39:54"
+      "updated_at": "2020-09-19 02:04:17"
     }
   ],
   "sort": [
@@ -626,5 +626,5 @@
   "title": "AltitudeHeadingReminder",
   "foldername": "AltitudeHeadingReminder",
   "schfilename": "AltitudeHeadingReminder.json",
-  "schfilemtime": 1599792144664
+  "schfilemtime": 1600505986648
 }
