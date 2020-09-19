@@ -11,7 +11,8 @@ or departed from it.
 *TODO:
 *adjust code for new pressure sensor when you get the PCB ordered
 *volume control?
-*print "LOW BATTERY" for brief periods of time even when Minimums is turned on
+*add minimums altitude to EEPROM?
+*There is a spike in the reported altitude periodically where altitude drops by a few thousand feet. For now, I'm assuming this is just a fault in the pressure sensor
 *investigate why there is a ghost image when the screen colors are "inverted". Perhaps send an update twice?
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
@@ -113,10 +114,10 @@ bool            gLegitimate = true;
 #define            cLongBuzzDuration                     1000
 #define            cShortBuzzOnDuration                  250
 #define            cShortBuzzOffDuration                 100
-#define            cMinimumsLongBuzzOnDuration           450
-#define            cMinimumsShortBuzzOnDuration          100
-#define            cMinimumsBuzzOffDuration              70
-#define            cMinimumsOffBetweenCycleDuration      100
+#define            cMinimumsLongBuzzOnDuration           375
+#define            cMinimumsShortBuzzOnDuration          125
+#define            cMinimumsBuzzOffDuration              125
+#define            cMinimumsOffBetweenCycleDuration      125
 #define            cMinimumsNumberOfBeepCylces           5
 #define            cUrgentBuzzNumberOfBeeps              3
 #define            cDisableAlarmKnobMovementTime         1200
@@ -133,8 +134,16 @@ int                gBuzzCountInt;
 #define       cBatteryVoltagePin      A0
 #define       cBatteryUpdateInterval  30000
 #define       cBatteryAlertLevel      15
+#define       cBatteryMessageInterval 15000 //15 seconds
+#define       cBatteryMessageDuration 1500  //1.5 seconds
 int           gBatteryLevel;
 unsigned long gBatteryUpdateTs;
+#define       cBatteryCapacityArrayLength   21
+#define       cBatteryCapacityArrayInterval 5 //this represents the jump in battery capacity per index in the array
+const double  cBatteryCapacity[2][cBatteryCapacityArrayLength] = { //TODO update battery voltages when you test
+  3.27, 3.61, 3.69, 3.71, 3.73, 3.75, 3.77, 3.79, 3.80, 3.82, 3.84, 3.85, 3.87, 3.91, 3.95, 3.98, 4.02, 4.08, 4.11, 4.15, 4.2,
+     0,    5,   10,   15,   20,   25,   30,   35,   40,   45,   50,   55,   60,   65,   70,   75,   80,   85,   90,   95, 100
+};
 
 //Timing control
 unsigned long          gNextSensorBeginCycleTs;
@@ -1490,6 +1499,7 @@ void drawRightScreen() {
 
   gOled.setTextSize(cLabelTextYpos);
   gOled.setCursor(1, cLabelTextYpos);
+  bool minimumsStatusDisplayed = false;
   if (gMinimumsOn) {
     if (gMinimumsTriggered && gFlashRightScreen) {
       gOled.setTextSize(2);
@@ -1498,7 +1508,15 @@ void drawRightScreen() {
       gOled.display();
       return;
     }
-    else if (!gMinimumsTriggered && !gMinimumsSilenced) {
+    else if (gMinimumsTriggered) {
+      gOled.print("MINIMUMS");
+      minimumsStatusDisplayed = true;
+    }
+    else if (gMinimumsSilenced) {
+      gOled.print("-------ft");
+      minimumsStatusDisplayed = true;
+    }
+    else {
       long altitudeDifference = gTrueAltitudeDouble - gMinimumsAltitudeLong;
       char* altitudeCountdownReadout = displayNumber(roundNumber(altitudeDifference, cTrueAltitudeRoundToNearestFt), true);
       sprintf(gDisplayTopContent, "%6s", altitudeCountdownReadout);
@@ -1507,16 +1525,17 @@ void drawRightScreen() {
       gOled.print(gDisplayTopContent);
       gOled.setCursor(43, cLabelTextYpos);
       gOled.print(cFtLabel);
-    }
-    else if (gMinimumsTriggered) {
-      gOled.print("MINIMUMS");
-    }
-    else { //gMinimumsSilenced
-      gOled.print("--------");
+      minimumsStatusDisplayed = true;
     }
   }
-  else if (gBatteryLevel <= cBatteryAlertLevel) { //low battery
-    gOled.print("LOW BATT");
+  
+  if (gBatteryLevel <= cBatteryAlertLevel) { //low battery
+    if (!minimumsStatusDisplayed || minimumsStatusDisplayed && millis() % cBatteryMessageInterval <= cBatteryMessageDuration) {
+      gOled.setTextSize(cLabelTextYpos);
+      gOled.setCursor(1, cLabelTextYpos);
+      gOled.clearDisplay();
+      gOled.print("LOW BATT");
+    }
   }
 
   long tempSelectedAltitude = gSelectedAltitudeLong; //doing this here because it's used inside of 2 scopes
@@ -1795,7 +1814,23 @@ void writeValuesToEeprom() {
 //difference = 997 - 558 = 419
 //////////////////////////////////////////////////////////////////////////
 void updateBatteryLevel() {
-  gBatteryLevel = constrain((analogRead(cBatteryVoltagePin) - 558) / 4.19, 0, 100); //TODO implement actual battery calculation
+  int voltage = analogRead(cBatteryVoltagePin) / 977.45 * 4.2; //TODO need to find out the actual max voltage and the corresponding pin readout value
+
+  for (int i = 1; i < cBatteryCapacityArrayLength; i++) {
+    if (voltage <= cBatteryCapacity[0][i]) {
+      if (i == 0) {
+        gBatteryLevel = cBatteryCapacity[1][0]; //set to 0% min.
+      }
+      else {
+        double interpolation = (voltage - cBatteryCapacity[0][i - 1]) / (cBatteryCapacity[0][i] - cBatteryCapacity[0][i - 1]);
+        gBatteryLevel = cBatteryCapacity[1][i - 1] + interpolation * cBatteryCapacityArrayInterval;
+      }
+    }
+    else if (i == cBatteryCapacityArrayLength - 1) {
+      gBatteryLevel = cBatteryCapacity[1][cBatteryCapacityArrayLength - 1]; //set to 100% max.
+    }
+  }
+
   gBatteryUpdateTs = millis();
   if (gCursor == CursorViewBatteryLevel) {
     gUpdateLeftScreen = true;
