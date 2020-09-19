@@ -860,6 +860,9 @@ void handleLeftRotaryMovement(int increment) {
       //set the triggered flag
       gMinimumsTriggered = false;
       gMinimumsSilenced = gMinimumsAltitudeLong > gTrueAltitudeDouble;
+
+      gEepromSaveNeededTs = millis();
+      gNeedToWriteToEeprom = true; //save heading to EEPROM
       break;
     }
 
@@ -1664,7 +1667,7 @@ ISR (PCINT2_vect) {    // handle pin change interrupt for D0 to D7 here
 // byte 69-70         original selected minimums altitude EEPROM-write-counter
 //////////////////////////////////////////////////////////////////////////
 void writeValuesToEeprom() {
-  /*gNeedToWriteToEeprom = false;
+  gNeedToWriteToEeprom = false;
   int eepromIndex;
   int numOfWrites;
   int datatypeSize;
@@ -1859,7 +1862,7 @@ void writeValuesToEeprom() {
   EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
   if (eepromIndex >= cSizeOfEeprom - 6) { //6 bytes is the biggest chunk of data we use
     initializeDefaultEeprom(); //start all over again with the EEPROM
-  }*/
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////
