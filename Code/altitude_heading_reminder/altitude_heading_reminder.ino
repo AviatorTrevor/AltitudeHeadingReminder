@@ -11,7 +11,6 @@ or departed from it.
 *TODO:
 *adjust code for new pressure sensor when you get the PCB ordered
 *volume control?
-*add minimums altitude to EEPROM?
 *There is a spike in the reported altitude periodically where altitude drops by a few thousand feet. For now, I'm assuming this is just a fault in the pressure sensor
 *investigate why there is a ghost image when the screen colors are "inverted". Perhaps send an update twice?
 *create software license - credit for libraries used
@@ -50,6 +49,7 @@ or departed from it.
 #define cMinimumsSelectIncrement       50    //ft
 #define cHighAltitude                  18000 //ft
 #define cDefaultSelectedAltitude       3000  //ft
+#define cDefaultMinimumsAltitude       1000  //ft
 #define cLowestAltitudeSelect          -1000 //ft
 #define cHighestAltitudeSelect         60000 //ft
 #define cHighestAltitudeAlert          24000 //ft, the pressure sensor will only measure so high. No point in alerting above a certain pressure level
@@ -65,7 +65,7 @@ or departed from it.
 
 //EEPROM
 #define         cSizeOfEeprom                       EEPROM.length() //1024
-#define         cEepromWriteDelay                   3000  //milliseconds
+#define         cEepromWriteDelay                   2000  //milliseconds
 #define         cEepromMaxWrites                    100000
 #define         cEepromNextAvailableSlot            12
 #define         cEepromAltimeterAddr                14
@@ -76,6 +76,8 @@ or departed from it.
 #define         cEepromScreenOrientationAddr        24
 #define         cEepromSelectedAltitudeAddr         26
 #define         cEepromSelectedHeadingAddr          28
+#define         cEepromSelectedMinimumsAddr         30
+#define         cEepromLastAddr                     cEepromSelectedMinimumsAddr
 volatile bool   gNeedToWriteToEeprom;
 
 //BMP180 Sensor variables //TODO replace reference to BMP180 with new pressure sensor
@@ -98,7 +100,7 @@ volatile int    gCalibratedAltitudeOffsetInt;
 volatile int    gPermanentCalibratedAltitudeOffsetInt;
 volatile int    gSelectedHeadingInt; //degrees
 volatile bool   gMinimumsOn;
-volatile long   gMinimumsAltitudeLong = 1000;
+volatile long   gMinimumsAltitudeLong;
 volatile bool   gMinimumsTriggered = true;
 volatile bool   gMinimumsSilenced = true;
 
@@ -250,7 +252,6 @@ void setup() {
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
-
   initializeDisplayDevice();
   initializeRotaryKnobs();
   initializePiracyCheck();
@@ -347,43 +348,59 @@ void initializeValuesFromEeprom() {
       gSelectedHeadingInt = tempInt;
     }
   }
+
+  //Selected Minimums Altitude
+  EEPROM.get(cEepromSelectedMinimumsAddr, eepromIndex);
+  if (eepromIndex >= 0 && eepromIndex < cSizeOfEeprom) {
+    EEPROM.get(eepromIndex, tempLong);
+    if (tempLong >= cLowestAltitudeSelect && tempInt <= cHighAltitude) {
+      gMinimumsAltitudeLong = tempLong;
+    }
+    else {
+      gMinimumsAltitudeLong = cDefaultMinimumsAltitude;
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////
 void initializeDefaultEeprom() {  
-  EEPROM.put(cEepromAltimeterAddr, 30);
-  EEPROM.put(30, (double)cSeaLevelPressureInHg); //default value for altimeter
-  EEPROM.put(30 + sizeof(double), 0);
+  EEPROM.put(cEepromAltimeterAddr, cEepromLastAddr + 2);
+  EEPROM.put(cEepromLastAddr + 2, (double)cSeaLevelPressureInHg); //default value for altimeter
+  EEPROM.put(cEepromLastAddr + 2 + sizeof(double), 0);
   
-  EEPROM.put(cEepromAltitudeOffsetAddr, 36);
-  EEPROM.put(36, (int)0); //default value for altitude offset
-  EEPROM.put(36 + sizeof(int), 0);
+  EEPROM.put(cEepromAltitudeOffsetAddr, cEepromLastAddr + 8);
+  EEPROM.put(cEepromLastAddr + 8, (int)0); //default value for altitude offset
+  EEPROM.put(cEepromLastAddr + 8 + sizeof(int), 0);
   
-  EEPROM.put(cEepromPermanentAltitutdeOffsetAddr, 40);
-  EEPROM.put(40, (int)0); //default value for permanent altitude offset
-  EEPROM.put(40 + sizeof(int), 0);
+  EEPROM.put(cEepromPermanentAltitutdeOffsetAddr, cEepromLastAddr + 12);
+  EEPROM.put(cEepromLastAddr + 12, (int)0); //default value for permanent altitude offset
+  EEPROM.put(cEepromLastAddr + 12 + sizeof(int), 0);
   
-  EEPROM.put(cEepromSensorModeAddr, 44);
-  EEPROM.put(44, static_cast<byte>(SensorModeOnShow)); //default value for mode
-  EEPROM.put(44 + sizeof(byte), 0);
+  EEPROM.put(cEepromSensorModeAddr, cEepromLastAddr + 16);
+  EEPROM.put(cEepromLastAddr + 16, static_cast<byte>(SensorModeOnShow)); //default value for mode
+  EEPROM.put(cEepromLastAddr + 16 + sizeof(byte), 0);
   
-  EEPROM.put(cEepromScreenDimAddr, 47);
-  EEPROM.put(47, false); //default value for screen dim
-  EEPROM.put(47 + sizeof(bool), 0);
+  EEPROM.put(cEepromScreenDimAddr, cEepromLastAddr + 19);
+  EEPROM.put(cEepromLastAddr + 19, false); //default value for screen dim
+  EEPROM.put(cEepromLastAddr + 19 + sizeof(bool), 0);
   
-  EEPROM.put(cEepromScreenOrientationAddr, 50);
-  EEPROM.put(50, false); //default value for screen orientation
-  EEPROM.put(50 + sizeof(bool), 0);
+  EEPROM.put(cEepromScreenOrientationAddr, cEepromLastAddr + 22);
+  EEPROM.put(cEepromLastAddr + 22, false); //default value for screen orientation
+  EEPROM.put(cEepromLastAddr + 22 + sizeof(bool), 0);
 
-  EEPROM.put(cEepromSelectedAltitudeAddr, 53);
-  EEPROM.put(53, cDefaultSelectedAltitude); //default selected altitude
-  EEPROM.put(53 + sizeof(long), 0);
+  EEPROM.put(cEepromSelectedAltitudeAddr, cEepromLastAddr + 25);
+  EEPROM.put(cEepromLastAddr + 25, cDefaultSelectedAltitude); //default selected altitude
+  EEPROM.put(cEepromLastAddr + 25 + sizeof(long), 0);
 
-  EEPROM.put(cEepromSelectedHeadingAddr, 59);
-  EEPROM.put(59, cDefaultSelectedHeading); //default selected heading
-  EEPROM.put(59 + sizeof(int), 0);
+  EEPROM.put(cEepromSelectedHeadingAddr, cEepromLastAddr + 31);
+  EEPROM.put(cEepromLastAddr + 31, cDefaultSelectedHeading); //default selected heading
+  EEPROM.put(cEepromLastAddr + 31 + sizeof(int), 0);
 
-  EEPROM.put(cEepromNextAvailableSlot, 63);
+  EEPROM.put(cEepromSelectedMinimumsAddr, cEepromLastAddr + 35);
+  EEPROM.put(cEepromLastAddr + 35, cDefaultMinimumsAltitude); //default selected minimums
+  EEPROM.put(cEepromLastAddr + 35 + sizeof(int), 0);
+
+  EEPROM.put(cEepromNextAvailableSlot, cEepromLastAddr + 41);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -490,7 +507,6 @@ void initializeDisplayDevice() {
   
   digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
   digitalWrite(cPinRightDisplayControl, CONTROL_ON);
-  
   gOled.begin(SSD1306_SWITCHCAPVCC, cOledAddr);
 
   //common between left & right display
@@ -920,13 +936,13 @@ void handleLeftRotaryLongPress() {
   gLeftRotaryFineTuningPress = false;
   gCursor = CursorSelectHeading;
 
-  if (gSelectedHeadingInt == 333 && gSelectedAltitudeLong == -1500) { //magic numbers to program offset
+  if (gSelectedHeadingInt == 333 && gSelectedAltitudeLong == cLowestAltitudeSelect) { //magic numbers to program offset
     gPermanentCalibratedAltitudeOffsetInt += gCalibratedAltitudeOffsetInt;
     gCalibratedAltitudeOffsetInt = 0;
     gEepromSaveNeededTs = millis();
     gNeedToWriteToEeprom = true;
   }
-  else if (gSelectedHeadingInt == 111 && gSelectedAltitudeLong == -1500) { //magic numbers to reset EEPROM
+  else if (gSelectedHeadingInt == 111 && gSelectedAltitudeLong == cLowestAltitudeSelect) { //magic numbers to reset EEPROM
     resetAntiPiracyCodes();
   }
 }
@@ -1625,21 +1641,30 @@ ISR (PCINT2_vect) {    // handle pin change interrupt for D0 to D7 here
 // byte 20-21         address of sensor mode
 // byte 22-23         address of screen dim
 // byte 24-25         address of screen orientation
-// byte 26-29         original altimeter value
-// byte 30-31         original altimeter EEPROM-write-counter
-// byte 32-33         original altitude offset value
-// byte 34-35         original altitude offset EEPROM-write-counter
-// byte 36-37         original permanent altitude offset value
-// byte 38-39         original permanent altitude offset EEPROM-write-counter
-// byte 40            original sensor mode value
-// byte 41-42         original sensor mode EEPROM-write-counter
-// byte 43            original screen dim value
-// byte 44-45         original screen dim EEPROM-write-counter
-// byte 46            original screen orientation value
-// byte 47-48         original screen orientation EEPROM-write-counter
+// byte 26-27         address of selected altitude
+// byte 28-29         address of selected heading
+// byte 30-31         address of minimums
+// byte 32-35         original altimeter value
+// byte 36-37         original altimeter EEPROM-write-counter
+// byte 38-39         original altitude offset value
+// byte 40-41         original altitude offset EEPROM-write-counter
+// byte 42-43         original permanent altitude offset value
+// byte 44-45         original permanent altitude offset EEPROM-write-counter
+// byte 46            original sensor mode value
+// byte 47-48         original sensor mode EEPROM-write-counter
+// byte 49            original screen dim value
+// byte 50-51         original screen dim EEPROM-write-counter
+// byte 52            original screen orientation value
+// byte 53-54         original screen orientation EEPROM-write-counter
+// byte 55-58         original selected altitude value
+// byte 59-60         original selected altitude EEPROM-write-counter
+// byte 61-62         original selected heading value
+// byte 63-64         original selected heading EEPROM-write-counter
+// byte 65-68         original selected minimums altitude value
+// byte 69-70         original selected minimums altitude EEPROM-write-counter
 //////////////////////////////////////////////////////////////////////////
 void writeValuesToEeprom() {
-  gNeedToWriteToEeprom = false;
+  /*gNeedToWriteToEeprom = false;
   int eepromIndex;
   int numOfWrites;
   int datatypeSize;
@@ -1806,6 +1831,35 @@ void writeValuesToEeprom() {
     EEPROM.put(eepromIndex, selectedHeading);
     EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
   }
+
+
+
+  //Selected Minimums
+  datatypeSize = sizeof(long);
+  dataAddr = cEepromSelectedMinimumsAddr;
+  long selectedMinimumsAltitude;
+  EEPROM.get(dataAddr, eepromIndex);
+  EEPROM.get(eepromIndex, selectedMinimumsAltitude);
+  if (selectedMinimumsAltitude != gMinimumsAltitudeLong) {
+    EEPROM.get(eepromIndex + datatypeSize, numOfWrites);
+    if (numOfWrites > cEepromMaxWrites) {
+      EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
+      EEPROM.put(eepromIndex + datatypeSize, 0); //reset write counter
+      EEPROM.put(dataAddr, eepromIndex); //reset address
+      EEPROM.put(cEepromNextAvailableSlot, eepromIndex + datatypeSize + sizeof(int)); //reset next available slot
+    }
+    selectedMinimumsAltitude = gMinimumsAltitudeLong; //this silences a compiler warning
+    EEPROM.put(eepromIndex, selectedMinimumsAltitude);
+    EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
+  }
+
+
+
+  //Check if we ran out of EEPROM
+  EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
+  if (eepromIndex >= cSizeOfEeprom - 6) { //6 bytes is the biggest chunk of data we use
+    initializeDefaultEeprom(); //start all over again with the EEPROM
+  }*/
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1814,16 +1868,18 @@ void writeValuesToEeprom() {
 //difference = 997 - 558 = 419
 //////////////////////////////////////////////////////////////////////////
 void updateBatteryLevel() {
-  int voltage = analogRead(cBatteryVoltagePin) / 977.45 * 4.2; //TODO need to find out the actual max voltage and the corresponding pin readout value
+  double voltage = analogRead(cBatteryVoltagePin) / 977.45 * 4.2; //TODO need to find out the actual max voltage and the corresponding pin readout value
 
-  for (int i = 1; i < cBatteryCapacityArrayLength; i++) {
+  for (int i = 0; i < cBatteryCapacityArrayLength; i++) {
     if (voltage <= cBatteryCapacity[0][i]) {
       if (i == 0) {
         gBatteryLevel = cBatteryCapacity[1][0]; //set to 0% min.
+        break;
       }
       else {
         double interpolation = (voltage - cBatteryCapacity[0][i - 1]) / (cBatteryCapacity[0][i] - cBatteryCapacity[0][i - 1]);
         gBatteryLevel = cBatteryCapacity[1][i - 1] + interpolation * cBatteryCapacityArrayInterval;
+        break;
       }
     }
     else if (i == cBatteryCapacityArrayLength - 1) {
