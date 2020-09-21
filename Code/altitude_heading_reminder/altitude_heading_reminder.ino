@@ -1520,7 +1520,7 @@ void drawRightScreen() {
   gOled.setCursor(1, cLabelTextYpos);
   bool minimumsStatusDisplayed = false;
   if (gMinimumsOn) {
-    if (gMinimumsTriggered && gFlashRightScreen) {
+    if (gMinimumsTriggered && gAlarmModeEnum == MinimumsAlarm) {
       gOled.setTextSize(2);
       gOled.setCursor(18, 9);
       gOled.print("MINIMUMS");
