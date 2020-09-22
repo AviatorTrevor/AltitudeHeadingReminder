@@ -11,6 +11,7 @@ or departed from it.
 *TODO:
 *adjust code for new pressure sensor when you get the PCB ordered
 *volume control?
+*while sensor is selected off, still go through handleSensor() function to grab temperature only
 *There is a spike in the reported altitude periodically where altitude drops by a few thousand feet. For now, I'm assuming this is just a fault in the pressure sensor
 *investigate why there is a ghost image when the screen colors are "inverted". Perhaps send an update twice?
 *create software license - credit for libraries used
@@ -625,7 +626,7 @@ void loop() {
     return; //return so that we grab a new currentTime
   }
 
-  if (gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() >= gNextSensorReadyTs && gSensorMode != SensorModeOff) {
+  if (millis() >= gNextSensorReadyTs) {
     handlePressureSensor();
   }
 
@@ -651,12 +652,14 @@ void loop() {
   }
 
   //Automatically turn off minimums if these conditions are met
-  if (gMinimumsTriggered && millis() - gMinimumsTriggeredTs >= cMinimumsTriggeredAutoOffTime) {
+  if (gMinimumsTriggered && millis() - gMinimumsTriggeredTs >= cMinimumsTriggeredAutoOffTime
+      || ePressureSensorFailed && gCursor == CursorSelectMinimumsAltitude || ePressureSensorFailed && gMinimumsOn) {
     gMinimumsOn = false;
     if (gCursor == CursorSelectMinimumsOn || gCursor == CursorSelectMinimumsAltitude) {
       gUpdateLeftScreen = true;
       gCursor = CursorSelectMinimumsOn; //kick us back to this mode, because the "MinimumsAltitude" always says "ON"
     }
+    gUpdateRightScreen = true;
   }
 
   handleBuzzer();
@@ -670,6 +673,9 @@ void loop() {
 //////////////////////////////////////////////////////////////////////////
 void handlePressureSensor() {
   if (!ePressureSensorFailed) {
+    if (gSelectedAltitudeLong <= cHighestAltitudeAlert && gSensorMode != SensorModeOff && gSensorProcessStateInt > 1) {
+      gSensorProcessStateInt = 0; //we're only interested in grabbing the temperature
+    }
     switch (gSensorProcessStateInt) {
       
       
@@ -826,16 +832,18 @@ void handleLeftRotaryMovement(int increment) {
       break;
 
     case CursorSelectMinimumsOn:
+      if (gSensor != SensorModeOff && !ePressureSensorFailed) {
       gUpdateRightScreen = true;
-      if (gMinimumsOn) {
-        gMinimumsOn = false;
-        gMinimumsSilenced = false;
-      }
-      else {
-        gMinimumsOn = true;
-        gMinimumsTriggered = false;
-        gLastMinimumsAltitudeTs = millis(); //note the time the minimums altitude changed so we silence the alarm/buzzer for a short time
-        gMinimumsSilenced = gMinimumsAltitudeLong > gTrueAltitudeDouble;
+        if (gMinimumsOn) {
+          gMinimumsOn = false;
+          gMinimumsSilenced = false;
+        }
+        else {
+          gMinimumsOn = true;
+          gMinimumsTriggered = false;
+          gLastMinimumsAltitudeTs = millis(); //note the time the minimums altitude changed so we silence the alarm/buzzer for a short time
+          gMinimumsSilenced = gMinimumsAltitudeLong > gTrueAltitudeDouble;
+        }
       }
       break;
 
@@ -896,6 +904,8 @@ void handleLeftRotaryMovement(int increment) {
     case CursorSelectSensor:
       gSensorMode = static_cast<SensorMode>((gSensorMode + increment + cNumberOfSensorModes) % cNumberOfSensorModes);
       if (gSensorMode == SensorModeOff) {
+        gMinimumsOn = false;
+        gMinimumsSilenced = false;
         gAlarmModeEnum = DetermineAlarmState;
       }
       gEepromSaveNeededTs = millis();
