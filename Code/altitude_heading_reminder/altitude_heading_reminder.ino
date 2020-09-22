@@ -11,7 +11,6 @@ or departed from it.
 *TODO:
 *adjust code for new pressure sensor when you get the PCB ordered
 *volume control?
-*while sensor is selected off, still go through handleSensor() function to grab temperature only
 *There is a spike in the reported altitude periodically where altitude drops by a few thousand feet. For now, I'm assuming this is just a fault in the pressure sensor
 *investigate why there is a ghost image when the screen colors are "inverted". Perhaps send an update twice?
 *create software license - credit for libraries used
