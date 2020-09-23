@@ -672,7 +672,7 @@ void loop() {
 //////////////////////////////////////////////////////////////////////////
 void handlePressureSensor() {
   if (!ePressureSensorFailed) {
-    if (gSelectedAltitudeLong <= cHighestAltitudeAlert && gSensorMode != SensorModeOff && gSensorProcessStateInt > 1) {
+    if ((gSelectedAltitudeLong > cHighestAltitudeAlert || gSensorMode == SensorModeOff) && gSensorProcessStateInt > 1) {
       gSensorProcessStateInt = 0; //we're only interested in grabbing the temperature
     }
     switch (gSensorProcessStateInt) {
@@ -831,7 +831,7 @@ void handleLeftRotaryMovement(int increment) {
       break;
 
     case CursorSelectMinimumsOn:
-      if (gSensor != SensorModeOff && !ePressureSensorFailed) {
+      if (gSensorMode != SensorModeOff && !ePressureSensorFailed) {
       gUpdateRightScreen = true;
         if (gMinimumsOn) {
           gMinimumsOn = false;
