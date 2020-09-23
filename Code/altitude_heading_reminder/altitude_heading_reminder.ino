@@ -12,7 +12,6 @@ or departed from it.
 *adjust code for new pressure sensor when you get the PCB ordered
 *volume control?
 *There is a spike in the reported altitude periodically where altitude drops by a few thousand feet. For now, I'm assuming this is just a fault in the pressure sensor
-*investigate why there is a ghost image when the screen colors are "inverted". Perhaps send an update twice?
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
