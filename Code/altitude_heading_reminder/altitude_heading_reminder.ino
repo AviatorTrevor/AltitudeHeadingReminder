@@ -831,7 +831,7 @@ void handleLeftRotaryMovement(int increment) {
 
     case CursorSelectMinimumsOn:
       if (gSensorMode != SensorModeOff && !ePressureSensorFailed) {
-      gUpdateRightScreen = true;
+        gUpdateRightScreen = true;
         if (gMinimumsOn) {
           gMinimumsOn = false;
           gMinimumsSilenced = false;
