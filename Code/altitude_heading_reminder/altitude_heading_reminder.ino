@@ -10,7 +10,6 @@ selected altitude, or departed from it.
 
 *TODO:
 *adjust code for new pressure sensor when you get the PCB ordered
-*handle the case of selecting an altitude > 24,000ft while minimums are turned on. buzzer should be off, but altitude measurements should be on until >24,000ft?
 *volume control?
 *There is a spike in the reported altitude periodically where altitude drops by a few thousand feet. For now, I'm assuming this is just a fault in the pressure sensor
 *create software license - credit for libraries used
