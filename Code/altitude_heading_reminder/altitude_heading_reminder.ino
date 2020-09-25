@@ -1892,7 +1892,7 @@ void writeValuesToEeprom() {
 //difference = 997 - 558 = 419
 //////////////////////////////////////////////////////////////////////////
 void updateBatteryLevel() {
-  double voltage = analogRead(cBatteryVoltagePin) / 977.45 * 4.2; //TODO need to find out the actual max voltage and the corresponding pin readout value
+  double voltage = analogRead(cBatteryVoltagePin) / 1024 * 3.3 * (4 / 3);
   gVoltageLevel = voltage; //TODO: debug, remove later
   gUpdateLeftScreen = gUpdateRightScreen = true; //TODO: debug, remove later
 
