@@ -133,11 +133,12 @@ int                gBuzzCountInt;
 
 //Battery
 #define       cBatteryVoltagePin      A0
-#define       cBatteryUpdateInterval  30000
+#define       cBatteryUpdateInterval  1000//TODO debug. later, make it: 30000
 #define       cBatteryAlertLevel      15
 #define       cBatteryMessageInterval 15000 //15 seconds
 #define       cBatteryMessageDuration 1500  //1.5 seconds
 int           gBatteryLevel;
+double        gVoltageLevel; //TODO debug, remove later
 unsigned long gBatteryUpdateTs;
 #define       cBatteryCapacityArrayLength   21
 #define       cBatteryCapacityArrayInterval 5 //this represents the jump in battery capacity per index in the array
@@ -1487,7 +1488,10 @@ void drawLeftScreen() {
 
     case CursorViewBatteryLevel:
       sprintf(gDisplayTopContent, "%s", "Battery");
-      sprintf(gDisplayBottomContent, "%d%%", gBatteryLevel);
+      sprintf(gDisplayBottomContent, "%d.%dV", (int)gVoltageLevel, (int)(gVoltageLevel * 100)%100);
+      /*TODO: add this back in later:
+      sprintf(gDisplayTopContent, "%s", "Battery");
+      sprintf(gDisplayBottomContent, "%d%%", gBatteryLevel);*/
       break;
   }
   
@@ -1524,7 +1528,7 @@ void drawRightScreen() {
     gOled.dim(false, 255);
   }
 
-  gOled.setTextSize(cLabelTextYpos);
+  gOled.setTextSize(cLabelTextSize);
   gOled.setCursor(1, cLabelTextYpos);
   bool minimumsStatusDisplayed = false;
   if (gMinimumsOn) {
@@ -1556,13 +1560,22 @@ void drawRightScreen() {
     }
   }
   
+  /*TODO: add this back in after battery testing:
   if (gBatteryLevel <= cBatteryAlertLevel) { //low battery
     if (!minimumsStatusDisplayed || minimumsStatusDisplayed && millis() % cBatteryMessageInterval <= cBatteryMessageDuration) {
-      gOled.setTextSize(cLabelTextYpos);
+      gOled.setTextSize(cLabelTextSize);
       gOled.setCursor(1, cLabelTextYpos);
       gOled.clearDisplay();
       gOled.print("LOW BATT");
     }
+  }*/
+  
+  //TODO: debug if-statement and debug contents. remove later after battery testing
+  if (!minimumsStatusDisplayed) {
+    gOled.setTextSize(cLabelTextSize);
+    gOled.setCursor(1, cLabelTextYpos);
+    sprintf(gDisplayTopContent, "%d.%dV", (int)gVoltageLevel, (int)(gVoltageLevel * 100)%100);
+    gOled.print(gDisplayTopContent);
   }
 
   long tempSelectedAltitude = gSelectedAltitudeLong; //doing this here because it's used inside of 2 scopes
@@ -1880,6 +1893,8 @@ void writeValuesToEeprom() {
 //////////////////////////////////////////////////////////////////////////
 void updateBatteryLevel() {
   double voltage = analogRead(cBatteryVoltagePin) / 977.45 * 4.2; //TODO need to find out the actual max voltage and the corresponding pin readout value
+  gVoltageLevel = voltage; //TODO: debug, remove later
+  gUpdateLeftScreen = gUpdateRightScreen = true; //TODO: debug, remove later
 
   for (int i = 0; i < cBatteryCapacityArrayLength; i++) {
     if (voltage <= cBatteryCapacity[0][i]) {
