@@ -5,8 +5,8 @@ Email: aviatortrevor@gmail.com
 Hardware device to remind pilots of assigned headings, altitudes, IFR procedure minimums, and other features.
 The device measures atmospheric pressure to present to the pilot what their altitude is. Cabin altitude can
 be slightly different from static pressure used by the aircraft's altimeter, so there is a calibration offset
-provided to the user. It also has buzzer feature to alert the pilot of when he/she is approaching altitude,
-or departed from it.
+provided to the user. It also has buzzer feature to alert the pilot of when he/she is approaching their
+selected altitude, or departed from it.
 
 *TODO:
 *adjust code for new pressure sensor when you get the PCB ordered
@@ -672,7 +672,7 @@ void loop() {
 //////////////////////////////////////////////////////////////////////////
 void handlePressureSensor() {
   if (!ePressureSensorFailed) {
-    if ((gSelectedAltitudeLong > cHighestAltitudeAlert || gSensorMode == SensorModeOff) && gSensorProcessStateInt > 1) {
+    if (gSensorMode == SensorModeOff && gSensorProcessStateInt > 1) {
       gSensorProcessStateInt = 0; //we're only interested in grabbing the temperature
     }
     switch (gSensorProcessStateInt) {
