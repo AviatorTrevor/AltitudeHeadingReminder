@@ -1470,7 +1470,7 @@ void drawLeftScreen() {
       }
       else {
         double temperatureFarenheit = gSensorTemperatureDouble * 9 / 5 + 32;
-        sprintf(gDisplayBottomContent, "%d.%d %c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, cDegFLabel);
+        sprintf(gDisplayBottomContent, "%d.%02d %c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, cDegFLabel);
         gOled.setTextSize(2);
         if (temperatureFarenheit >= 100) {
           gOled.setCursor(94, 11);
@@ -1489,7 +1489,7 @@ void drawLeftScreen() {
 
     case CursorViewBatteryLevel:
       sprintf(gDisplayTopContent, "%s", "Battery");
-      sprintf(gDisplayBottomContent, "%d.%dV", (int)gVoltageLevel, (int)(gVoltageLevel * 100)%100);
+      sprintf(gDisplayBottomContent, "%d.%02dV", (int)gVoltageLevel, (int)(gVoltageLevel * 100)%100);
       /*TODO: add this back in later:
       sprintf(gDisplayTopContent, "%s", "Battery");
       sprintf(gDisplayBottomContent, "%d%%", gBatteryLevel);*/
@@ -1575,7 +1575,7 @@ void drawRightScreen() {
   if (!minimumsStatusDisplayed) {
     gOled.setTextSize(cLabelTextSize);
     gOled.setCursor(1, cLabelTextYpos);
-    sprintf(gDisplayTopContent, "%d.%dV", (int)gVoltageLevel, (int)(gVoltageLevel * 100)%100);
+    sprintf(gDisplayTopContent, "%d.%02dV", (int)gVoltageLevel, (int)(gVoltageLevel * 100)%100);
     gOled.print(gDisplayTopContent);
   }
 
