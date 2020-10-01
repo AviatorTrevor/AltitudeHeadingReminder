@@ -134,7 +134,7 @@ int                gBuzzCountInt;
 
 //Battery
 #define       cBatteryVoltagePin      A0
-#define       cBatteryUpdateInterval  1000//TODO debug. later, make it: 30000
+#define       cBatteryUpdateInterval  1000 //TODO debug. later, make it: 30000
 #define       cBatteryAlertLevel      15
 #define       cBatteryMessageInterval 15000 //15 seconds
 #define       cBatteryMessageDuration 1500  //1.5 seconds
@@ -1893,7 +1893,7 @@ void writeValuesToEeprom() {
 //difference = 997 - 558 = 419
 //////////////////////////////////////////////////////////////////////////
 void updateBatteryLevel() {
-  double voltage = analogRead(cBatteryVoltagePin) / 1024 * 3.3 * (4 / 3);
+  double voltage = (double)(analogRead(cBatteryVoltagePin)) / 1024 * 3.3 * 1.3333;
   gVoltageLevel = voltage; //TODO: debug, remove later
   gUpdateLeftScreen = gUpdateRightScreen = true; //TODO: debug, remove later
 
