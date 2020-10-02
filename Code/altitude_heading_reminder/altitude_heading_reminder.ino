@@ -1470,7 +1470,7 @@ void drawLeftScreen() {
       }
       else {
         double temperatureFarenheit = gSensorTemperatureDouble * 9 / 5 + 32;
-        sprintf(gDisplayBottomContent, "%d.%02d %c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, cDegFLabel);
+        sprintf(gDisplayBottomContent, "%d.%d %c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, cDegFLabel);
         gOled.setTextSize(2);
         if (temperatureFarenheit >= 100) {
           gOled.setCursor(94, 11);
