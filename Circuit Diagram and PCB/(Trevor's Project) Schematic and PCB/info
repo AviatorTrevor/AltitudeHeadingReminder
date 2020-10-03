@@ -4,7 +4,7 @@
   "name": "AltitudeHeadingReminder",
   "content": "",
   "created_at": "2020-07-07 22:56:29",
-  "updated_at": "2020-09-19 02:04:17",
+  "updated_at": "2020-10-02 21:35:36",
   "stick": "",
   "documents": [
     {
@@ -32,7 +32,6 @@
         "3e0fb0c806d434e4d3ee93b3d2cd8f1d": 2,
         "22afc3b6b9f5465fab92a825dd343145": 1,
         "6c2bedbae9fbd358441dfb9948555b9c": 6,
-        "b115fc3265004bdeac1e77a99429dfa1": 1,
         "72a1f072224748d48af03606ba8f2526": 1,
         "868011bcb59840aaa82f682a5639957f": 1,
         "f54990f485ef45639861155b276c1b2c": 1,
@@ -155,7 +154,7 @@
           "22uF",
           5,
           "C0805",
-          "C14,C12,C13,C3,C4",
+          "C14,C3,C4,C13,C12",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "SAMSUNG",
@@ -242,7 +241,7 @@
           "1K",
           3,
           "R0402",
-          "R1,R2,R7",
+          "R7,R2,R1",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "UniOhm",
@@ -283,19 +282,6 @@
           }
         ],
         [
-          "BAT+1",
-          1,
-          "HDR-M-2.54_1X1",
-          "B+",
-          {
-            "BOM_Supplier Part": "C81276",
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer Part": "",
-            "puuid": "19c77e72422b43b59c26b9fa67af5de4",
-            "uuid": "404aa9221ff94de597b8734806e7c74f"
-          }
-        ],
-        [
           "HDR-M-2.54_1x1",
           2,
           "HDR-M-2.54_1X1",
@@ -313,6 +299,19 @@
           1,
           "HDR-M-2.54_1X1",
           "B-",
+          {
+            "BOM_Supplier Part": "C81276",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer Part": "",
+            "puuid": "19c77e72422b43b59c26b9fa67af5de4",
+            "uuid": "404aa9221ff94de597b8734806e7c74f"
+          }
+        ],
+        [
+          "BAT+1",
+          1,
+          "HDR-M-2.54_1X1",
+          "B+",
           {
             "BOM_Supplier Part": "C81276",
             "BOM_Supplier": "LCSC",
@@ -425,24 +424,10 @@
           }
         ],
         [
-          "1K",
-          1,
-          "AXIAL-0.3",
-          "R13",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Supplier Part": "C119870",
-            "BOM_Manufacturer": "Chian Chia Elec",
-            "BOM_Manufacturer Part": "-",
-            "puuid": "b9efc06d0fb742f99a478d48de211eb9",
-            "uuid": "b115fc3265004bdeac1e77a99429dfa1"
-          }
-        ],
-        [
           "10uF",
           3,
           "C0402",
-          "C1,C11,C10",
+          "C10,C1,C11",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer Part": "CL05A106MQ5NUNC",
@@ -572,11 +557,11 @@
           }
         ]
       ],
-      "updateTime": 1600505986,
+      "updateTime": 1601699736,
       "createTime": 1594192792,
       "histories": [],
       "created_at": "2020-07-08 00:19:52",
-      "updated_at": "2020-09-19 01:59:46"
+      "updated_at": "2020-10-02 21:35:36"
     },
     {
       "uuid": "20a312a855db8bf5c635c113bc2a264b",
@@ -608,15 +593,14 @@
         "282f7786cb6144d097ae00194c3e3fb3": 2,
         "7568fee05bc44581b2c32625ae15b3f8": 1,
         "9c6dab9dc91e4b929269cb3454d6d713": 1,
-        "b9efc06d0fb742f99a478d48de211eb9": 1,
         "cd3b409a11704b5090bebb894dca3ac7": 1
       },
       "BOM": [],
-      "updateTime": 1600506257,
+      "updateTime": 1601677619,
       "createTime": 1597046156,
       "histories": [],
       "created_at": "2020-08-10 00:55:56",
-      "updated_at": "2020-09-19 02:04:17"
+      "updated_at": "2020-10-02 15:26:59"
     }
   ],
   "sort": [
@@ -626,5 +610,5 @@
   "title": "AltitudeHeadingReminder",
   "foldername": "AltitudeHeadingReminder",
   "schfilename": "AltitudeHeadingReminder.json",
-  "schfilemtime": 1600505986648
+  "schfilemtime": 1601699736429
 }

@@ -19,6 +19,7 @@ innerLipHeight = resolution * 10;
 buzzerRadius = 28.5 / 2; //28.5 is diameter
 buzzerScrewOffset = 20.5; //20.5 mm from center of buzzer hole to center of screw hole
 buzzerScrewRadius = 1.9;
+buzzerScrewHeadRadius = 3.5;
 buzzerX = mainDepth - buzzerRadius * 1.4;
 buzzerY = mainWidth / 2;
 
@@ -100,11 +101,18 @@ difference() {
   translate([buzzerX, buzzerY - buzzerScrewOffset, 0]) {
     cylinder(lidThickness, buzzerScrewRadius, buzzerScrewRadius, $fn=cylinderFragments);
   };
+  translate([buzzerX, buzzerY - buzzerScrewOffset, 0]) {
+    cylinder(screwHeadSinkDepth, buzzerScrewHeadRadius, buzzerScrewHeadRadius, $fn=cylinderFragments);
+  };
   
   //buzzer right-screw
   translate([buzzerX, buzzerY + buzzerScrewOffset, 0]) {
     cylinder(lidThickness, buzzerScrewRadius, buzzerScrewRadius, $fn=cylinderFragments);
   };
+  translate([buzzerX, buzzerY + buzzerScrewOffset, 0]) {
+    cylinder(screwHeadSinkDepth, buzzerScrewHeadRadius, buzzerScrewHeadRadius, $fn=cylinderFragments);
+  };
+  
   
   //place for screw to sink into, rear-left (keep this in sync with section below)
   translate([screwCylinderRadius, screwCylinderRadius, 0]) {
