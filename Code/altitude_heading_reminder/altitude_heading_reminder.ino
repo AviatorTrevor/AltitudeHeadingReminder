@@ -10,7 +10,7 @@ selected altitude, or departed from it.
 
 *TODO:
 *adjust code for new pressure sensor when you get the PCB ordered
-*volume control?
+*keep buzzer off when powering on
 *silence buzzer ~0.5 seconds after rotating right-knob as opposed to silencing it immediately?
 *There is a spike in the reported altitude periodically where altitude drops by a few thousand feet. For now, I'm assuming this is just a fault in the pressure sensor
 *create software license - credit for libraries used
@@ -124,9 +124,10 @@ bool            gLegitimate = true;
 #define            cUrgentBuzzNumberOfBeeps              3
 #define            cDisableAlarmKnobMovementTime         1200
 #define            cDisableAlarmAfterAlarmTime           1800
-enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState};
+enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState, PowerUpDisabled};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 int                gBuzzCountInt;
+int                cPowerUpSilence = 15000; //wait 15 seconds after start-up before alarm can begin making sounds
 
 //Minimums
 #define            cMinimumsSilencedAutoOnAltitudeDiff   100 //ft
@@ -152,7 +153,7 @@ const double  cBatteryCapacity[2][cBatteryCapacityArrayLength] = { //TODO update
 unsigned long          gNextSensorBeginCycleTs;
 unsigned long          gNextSensorReadyTs;
 unsigned long          gNextBuzzTs;
-unsigned long          gLastAlarmTs;
+unsigned long          gLastAlarmTs; //this value disables the alarm temporarily just at start-up so people's ears aren't blown when they power it on.
 unsigned long          gTimerStartTs;
 unsigned long          gMinimumsTriggeredTs;
 volatile unsigned long gLeftButtonPressedTs;
@@ -531,7 +532,7 @@ void initializeDisplayDevice() {
   gOled.print(cAppVersion);
   gOled.display();
 
-  delay(900); //delay for splash screen (to see version number)
+  delay(750); //delay for splash screen (to see version number)
   digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
   digitalWrite(cPinRightDisplayControl, CONTROL_ON);
   gOled.clearDisplay();
@@ -1067,7 +1068,13 @@ void handleRightRotaryLongPress() {
 void handleBuzzer() {
   
   //Handle changing of minimums altitude selection
-  if (gSensorMode != SensorModeOff && gMinimumsOn && !gMinimumsSilenced && !gMinimumsTriggered && gTrueAltitudeDouble <= gMinimumsAltitudeLong && millis() - gLastMinimumsAltitudeTs >= cDisableAlarmKnobMovementTime) {
+  if (gAlarmModeEnum != PowerUpDisabled
+      && gSensorMode != SensorModeOff
+      && gMinimumsOn
+      && !gMinimumsSilenced
+      && !gMinimumsTriggered
+      && gTrueAltitudeDouble <= gMinimumsAltitudeLong
+      && millis() - gLastMinimumsAltitudeTs >= cDisableAlarmKnobMovementTime) {
     gAlarmModeEnum = MinimumsAlarm;
     gMinimumsTriggered = true;
     gMinimumsTriggeredTs = millis();
@@ -1213,11 +1220,12 @@ void handleBuzzer() {
 
     case AlarmDisabled:
     {
-      if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime || ePressureSensorFailed) {
+      if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime || ePressureSensorFailed || millis() < cPowerUpSilence) {
         //if alarm disabled or pressure sensor failed, do nothing
       }
       else if (gSensorMode != SensorModeOff && gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
         gAlarmModeEnum = DetermineAlarmState;
+        cPowerUpSilence = 0;
       }
       break;
     }

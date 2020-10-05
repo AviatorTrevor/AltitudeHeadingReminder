@@ -4,7 +4,7 @@
   "name": "AltitudeHeadingReminder",
   "content": "",
   "created_at": "2020-07-07 22:56:29",
-  "updated_at": "2020-10-02 22:46:33",
+  "updated_at": "2020-10-03 20:57:54",
   "stick": "",
   "documents": [
     {
@@ -30,7 +30,6 @@
         "ca94110f4544769d36adda4b0515e409": 6,
         "fffefb2a47c50d7f390a5f5cfb2b4d4d": 1,
         "3e0fb0c806d434e4d3ee93b3d2cd8f1d": 2,
-        "22afc3b6b9f5465fab92a825dd343145": 1,
         "6c2bedbae9fbd358441dfb9948555b9c": 6,
         "72a1f072224748d48af03606ba8f2526": 1,
         "868011bcb59840aaa82f682a5639957f": 1,
@@ -41,7 +40,8 @@
         "2291b26429a0a53b9787e50172e9245c": 1,
         "ee3f2b66a3de5b5b8bb94df95674677b": 1,
         "3eed98608c2542ad840aa25932b95975": 5,
-        "b585d92194385de14506b560a4a27e20": 3
+        "b585d92194385de14506b560a4a27e20": 3,
+        "e0400ebd669140f683c429622d7887f4": 1
       },
       "BOM": [
         [
@@ -154,7 +154,7 @@
           "22uF",
           5,
           "C0805",
-          "C14,C3,C4,C13,C12",
+          "C14,C4,C13,C3,C12",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "SAMSUNG",
@@ -169,7 +169,7 @@
           "10K",
           6,
           "R0402",
-          "R12,R9,R14,R17,R8,R11",
+          "R17,R11,R9,R12,R14,R8",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "UniOhm",
@@ -193,20 +193,6 @@
             "BOM_Supplier Part": "C32375",
             "puuid": "8575d4a67a3f4c179607f0acaae4f7e7",
             "uuid": "9eddb0dc64ee9d911fa2d70653f1d71f"
-          }
-        ],
-        [
-          "SSSS916400",
-          1,
-          "SW-TH_SSSS916400",
-          "SW1",
-          {
-            "BOM_Supplier": "LCSC",
-            "BOM_Supplier Part": "C129102",
-            "BOM_Manufacturer": "ALPS Electric",
-            "BOM_Manufacturer Part": "SSSS916400",
-            "puuid": "a3d5c2dda4a34d6d9de93d8e06f3e188",
-            "uuid": "22afc3b6b9f5465fab92a825dd343145"
           }
         ],
         [
@@ -241,7 +227,7 @@
           "1K",
           3,
           "R0402",
-          "R7,R2,R1",
+          "R1,R7,R2",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer": "UniOhm",
@@ -285,20 +271,7 @@
           "HDR-M-2.54_1x1",
           2,
           "HDR-M-2.54_1X1",
-          "BUZ-,BUZ+",
-          {
-            "BOM_Supplier Part": "C81276",
-            "BOM_Supplier": "LCSC",
-            "BOM_Manufacturer Part": "",
-            "puuid": "19c77e72422b43b59c26b9fa67af5de4",
-            "uuid": "404aa9221ff94de597b8734806e7c74f"
-          }
-        ],
-        [
-          "BAT-1",
-          1,
-          "HDR-M-2.54_1X1",
-          "B-",
+          "BUZ+,BUZ-",
           {
             "BOM_Supplier Part": "C81276",
             "BOM_Supplier": "LCSC",
@@ -312,6 +285,19 @@
           1,
           "HDR-M-2.54_1X1",
           "B+",
+          {
+            "BOM_Supplier Part": "C81276",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer Part": "",
+            "puuid": "19c77e72422b43b59c26b9fa67af5de4",
+            "uuid": "404aa9221ff94de597b8734806e7c74f"
+          }
+        ],
+        [
+          "BAT-1",
+          1,
+          "HDR-M-2.54_1X1",
+          "B-",
           {
             "BOM_Supplier Part": "C81276",
             "BOM_Supplier": "LCSC",
@@ -381,10 +367,10 @@
           }
         ],
         [
-          "Left Rotary",
+          "Right Rotary",
           1,
           "HDR-M-2.54_1X5",
-          "J6",
+          "J7",
           {
             "BOM_Supplier Part": "C358687",
             "BOM_Supplier": "LCSC",
@@ -395,10 +381,10 @@
           }
         ],
         [
-          "Right Rotary",
+          "Left Rotary",
           1,
           "HDR-M-2.54_1X5",
-          "J7",
+          "J6",
           {
             "BOM_Supplier Part": "C358687",
             "BOM_Supplier": "LCSC",
@@ -427,7 +413,7 @@
           "10uF",
           3,
           "C0402",
-          "C10,C1,C11",
+          "C1,C10,C11",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer Part": "CL05A106MQ5NUNC",
@@ -442,7 +428,7 @@
           "100nF",
           6,
           "C0402",
-          "C5,C7,C8,C2,C9,C6",
+          "C8,C7,C9,C5,C2,C6",
           {
             "BOM_Supplier": "LCSC",
             "BOM_Manufacturer Part": "CL05B104KO5NNNC",
@@ -451,6 +437,20 @@
             "BOM_Supplier Part": "C1525",
             "puuid": "f8eca159cd18407f9d5df374a1c2badf",
             "uuid": "ca94110f4544769d36adda4b0515e409"
+          }
+        ],
+        [
+          "K3-1260D-L1",
+          1,
+          "SW-TH_K3-1260D-L1",
+          "SW1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "HRO",
+            "BOM_Manufacturer Part": "K3-1260D-L1",
+            "BOM_Supplier Part": "C92657",
+            "puuid": "4d43ad884c0c4ecebbf59e0bf4931264",
+            "uuid": "e0400ebd669140f683c429622d7887f4"
           }
         ],
         [
@@ -557,11 +557,11 @@
           }
         ]
       ],
-      "updateTime": 1601703993,
+      "updateTime": 1601783874,
       "createTime": 1594192792,
       "histories": [],
       "created_at": "2020-07-08 00:19:52",
-      "updated_at": "2020-10-02 22:46:33"
+      "updated_at": "2020-10-03 20:57:54"
     },
     {
       "uuid": "20a312a855db8bf5c635c113bc2a264b",
@@ -573,6 +573,7 @@
       "master": "",
       "thumb": "/images/thumb-default.png",
       "components": {
+        "4d43ad884c0c4ecebbf59e0bf4931264": 1,
         "50dc3b6111d549ddb6686d77ab1ebdd8": 2,
         "cea456c24ca24165b176bcf9114a7b29": 12,
         "bbc61cb2bd3840b290cf4f8db68b3c00": 5,
@@ -586,7 +587,6 @@
         "c9505f60178b4b09a38c43ffc0b7a6ef": 3,
         "6924b36489de4921bb29ca14bf27c33f": 2,
         "8575d4a67a3f4c179607f0acaae4f7e7": 1,
-        "a3d5c2dda4a34d6d9de93d8e06f3e188": 1,
         "df3ca37cb13d499cb713e9aa6fdd0c7b": 1,
         "cc33f00711a541bfbe7fb0b164318c1f": 1,
         "108969f8d9834a9ea23bcec2d43a66e4": 2,
@@ -596,11 +596,11 @@
         "cd3b409a11704b5090bebb894dca3ac7": 1
       },
       "BOM": [],
-      "updateTime": 1601677619,
+      "updateTime": 1601783834,
       "createTime": 1597046156,
       "histories": [],
       "created_at": "2020-08-10 00:55:56",
-      "updated_at": "2020-10-02 15:26:59"
+      "updated_at": "2020-10-03 20:57:14"
     }
   ],
   "sort": [
@@ -610,5 +610,5 @@
   "title": "AltitudeHeadingReminder",
   "foldername": "AltitudeHeadingReminder",
   "schfilename": "AltitudeHeadingReminder.json",
-  "schfilemtime": 1601703993402
+  "schfilemtime": 1601783874140
 }
