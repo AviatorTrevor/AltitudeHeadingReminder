@@ -127,7 +127,7 @@ bool            gLegitimate = true;
 enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState, PowerUpDisabled};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 int                gBuzzCountInt;
-int                cPowerUpSilence = 15000; //wait 15 seconds after start-up before alarm can begin making sounds
+int                cPowerUpSilence = 7000; //wait 7 seconds after start-up before alarm can begin making sounds
 
 //Minimums
 #define            cMinimumsSilencedAutoOnAltitudeDiff   100 //ft
