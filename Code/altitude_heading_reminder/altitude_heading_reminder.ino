@@ -57,8 +57,8 @@ selected altitude, or departed from it.
 #define cAltimeterSettingInHgMin       27.50 //inHg
 #define cAltimeterSettingInHgMax       31.50 //inHg
 #define cAltimeterSettingInHgInterval  0.01  //inHg
-#define cCalibrationOffsetMin          -990  //ft
-#define cCalibrationOffsetMax          990   //ft
+#define cCalibrationOffsetMin          -2000 //ft
+#define cCalibrationOffsetMax          2000  //ft
 #define cCalibrationOffsetInterval     10    //ft
 #define cHeadingSelectIncrement        5     //degrees
 #define cDefaultSelectedHeading        360   //degrees
