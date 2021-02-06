@@ -29,6 +29,10 @@ knobSupportWallThickness = resolution * 2;
 knobSupportWidth = 12 + 2 * knobSupportWallThickness;
 knobSupportHeight = 12.3 + 2 * knobSupportWallThickness;
 knobSupportDepth = 2;
+knobHookYaxisOffset = 6;
+knobHookYaxisWidth = 0.6;
+knobHookXaxisDepth = 1.5;
+knobHookZaxisHeight = 2;
 mountingHoleRadius = 2.78;
 mountingHoleX = mainDepth - mainShellThickness - mountingHoleRadius - 0.4;
 pcbScrewMountHeight = 7.5;
@@ -74,12 +78,20 @@ union() {
         cylinder(knobHoleDepth,knobHoleRadius,knobHoleRadius,$fn=cylinderFragments);
       };
     };
+    //left knob hook slot
+    translate([mainDepth - knobHoleDepth, knobHoleYoffset - knobHookYaxisOffset - knobHookYaxisWidth, knobHoleZoffset - knobHookZaxisHeight / 2]) {
+      cube([knobHookXaxisDepth, knobHookYaxisWidth, knobHookZaxisHeight]);
+    };
     
     //right knob
     translate([mainDepth - knobHoleDepth, mainWidth - knobHoleYoffset, knobHoleZoffset]) {
       rotate([0,90,0]) {
         cylinder(knobHoleDepth,knobHoleRadius,knobHoleRadius,$fn=cylinderFragments);
       };
+    };
+    //right knob hook slot
+    translate([mainDepth - knobHoleDepth, mainWidth - knobHoleYoffset + knobHookYaxisOffset, knobHoleZoffset - knobHookZaxisHeight / 2]) {
+      cube([knobHookXaxisDepth, knobHookYaxisWidth, knobHookZaxisHeight]);
     };
     
     //usb cable slot right side
@@ -173,6 +185,7 @@ union() {
   };
   
   //display "jail bar" support for 3D plastic printing process
+  /* TODO: removing this for now since it didn't print on Arianne's 3D printer
   translate([mainDepth - mainShellThickness, mainWidth/2 - 16, mainHeight - displayTopOffset]) {
     cube([mainShellThickness, resolution, displayHeight]);
   };
@@ -191,7 +204,7 @@ union() {
   };
   translate([screwCylinderRadius * 2 + usbSlotWidth/3 * 2, mainWidth - mainShellThickness, mainShellThickness + usbSlotYoffset]) {
     cube([resolution, mainShellThickness, usbSlotHeight]);
-  };
+  };*/
   
   
   //PCB left-front side screw/mount
