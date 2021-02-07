@@ -7,7 +7,7 @@ mainDepth = 57;
 mainWidth = 91;
 mainHeight = 37 + mainShellThickness;
 screwCylinderRadius = 2.5;
-screwHoleCylinderRadius = 0.8;
+screwHoleCylinderRadius = 1.1;
 screwHoleCylinderOffsetFromFloor = mainHeight / 2;
 cylinderFragments = 70;
 

@@ -8,9 +8,12 @@ mainDepth = 57;
 mainWidth = 91;
 mainHeight = 37 + mainShellThickness;
 screwCylinderRadius = 2.5;
-screwHoleCylinderRadius = 0.8;
+screwHoleCylinderRadius = 1.1;
 screwHoleCylinderOffsetFromFloor = mainHeight / 2;
 cylinderFragments = 70;
+
+//keep in-sync with the mounting plate file
+mountingHoleRadius = 2.78;
 
 displayWidth = 24;
 displayDepth = mainShellThickness;
@@ -30,28 +33,31 @@ knobSupportWidth = 12 + 2 * knobSupportWallThickness;
 knobSupportHeight = 12.3 + 2 * knobSupportWallThickness;
 knobSupportDepth = 2;
 knobHookYaxisOffset = 6;
-knobHookYaxisWidth = 0.6;
-knobHookXaxisDepth = 1.5;
-knobHookZaxisHeight = 2;
-mountingHoleRadius = 2.78;
-mountingHoleX = mainDepth - mainShellThickness - mountingHoleRadius - 0.4;
+knobHookYaxisWidth = 0.7;
+knobHookXaxisDepth = mainShellThickness - resolution;
+knobHookZaxisHeight = 2.2;
 pcbScrewMountHeight = 7.5;
-pcbScrewCylinderRadius = 1.8;
-pcbScrewHoleCylinderRadius = 0.8;
+pcbScrewCylinderRadius = screwCylinderRadius;
+pcbScrewHoleCylinderRadius = screwHoleCylinderRadius;
 pcbBoardThickness = 1.6;
-pcbOffsetX = -mainDepth + 36.5 + 2.4 + screwCylinderRadius; //36.5 is height of PCB board, 2.3 is distance from screw hole to edge of PCB board in the rear-right
-pcbOffsetY = mainWidth - mainShellThickness - 75.2; //75.2 is PCB board width
-pcbScrewRearLeftX = mainDepth - 31.581 + pcbOffsetX;
+pcbBoardDepth = 36.9;
+pcbBoardWidth = 75.3;
+pcbOffsetX = screwCylinderRadius * 2 + 1.5; //2.4 is distance from screw hole to edge of PCB board in the rear-right
+pcbOffsetY = mainWidth - mainShellThickness - pcbBoardWidth - 1.2;
+pcbScrewRearLeftX = pcbBoardDepth - 31.581 + pcbOffsetX;
 pcbScrewRearLeftY = 2.286 + pcbOffsetY;
-pcbScrewFrontLeftX = mainDepth - 3.26 + pcbOffsetX;
+pcbScrewFrontLeftX = pcbBoardDepth - 3.26 + pcbOffsetX;
 pcbScrewFrontLeftY = 2.159 + pcbOffsetY;
-pcbScrewFrontRightX = mainDepth - 2.752 + pcbOffsetX;
+pcbScrewFrontRightX = pcbBoardDepth - 2.752 + pcbOffsetX;
 pcbScrewFrontRightY = 68.326 + pcbOffsetY;
-pcbScrewRearRightX = mainDepth - 34.29 + pcbOffsetX;
+pcbScrewRearRightX = pcbBoardDepth - 34.29 + pcbOffsetX;
 pcbScrewRearRightY = 66.929 + pcbOffsetY;
-usbSlotWidth = 29;
+usbSlotXoffset = pcbOffsetX + 2.2;
+usbSlotYoffset = pcbScrewMountHeight; //do not add pcbBoardThickness, because you need buffer for the cable to plug in. mainShellThickness already factored in down below where it's drawn
+usbSlotWidth = 27;
 usbSlotHeight = 7;
-usbSlotYoffset = pcbScrewMountHeight + pcbBoardThickness;
+//mountingHoleX = mainDepth - mainShellThickness - mountingHoleRadius - 3.3;
+mountingHoleX = pcbOffsetX + pcbBoardDepth + mountingHoleRadius + 2.5;
 
 
 union() {
@@ -95,7 +101,7 @@ union() {
     };
     
     //usb cable slot right side
-    translate([screwCylinderRadius * 2, mainWidth - mainShellThickness, mainShellThickness + usbSlotYoffset]) {
+    translate([usbSlotXoffset, mainWidth - mainShellThickness, mainShellThickness + usbSlotYoffset]) {
       cube([usbSlotWidth, mainShellThickness, usbSlotHeight]);
     };
     
