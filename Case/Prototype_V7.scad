@@ -8,7 +8,7 @@ mainDepth = 57;
 mainWidth = 91;
 mainHeight = 37 + mainShellThickness;
 screwCylinderRadius = 2.5;
-screwHoleCylinderRadius = 1.1;
+screwHoleCylinderRadius = 0.8;
 screwHoleCylinderOffsetFromFloor = mainHeight / 2;
 cylinderFragments = 70;
 
@@ -43,17 +43,17 @@ pcbBoardThickness = 1.6;
 pcbBoardDepth = 36.9;
 pcbBoardWidth = 75.3;
 pcbOffsetX = screwCylinderRadius * 2 + 1.5; //2.4 is distance from screw hole to edge of PCB board in the rear-right
-pcbOffsetY = mainWidth - mainShellThickness - pcbBoardWidth - 1.2;
-pcbScrewRearLeftX = pcbBoardDepth - 31.581 + pcbOffsetX;
-pcbScrewRearLeftY = 2.286 + pcbOffsetY;
-pcbScrewFrontLeftX = pcbBoardDepth - 3.26 + pcbOffsetX;
-pcbScrewFrontLeftY = 2.159 + pcbOffsetY;
-pcbScrewFrontRightX = pcbBoardDepth - 2.752 + pcbOffsetX;
-pcbScrewFrontRightY = 68.326 + pcbOffsetY;
-pcbScrewRearRightX = pcbBoardDepth - 34.29 + pcbOffsetX;
-pcbScrewRearRightY = 66.929 + pcbOffsetY;
+pcbOffsetY = mainWidth - mainShellThickness - pcbBoardWidth;
+pcbScrewRearLeftX = pcbBoardDepth - 33.147 + pcbOffsetX;
+pcbScrewRearLeftY = 3.937 + pcbOffsetY;
+pcbScrewFrontLeftX = pcbBoardDepth - 6.731 + pcbOffsetX;
+pcbScrewFrontLeftY = 3.429 + pcbOffsetY;
+pcbScrewFrontRightX = pcbBoardDepth - 3.048 + pcbOffsetX;
+pcbScrewFrontRightY = 71.2 + pcbOffsetY;
+pcbScrewRearRightX = pcbBoardDepth - 33.274 + pcbOffsetX;
+pcbScrewRearRightY = 63.754 + pcbOffsetY;
 usbSlotXoffset = pcbOffsetX + 2.2;
-usbSlotYoffset = pcbScrewMountHeight; //do not add pcbBoardThickness, because you need buffer for the cable to plug in. mainShellThickness already factored in down below where it's drawn
+usbSlotYoffset = pcbScrewMountHeight - 1.7;
 usbSlotWidth = 27;
 usbSlotHeight = 7;
 //mountingHoleX = mainDepth - mainShellThickness - mountingHoleRadius - 3.3;
@@ -218,9 +218,10 @@ union() {
     translate([pcbScrewFrontLeftX, pcbScrewFrontLeftY, mainShellThickness]) {
       cylinder(pcbScrewMountHeight, pcbScrewCylinderRadius, pcbScrewCylinderRadius, $fn=cylinderFragments);
     };
+    /*TODO removing the cutout:
     translate([pcbScrewFrontLeftX, pcbScrewFrontLeftY, mainShellThickness]) {
       cylinder(pcbScrewMountHeight, pcbScrewHoleCylinderRadius, pcbScrewHoleCylinderRadius, $fn=cylinderFragments);
-    };
+    };*/
   };
   
   //PCB right-front side screw/mount
@@ -238,9 +239,10 @@ union() {
     translate([pcbScrewRearRightX, pcbScrewRearRightY, mainShellThickness]) {
       cylinder(pcbScrewMountHeight, pcbScrewCylinderRadius, pcbScrewCylinderRadius, $fn=cylinderFragments);
     };
+    /*TODO: removing the cutout:
     translate([pcbScrewRearRightX, pcbScrewRearRightY, mainShellThickness]) {
       cylinder(pcbScrewMountHeight, pcbScrewHoleCylinderRadius, pcbScrewHoleCylinderRadius, $fn=cylinderFragments);
-    };
+    };*/
   };
   
   //PCB left-rear side screw/mount

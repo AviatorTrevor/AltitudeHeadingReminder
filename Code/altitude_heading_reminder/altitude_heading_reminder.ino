@@ -14,6 +14,11 @@ selected altitude, or departed from it.
 *allow for a larger altitude diff for the calibration altitude. Might have a cold day outside and a heated cabin inside.
 *silence buzzer ~0.5 seconds after rotating right-knob as opposed to silencing it immediately?
 *There is a spike in the reported altitude periodically where altitude drops by a few thousand feet. For now, I'm assuming this is just a fault in the pressure sensor
+*I seem to be getting only about 19-20V for the buzzer?
+*when high-wattage USB-C plugged in, the LED looks like it's about to burn out
+*when battery fully charged and switch is turned ON, the FTDI LED doesn't turn on
+*add 8Mhz resonator?
+*check register values?
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
