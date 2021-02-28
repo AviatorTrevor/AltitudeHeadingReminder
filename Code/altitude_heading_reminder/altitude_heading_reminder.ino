@@ -91,7 +91,6 @@ volatile bool   gNeedToWriteToEeprom;
 #define    cSensorLoopCycle               2 //2Hz
 #define    cSensorLoopPeriod              (cOneSecond / cSensorLoopCycle)
 double     gSensorTemperatureDouble;      //farhenheit
-double     gSensorPressureDouble;         //millibars
 enum SensorMode {SensorModeOff, SensorModeOnHide, SensorModeOnShow, cNumberOfSensorModes};
 volatile SensorMode gSensorMode;
 
@@ -498,6 +497,7 @@ void initializePiracyCheck() {
 
 //////////////////////////////////////////////////////////////////////////
 void initializePressureSensor() {
+  Wire.begin();
   SPL_init();
 }
 
@@ -673,22 +673,16 @@ void loop() {
 
 //////////////////////////////////////////////////////////////////////////
 void handlePressureSensor() {
-
-  gNextSensorBeginCycleTs = millis() + cSensorLoopPeriod;
+  gNextSensorReadyTs = millis() + cSensorLoopPeriod;
 
   //get temperature
-  gSensorTemperatureDouble = get_temp_f();
   if (gCursor == CursorViewSensorTemp) {
      gUpdateLeftScreen = true;
   }
 
-  //if sensor is on, get altitude. TODO: is there already a check for it being over 24,000ft?
-  //TODO: display logic gets updated if there is a sensor error, but we removed the error possibility with this new sensor. go update graphics code.
   if (gSensorMode != SensorModeOff) {
     //get altitude
-    gTrueAltitudeDouble = cFeetInMeters * get_altitude(get_pressure(),local_pressure)
-
-    gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
+    gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * get_altitude(get_pressure(), cSeaLevelPressureHPa));
     if (gMinimumsSilenced && gTrueAltitudeDouble - gMinimumsAltitudeLong >= cMinimumsSilencedAutoOnAltitudeDiff) {
       gMinimumsSilenced = false;
     }
@@ -791,7 +785,7 @@ void handleLeftRotaryMovement(int increment) {
       break;
 
     case CursorSelectMinimumsOn:
-      if (gSensorMode != SensorModeOff && !ePressureSensorFailed) {
+      if (gSensorMode != SensorModeOff) {
         gUpdateRightScreen = true;
         if (gMinimumsOn) {
           gMinimumsOn = false;
@@ -1317,10 +1311,7 @@ void drawLeftScreen() {
       long altitudeDifference = gTrueAltitudeDouble - gSelectedAltitudeLong;
       gOled.setTextSize(2);
       gOled.setCursor(1, cReadoutTextYpos + 4);
-      if (ePressureSensorFailed) {
-        gOled.print("SensorFail");
-      }
-      else if (gSensorMode == SensorModeOff) {
+      if (gSensorMode == SensorModeOff) {
         gOled.print("Sensor Off");
       }
       else if (gMinimumsOn) {
@@ -1352,10 +1343,7 @@ void drawLeftScreen() {
       long altitudeDifference = gTrueAltitudeDouble - gSelectedAltitudeLong;
       gOled.setTextSize(2);
       gOled.setCursor(1, cReadoutTextYpos + 4);
-      if (ePressureSensorFailed) {
-        gOled.print("SensorFail");
-      }
-      else if (gSensorMode == SensorModeOff) {
+      if (gSensorMode == SensorModeOff) {
         gOled.print("Sensor Off");
       }
       else { //we only reach this if minimums are turned ON
@@ -1429,27 +1417,20 @@ void drawLeftScreen() {
     case CursorViewSensorTemp:
     {
       sprintf(gDisplayTopContent, "%s", "Temperature");
-      if (ePressureSensorFailed) {
-        gOled.setTextSize(2);
-        gOled.setCursor(1, cReadoutTextYpos + 7);
-        gOled.print("Failed");
+      double temperatureFarenheit = gSensorTemperatureDouble;
+      sprintf(gDisplayBottomContent, "%d.%d %c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, cDegFLabel);
+      gOled.setTextSize(2);
+      if (temperatureFarenheit >= 100) {
+        gOled.setCursor(94, 11);
       }
       else {
-        double temperatureFarenheit = gSensorTemperatureDouble;
-        sprintf(gDisplayBottomContent, "%d.%d %c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, cDegFLabel);
-        gOled.setTextSize(2);
-        if (temperatureFarenheit >= 100) {
-          gOled.setCursor(94, 11);
-        }
-        else {
-          gOled.setCursor(76, 11);
-        }
-        gOled.print((char)(247));
-
-        gOled.setTextSize(cReadoutTextSize);
-        gOled.setCursor(1, cReadoutTextYpos);
-        gOled.print(gDisplayBottomContent);
+        gOled.setCursor(76, 11);
       }
+      gOled.print((char)(247));
+
+      gOled.setTextSize(cReadoutTextSize);
+      gOled.setCursor(1, cReadoutTextYpos);
+      gOled.print(gDisplayBottomContent);
       break;
     }
 
@@ -1552,12 +1533,6 @@ void drawRightScreen() {
     sprintf(gDisplayTopContent, "%6s", "OFF");
     gOled.setTextSize(cLabelTextSize);
     gOled.setCursor(92, cLabelTextYpos);
-    gOled.print(gDisplayTopContent);
-  }
-  else if (ePressureSensorFailed) { //if there's a sensor error, the top line should be the error message
-    sprintf(gDisplayTopContent, "%13s", "SENSOR FAILED");
-    gOled.setTextSize(cLabelTextSize);
-    gOled.setCursor(50, cLabelTextYpos);
     gOled.print(gDisplayTopContent);
   }
   else if (gSensorMode == SensorModeOnShow) {

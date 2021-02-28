@@ -2,6 +2,7 @@
 #include "Wire.h"
 
 uint8_t SPL_CHIP_ADDRESS = 0x76;
+int32_t oneInt32 = 1;
 
 void SPL_init()
 {
@@ -148,7 +149,7 @@ int32_t get_traw()
   tmp = (tmp << 8) | tmp_XLSB;
 
 
-  if(tmp & (1 << 23))
+  if(tmp & (oneInt32 << 23))
     tmp = tmp | 0XFF000000; // Set left bits to one for 2's complement conversion of negitive number
   
   
@@ -254,7 +255,7 @@ int32_t get_praw()
 
 
 
-  if(tmp & (1 << 23))
+  if(tmp & (oneInt32 << 23))
     tmp = tmp | 0XFF000000; // Set left bits to one for 2's complement conversion of negitive number
   
   
@@ -322,7 +323,7 @@ int32_t get_c00()
 
   tmp = (uint32_t)tmp_MSB << 12 | (uint32_t)tmp_LSB << 4 | (uint32_t)tmp_XLSB >> 4;
 
-  if(tmp & (1 << 19))
+  if(tmp & (oneInt32 << 19))
     tmp = tmp | 0XFFF00000; // Set left bits to one for 2's complement conversion of negitive number
     
 
@@ -350,7 +351,7 @@ int32_t get_c10()
 
   tmp = (uint32_t)tmp_MSB << 16 | (uint32_t)tmp_LSB << 8 | (uint32_t)tmp_XLSB;
 
-  if(tmp & (1 << 19))
+  if(tmp & (oneInt32 << 19))
     tmp = tmp | 0XFFF00000; // Set left bits to one for 2's complement conversion of negitive number
 
   return tmp;
@@ -440,7 +441,7 @@ uint8_t i2c_eeprom_read_uint8_t(  uint8_t deviceaddress, uint8_t eeaddress )
     Wire.write(eeaddress); 
     Wire.endTransmission(false); // false to not release the line
     
-    Wire.requestFrom(deviceaddress,1);
+    Wire.requestFrom(deviceaddress, (uint8_t)1);
     if (Wire.available()) rdata = Wire.read();
     return rdata;
 }
