@@ -9,8 +9,8 @@ provided to the user. It also has buzzer feature to alert the pilot of when he/s
 selected altitude, or departed from it.
 
 *TODO:
-*adjust code for new pressure sensor when you get the PCB ordered
 *add adjustable altitude-deviation alert?
+*temperature readout degree symbol wrong when its 0.0 F
 *allow for a larger altitude diff for the calibration altitude. Might have a cold day outside and a heated cabin inside.
 *silence buzzer ~0.5 seconds after rotating right-knob as opposed to silencing it immediately?
 *There is a spike in the reported altitude periodically where altitude drops by a few thousand feet. For now, I'm assuming this is just a fault in the pressure sensor
@@ -25,7 +25,7 @@ selected altitude, or departed from it.
 *     https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
 */
 #include <EEPROM.h>
-#include <SFE_BMP180.h> //TODO replace
+#include <SPL06-007.h>
 #include <Wire.h>
 #include <Custom_GFX.h>
 #include <Custom_SSD1306.h>
@@ -45,6 +45,7 @@ selected altitude, or departed from it.
 #define cTenSeconds                    10000
 #define cFeetInMeters                  3.28084
 #define cSeaLevelPressureHPa           1013.25 //standard sea level pressure in millibars
+#define cMbInHg                        33.8639
 #define cSeaLevelPressureInHg          29.92 //standard sea level pressure in inches of mercury
 #define cFtLabel                       "ft"
 #define cInLabel                       "\""
@@ -86,14 +87,10 @@ selected altitude, or departed from it.
 #define         cEepromLastAddr                     cEepromSelectedMinimumsAddr
 volatile bool   gNeedToWriteToEeprom;
 
-//BMP180 Sensor variables //TODO replace reference to BMP180 with new pressure sensor
+//SPL06-007 Sensor variables
 #define    cSensorLoopCycle               2 //2Hz
 #define    cSensorLoopPeriod              (cOneSecond / cSensorLoopCycle)
-#define    cBmp180Quality                 3 //highest quality, more electrical draw [0-3]. Wait times are {5ms, 8ms, 14ms, 26ms}. Getting temperature is always 5ms.
-SFE_BMP180 gSensor;
-char       gSensorStatusChar;             //byte value BMP180 pressure sensor returns. Acts as success status as well as time to wait for next state
-int        gSensorProcessStateInt;        //0 = start measuring temperature, 1 = get temperature, 2 = start measuring pressure, 3 = get pressure
-double     gSensorTemperatureDouble;      //celcius
+double     gSensorTemperatureDouble;      //farhenheit
 double     gSensorPressureDouble;         //millibars
 enum SensorMode {SensorModeOff, SensorModeOnHide, SensorModeOnShow, cNumberOfSensorModes};
 volatile SensorMode gSensorMode;
@@ -133,7 +130,7 @@ bool            gLegitimate = true;
 enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState, PowerUpDisabled};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 int                gBuzzCountInt;
-int                cPowerUpSilence = 7000; //wait 7 seconds after start-up before alarm can begin making sounds
+int                cPowerUpSilence = 7000; //wait 7 seconds after start-up before alarm can begin making sounds. this is so you don't scare anyone with a loud alarm as soon as they start it up at home.
 
 //Minimums
 #define            cMinimumsSilencedAutoOnAltitudeDiff   100 //ft
@@ -156,7 +153,6 @@ const double  cBatteryCapacity[2][cBatteryCapacityArrayLength] = { //TODO update
 };
 
 //Timing control
-unsigned long          gNextSensorBeginCycleTs;
 unsigned long          gNextSensorReadyTs;
 unsigned long          gNextBuzzTs;
 unsigned long          gLastAlarmTs; //this value disables the alarm temporarily just at start-up so people's ears aren't blown when they power it on.
@@ -251,9 +247,6 @@ volatile int   gLeftRotaryDirection;
 volatile bool  gLeftButtonPossibleLongPress;
 volatile bool  gLeftRotaryFineTuningPress;
 volatile bool  gDisableLeftRotaryProcessing; //we disable knob processing right after the screen changes pages until the button is released
-
-//Error handling variables
-bool ePressureSensorFailed;
 
 //////////////////////////////////////////////////////////////////////////
 void setup() {
@@ -505,7 +498,7 @@ void initializePiracyCheck() {
 
 //////////////////////////////////////////////////////////////////////////
 void initializePressureSensor() {
-  ePressureSensorFailed = !gSensor.begin();
+  SPL_init();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -515,6 +508,8 @@ void initializeDisplayDevice() {
   
   digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
   digitalWrite(cPinRightDisplayControl, CONTROL_ON);
+
+  delay(200);
   gOled.begin(SSD1306_SWITCHCAPVCC, cOledAddr);
 
   //common between left & right display
@@ -628,7 +623,7 @@ void initializeBuzzer() {
 //////////////////////////////////////////////////////////////////////////
 void loop() {
   if (millis() > cOneSecondBeforeOverflow) { //this handles the extremely rare case (every ~50 days of uptime) that the clock overflows
-    gNextSensorBeginCycleTs = gNextSensorReadyTs = gNextBuzzTs = 0; //reset timing
+    gNextSensorReadyTs = gNextBuzzTs = 0; //reset timing
     delay(cOneSecond); //we take a 1 second frozen penalty for handling this extremely rare situation
     return; //return so that we grab a new currentTime
   }
@@ -659,8 +654,7 @@ void loop() {
   }
 
   //Automatically turn off minimums if these conditions are met
-  if (gMinimumsTriggered && millis() - gMinimumsTriggeredTs >= cMinimumsTriggeredAutoOffTime
-      || ePressureSensorFailed && gCursor == CursorSelectMinimumsAltitude || ePressureSensorFailed && gMinimumsOn) {
+  if (gMinimumsTriggered && millis() - gMinimumsTriggeredTs >= cMinimumsTriggeredAutoOffTime) {
     gMinimumsOn = false;
     if (gCursor == CursorSelectMinimumsOn || gCursor == CursorSelectMinimumsAltitude) {
       gUpdateLeftScreen = true;
@@ -679,68 +673,26 @@ void loop() {
 
 //////////////////////////////////////////////////////////////////////////
 void handlePressureSensor() {
-  if (!ePressureSensorFailed) {
-    if (gSensorMode == SensorModeOff && gSensorProcessStateInt > 1) {
-      gSensorProcessStateInt = 0; //we're only interested in grabbing the temperature
+
+  gNextSensorBeginCycleTs = millis() + cSensorLoopPeriod;
+
+  //get temperature
+  gSensorTemperatureDouble = get_temp_f();
+  if (gCursor == CursorViewSensorTemp) {
+     gUpdateLeftScreen = true;
+  }
+
+  //if sensor is on, get altitude. TODO: is there already a check for it being over 24,000ft?
+  //TODO: display logic gets updated if there is a sensor error, but we removed the error possibility with this new sensor. go update graphics code.
+  if (gSensorMode != SensorModeOff) {
+    //get altitude
+    gTrueAltitudeDouble = cFeetInMeters * get_altitude(get_pressure(),local_pressure)
+
+    gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
+    if (gMinimumsSilenced && gTrueAltitudeDouble - gMinimumsAltitudeLong >= cMinimumsSilencedAutoOnAltitudeDiff) {
+      gMinimumsSilenced = false;
     }
-    switch (gSensorProcessStateInt) {
-      
-      
-      case 0: //Start measuring temperature
-      gNextSensorBeginCycleTs = millis() + cSensorLoopPeriod;
-      gSensorStatusChar = gSensor.startTemperature();
-      gNextSensorReadyTs = millis() + gSensorStatusChar; //sensor tells us when it's ready for the next step
-      if (gSensorStatusChar == 0) {
-        ePressureSensorFailed = true;
-        gUpdateRightScreen = true;
-      }
-      break;
-      
-      
-      case 1: //Retrieve temperature measured
-      gSensorStatusChar = gSensor.getTemperature(gSensorTemperatureDouble);
-      gNextSensorReadyTs = millis(); //ready for the next step immediately
-      if (gSensorStatusChar == 0) {
-        ePressureSensorFailed = true;
-        gUpdateRightScreen = true;
-        if (gCursor == CursorViewSensorTemp) {
-          gUpdateLeftScreen = true;
-        }
-      }
-      break;
-      
-      
-      case 2: //Start measuring pressure
-      gSensorStatusChar = gSensor.startPressure(cBmp180Quality);
-      gNextSensorReadyTs = millis() + gSensorStatusChar;//sensor tells us when it's ready for the next step
-      if (gSensorStatusChar == 0) {
-        ePressureSensorFailed = true;
-        gUpdateRightScreen = true;
-      }
-      break;
-      
-      
-      case 3: //Retrieve pressure measured
-      gNextSensorReadyTs = gNextSensorBeginCycleTs; //we'll start the process over again according to the sensor rate we defined in the constants section
-      gSensorStatusChar = gSensor.getPressure(gSensorPressureDouble, gSensorTemperatureDouble);
-      if (gSensorStatusChar == 0) {
-        ePressureSensorFailed = true;
-        gUpdateRightScreen = true;
-      }
-      else { //only update the true altitude if the pressure reading was valid
-        gTrueAltitudeDouble = altitudeCorrected(cFeetInMeters * gSensor.altitude(gSensorPressureDouble, cSeaLevelPressureHPa));
-        if (gMinimumsSilenced && gTrueAltitudeDouble - gMinimumsAltitudeLong >= cMinimumsSilencedAutoOnAltitudeDiff) {
-          gMinimumsSilenced = false;
-        }
-        gUpdateRightScreen = true;
-      }
-    }
-    if (ePressureSensorFailed) {
-      gSensorProcessStateInt = 0;
-    }
-    else {
-      gSensorProcessStateInt = (gSensorProcessStateInt + 1) % 4;
-    }
+    gUpdateRightScreen = true;
   }
 }
 
@@ -1226,7 +1178,7 @@ void handleBuzzer() {
 
     case AlarmDisabled:
     {
-      if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime || ePressureSensorFailed || millis() < cPowerUpSilence) {
+      if (millis() - gLastAlarmTs < cDisableAlarmAfterAlarmTime || millis() < cPowerUpSilence) {
         //if alarm disabled or pressure sensor failed, do nothing
       }
       else if (gSensorMode != SensorModeOff && gSelectedAltitudeLong <= cHighestAltitudeAlert && millis() - gLastRightRotaryActionTs >= cDisableAlarmKnobMovementTime) {
@@ -1246,7 +1198,7 @@ void handleBuzzer() {
         gFlashRightScreen = false;
         gBuzzCountInt = 0;
       }
-      else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert || ePressureSensorFailed) {
+      else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert) {
         gAlarmModeEnum = AlarmDisabled;
         noTone(cBuzzPin); //stop the buzzer
         gFlashRightScreen = false;
@@ -1483,7 +1435,7 @@ void drawLeftScreen() {
         gOled.print("Failed");
       }
       else {
-        double temperatureFarenheit = gSensorTemperatureDouble * 9 / 5 + 32;
+        double temperatureFarenheit = gSensorTemperatureDouble;
         sprintf(gDisplayBottomContent, "%d.%d %c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, cDegFLabel);
         gOled.setTextSize(2);
         if (temperatureFarenheit >= 100) {
