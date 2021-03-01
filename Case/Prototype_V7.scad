@@ -4,6 +4,7 @@ resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
 mainShellThickness = 5 * resolution;
+frontFaceThickness = 3 * resolution;
 mainDepth = 57;
 mainWidth = 91;
 mainHeight = 37 + mainShellThickness;
@@ -65,7 +66,7 @@ union() {
     //main shell
     cube([mainDepth, mainWidth, mainHeight]);
     translate([mainShellThickness, mainShellThickness, mainShellThickness]) {//cut-out inside
-      cube([mainDepth - mainShellThickness * 2, mainWidth - mainShellThickness * 2, mainHeight]);
+      cube([mainDepth - mainShellThickness - frontFaceThickness, mainWidth - mainShellThickness * 2, mainHeight]);
     };
     
     //left display

@@ -3,6 +3,7 @@ resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
 mainShellThickness = 5 * resolution;
+frontFaceThickness = 3 * resolution;
 mainDepth = 57;
 mainWidth = 91;
 mainHeight = 37 + mainShellThickness;
@@ -32,14 +33,14 @@ difference() {
     cube([mainDepth, mainWidth, lidThickness]);
     
     //the inner lip
-    translate([margin, margin, lidThickness]) {
-      cube([mainDepth - margin*2, mainWidth - margin*2, innerLipHeight]);
+    translate([frontFaceThickness + resolution, margin, lidThickness]) {
+      cube([mainDepth - margin - frontFaceThickness - resolution, mainWidth - margin*2, innerLipHeight]);
     };
   };
   
   //cutting out the inside to save on plastic used
-  translate([margin + lidWidth, margin + lidWidth, lidThickness]) {
-    cube([mainDepth - margin*2 - lidWidth*2, mainWidth - margin*2 - lidWidth*2, innerLipHeight]);
+  translate([frontFaceThickness + resolution + lidWidth, margin + lidWidth, lidThickness]) {
+    cube([mainDepth - margin - frontFaceThickness - resolution - lidWidth*2, mainWidth - margin*2 - lidWidth*2, innerLipHeight]);
   };
   
   

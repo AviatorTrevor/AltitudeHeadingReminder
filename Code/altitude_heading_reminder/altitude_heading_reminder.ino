@@ -30,8 +30,6 @@ selected altitude, or departed from it.
 #include <Custom_GFX.h>
 #include <Custom_SSD1306.h>
 
-//#define DEBUG //TODO remove
-
 #define cAppVersion                    "1.0" //[HardwareConfigOrMajorRedesign].[SoftwareRelease]
 #define cAppCodeNumberOfDigits         6
 #define cAppCodeOne                    8
@@ -137,18 +135,17 @@ int                cPowerUpSilence = 7000; //wait 7 seconds after start-up befor
 
 //Battery
 #define       cBatteryVoltagePin      A0
-#define       cBatteryUpdateInterval  1000 //TODO debug. later, make it: 30000
+#define       cBatteryUpdateInterval  120000 //once per two minutes
 #define       cBatteryAlertLevel      15
 #define       cBatteryMessageInterval 15000 //15 seconds
 #define       cBatteryMessageDuration 1500  //1.5 seconds
 int           gBatteryLevel;
-double        gVoltageLevel; //TODO debug, remove later
 unsigned long gBatteryUpdateTs;
 #define       cBatteryCapacityArrayLength   21
 #define       cBatteryCapacityArrayInterval 5 //this represents the jump in battery capacity per index in the array
-const double  cBatteryCapacity[2][cBatteryCapacityArrayLength] = { //TODO update battery voltages when you test
-  3.27, 3.61, 3.69, 3.71, 3.73, 3.75, 3.77, 3.79, 3.80, 3.82, 3.84, 3.85, 3.87, 3.91, 3.95, 3.98, 4.02, 4.08, 4.11, 4.15, 4.2,
-     0,    5,   10,   15,   20,   25,   30,   35,   40,   45,   50,   55,   60,   65,   70,   75,   80,   85,   90,   95, 100
+const double  cBatteryCapacity[2][cBatteryCapacityArrayLength] = {
+  2.40, 3.41, 3.48, 3.54, 3.58, 3.62, 3.67, 3.71, 3.76, 3.79, 3.82, 3.84, 3.87, 3.91, 3.94, 3.98, 4.01, 4.03, 4.06, 4.09, 4.15,
+     0,    5,   10,   15,   20,   25,   30,   35,   40,   45,   50,   55,   60,   65,   70,   75,   80,   85,   90,   95,  100
 };
 
 //Timing control
@@ -497,7 +494,7 @@ void initializePiracyCheck() {
 
 //////////////////////////////////////////////////////////////////////////
 void initializePressureSensor() {
-  Wire.begin();
+  Wire.begin(); //TODO: was this really needed?
   SPL_init();
 }
 
@@ -1436,10 +1433,7 @@ void drawLeftScreen() {
 
     case CursorViewBatteryLevel:
       sprintf(gDisplayTopContent, "%s", "Battery");
-      sprintf(gDisplayBottomContent, "%d.%02dV", (int)gVoltageLevel, (int)(gVoltageLevel * 100)%100);
-      /*TODO: add this back in later:
-      sprintf(gDisplayTopContent, "%s", "Battery");
-      sprintf(gDisplayBottomContent, "%d%%", gBatteryLevel);*/
+      sprintf(gDisplayBottomContent, "%d%%", gBatteryLevel);
       break;
   }
   
@@ -1508,7 +1502,6 @@ void drawRightScreen() {
     }
   }
   
-  /*TODO: add this back in after battery testing:
   if (gBatteryLevel <= cBatteryAlertLevel) { //low battery
     if (!minimumsStatusDisplayed || minimumsStatusDisplayed && millis() % cBatteryMessageInterval <= cBatteryMessageDuration) {
       gOled.setTextSize(cLabelTextSize);
@@ -1516,14 +1509,6 @@ void drawRightScreen() {
       gOled.clearDisplay();
       gOled.print("LOW BATT");
     }
-  }*/
-  
-  //TODO: debug if-statement and debug contents. remove later after battery testing
-  if (!minimumsStatusDisplayed) {
-    gOled.setTextSize(cLabelTextSize);
-    gOled.setCursor(1, cLabelTextYpos);
-    sprintf(gDisplayTopContent, "%d.%02dV", (int)gVoltageLevel, (int)(gVoltageLevel * 100)%100);
-    gOled.print(gDisplayTopContent);
   }
 
   long tempSelectedAltitude = gSelectedAltitudeLong; //doing this here because it's used inside of 2 scopes
@@ -1835,8 +1820,6 @@ void writeValuesToEeprom() {
 //////////////////////////////////////////////////////////////////////////
 void updateBatteryLevel() {
   double voltage = (double)(analogRead(cBatteryVoltagePin)) / 1024 * 3.3 * 1.3333;
-  gVoltageLevel = voltage; //TODO: debug, remove later
-  gUpdateLeftScreen = gUpdateRightScreen = true; //TODO: debug, remove later
 
   for (int i = 0; i < cBatteryCapacityArrayLength; i++) {
     if (voltage <= cBatteryCapacity[0][i]) {
