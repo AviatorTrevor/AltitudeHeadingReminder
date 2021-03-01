@@ -10,11 +10,8 @@ selected altitude, or departed from it.
 
 *TODO:
 *add adjustable altitude-deviation alert?
-*temperature readout degree symbol wrong when its 0.0 F
-*allow for a larger altitude diff for the calibration altitude. Might have a cold day outside and a heated cabin inside.
 *silence buzzer ~0.5 seconds after rotating right-knob as opposed to silencing it immediately?
-*There is a spike in the reported altitude periodically where altitude drops by a few thousand feet. For now, I'm assuming this is just a fault in the pressure sensor
-*I seem to be getting only about 19-20V for the buzzer?
+*I seem to be getting only about 19-20V for the buzzer? Expected 24V
 *when high-wattage USB-C plugged in, the LED looks like it's about to burn out
 *when battery fully charged and switch is turned ON, the FTDI LED doesn't turn on
 *add 8Mhz resonator?
@@ -61,8 +58,8 @@ selected altitude, or departed from it.
 #define cAltimeterSettingInHgMin       27.50 //inHg
 #define cAltimeterSettingInHgMax       31.50 //inHg
 #define cAltimeterSettingInHgInterval  0.01  //inHg
-#define cCalibrationOffsetMin          -2000 //ft
-#define cCalibrationOffsetMax          2000  //ft
+#define cCalibrationOffsetMin          -5000 //ft
+#define cCalibrationOffsetMax          5000  //ft
 #define cCalibrationOffsetInterval     10    //ft
 #define cHeadingSelectIncrement        5     //degrees
 #define cDefaultSelectedHeading        360   //degrees
@@ -506,7 +503,6 @@ void initializeDisplayDevice() {
   digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
   digitalWrite(cPinRightDisplayControl, CONTROL_ON);
 
-  delay(200);
   gOled.begin(SSD1306_SWITCHCAPVCC, cOledAddr);
 
   //common between left & right display
@@ -673,6 +669,7 @@ void handlePressureSensor() {
   gNextSensorReadyTs = millis() + cSensorLoopPeriod;
 
   //get temperature
+  gSensorTemperatureDouble = get_temp_f();
   if (gCursor == CursorViewSensorTemp) {
      gUpdateLeftScreen = true;
   }
@@ -1185,13 +1182,13 @@ void handleBuzzer() {
       long diffBetweenSelectionAndTrueAltitude = gSelectedAltitudeLong - gTrueAltitudeDouble;
 
       if (millis() - gLastRightRotaryActionTs < cDisableAlarmKnobMovementTime) {
-        noTone(cBuzzPin); //stop the buzzer
+        digitalWrite(cBuzzPin, LOW); //stop the buzzer
         gFlashRightScreen = false;
         gBuzzCountInt = 0;
       }
       else if (gSensorMode == SensorModeOff || gSelectedAltitudeLong > cHighestAltitudeAlert) {
         gAlarmModeEnum = AlarmDisabled;
-        noTone(cBuzzPin); //stop the buzzer
+        digitalWrite(cBuzzPin, LOW); //stop the buzzer
         gFlashRightScreen = false;
         gBuzzCountInt = 0;
       }
@@ -1246,8 +1243,8 @@ void handleDisplay() {
     }
   }
 
-  //always update the left screen once a second when timer is running. I am giving it a 70 millisecond window at the beginning of each second to allow updates
-  if (gTimerStartTs != 0 && (millis() - gTimerStartTs) % 1000 < 70) {
+  //always update the left screen once a second when timer is running. I am giving it a 100 millisecond window at the beginning of each second to allow updates
+  if (gTimerStartTs != 0 && (millis() - gTimerStartTs) % 1000 < 100) {
     gUpdateLeftScreen = true;
   }
 }
@@ -1415,15 +1412,18 @@ void drawLeftScreen() {
     {
       sprintf(gDisplayTopContent, "%s", "Temperature");
       double temperatureFarenheit = gSensorTemperatureDouble;
-      sprintf(gDisplayBottomContent, "%d.%d %c", (int)temperatureFarenheit, (int)(temperatureFarenheit*10)%10, cDegFLabel);
+      sprintf(gDisplayBottomContent, "%d.%d %c", (int)temperatureFarenheit, abs((int)(temperatureFarenheit*10)%10), cDegFLabel);
       gOled.setTextSize(2);
-      if (temperatureFarenheit >= 100) {
+      if (temperatureFarenheit >= 100 || temperatureFarenheit <= -10) {
         gOled.setCursor(94, 11);
       }
-      else {
+      else if (temperatureFarenheit >= 10 || (temperatureFarenheit < 0 && temperatureFarenheit > -10)) {
         gOled.setCursor(76, 11);
       }
-      gOled.print((char)(247));
+      else if (temperatureFarenheit >= 0) {
+        gOled.setCursor(58, 11);
+      }
+      gOled.print((char)(247));  //degree symbol
 
       gOled.setTextSize(cReadoutTextSize);
       gOled.setCursor(1, cReadoutTextYpos);
