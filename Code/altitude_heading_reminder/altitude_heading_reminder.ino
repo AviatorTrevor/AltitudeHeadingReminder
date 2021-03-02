@@ -10,12 +10,10 @@ selected altitude, or departed from it.
 
 *TODO:
 *add adjustable altitude-deviation alert?
+*In silent mode, maybe display a symbol or "X" or "S" in front of the readout to indicate that you're in silent mode?
 *silence buzzer ~0.5 seconds after rotating right-knob as opposed to silencing it immediately?
-*I seem to be getting only about 19-20V for the buzzer? Expected 24V
 *when high-wattage USB-C plugged in, the LED looks like it's about to burn out
-*when battery fully charged and switch is turned ON, the FTDI LED doesn't turn on
 *add 8Mhz resonator?
-*check register values?
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
@@ -86,7 +84,7 @@ volatile bool   gNeedToWriteToEeprom;
 #define    cSensorLoopCycle               2 //2Hz
 #define    cSensorLoopPeriod              (cOneSecond / cSensorLoopCycle)
 double     gSensorTemperatureDouble;      //farhenheit
-enum SensorMode {SensorModeOff, SensorModeOnHide, SensorModeOnShow, cNumberOfSensorModes};
+enum SensorMode {SensorModeOff, SensorModeSilent, SensorModeOnHide, SensorModeOnShow, cNumberOfSensorModes};
 volatile SensorMode gSensorMode;
 
 //Main program variables
@@ -130,12 +128,14 @@ int                cPowerUpSilence = 7000; //wait 7 seconds after start-up befor
 #define            cMinimumsSilencedAutoOnAltitudeDiff   100 //ft
 #define            cMinimumsTriggeredAutoOffTime         30000 //30 seconds
 
+//Top-left corner message for low battery or silent mode
+#define       cAltMessageInterval 15000 //15 seconds
+#define       cAltMessageDuration 1500  //1.5 seconds
+
 //Battery
 #define       cBatteryVoltagePin      A0
-#define       cBatteryUpdateInterval  120000 //once per two minutes
+#define       cBatteryUpdateInterval  30000 //once per 30 seconds
 #define       cBatteryAlertLevel      15
-#define       cBatteryMessageInterval 15000 //15 seconds
-#define       cBatteryMessageDuration 1500  //1.5 seconds
 int           gBatteryLevel;
 unsigned long gBatteryUpdateTs;
 #define       cBatteryCapacityArrayLength   21
@@ -1088,7 +1088,9 @@ void handleBuzzer() {
       if (millis() >= gNextBuzzTs) {
         gBuzzCountInt--;
         if (gBuzzCountInt % 2 == 1) {
-          digitalWrite(cBuzzPin, HIGH);
+          if (gSensorMode != SensorModeSilent) {
+            digitalWrite(cBuzzPin, HIGH);
+          }
           gNextBuzzTs = millis() + cShortBuzzOnDuration;
         }
         else if (gBuzzCountInt != 0 && gBuzzCountInt % 2 == 0) {
@@ -1118,7 +1120,9 @@ void handleBuzzer() {
       if (millis() >= gNextBuzzTs) {
         gBuzzCountInt--;
         if (gBuzzCountInt % 4 == 3) {
-          digitalWrite(cBuzzPin, HIGH);
+          if (gSensorMode != SensorModeSilent) {
+            digitalWrite(cBuzzPin, HIGH);
+          }
           gNextBuzzTs = millis() + cMinimumsShortBuzzOnDuration;
         }
         else if (gBuzzCountInt % 4 == 2) {
@@ -1126,7 +1130,9 @@ void handleBuzzer() {
           gNextBuzzTs = millis() + cMinimumsBuzzOffDuration;
         }
         else if (gBuzzCountInt % 4 == 1) {
-          digitalWrite(cBuzzPin, HIGH);
+          if (gSensorMode != SensorModeSilent) {
+            digitalWrite(cBuzzPin, HIGH);
+          }
           gNextBuzzTs = millis() + cMinimumsLongBuzzOnDuration;
         }
         else if (gBuzzCountInt != 0 && gBuzzCountInt % 4 == 0) {
@@ -1151,7 +1157,9 @@ void handleBuzzer() {
       if (millis() >= gNextBuzzTs) {
         gBuzzCountInt--;
         if (gBuzzCountInt == 1) {
-          digitalWrite(cBuzzPin, HIGH);
+          if (gSensorMode != SensorModeSilent) {
+            digitalWrite(cBuzzPin, HIGH);
+          }
           gNextBuzzTs = millis() + cLongBuzzDuration;
           gFlashRightScreen = true;
         }
@@ -1398,6 +1406,9 @@ void drawLeftScreen() {
       else if (gSensorMode == SensorModeOnHide) {
         sprintf(gDisplayBottomContent, "%s", "ON/HIDE");
       }
+      else if (gSensorMode == SensorModeSilent) {
+        sprintf(gDisplayBottomContent, "%s", "SILENT");
+      }
       else {
         sprintf(gDisplayBottomContent, "%s", "OFF");
       }
@@ -1470,22 +1481,23 @@ void drawRightScreen() {
     gOled.dim(false, 255);
   }
 
+  //top-left corner of the right screen shows either minimums info and/or "LOW BATT" message
   gOled.setTextSize(cLabelTextSize);
   gOled.setCursor(1, cLabelTextYpos);
   bool minimumsStatusDisplayed = false;
   if (gMinimumsOn) {
-    if (gMinimumsTriggered && gAlarmModeEnum == MinimumsAlarm) {
+    if (gMinimumsTriggered && gAlarmModeEnum == MinimumsAlarm) { //this block prints "MINIMUMS" in large text that covers the entire screen
       gOled.setTextSize(2);
       gOled.setCursor(18, 9);
       gOled.print("MINIMUMS");
       gOled.display();
       return;
     }
-    else if (gMinimumsTriggered) {
+    else if (gMinimumsTriggered) { //this displays "MINIMUMS" in small text in the top-left corner for maybe 30 seconds after minimums were triggered
       gOled.print("MINIMUMS");
       minimumsStatusDisplayed = true;
     }
-    else if (gMinimumsSilenced) {
+    else if (gMinimumsSilenced) { //the user selected minimums higher than their current altitude, so minimums aren't armed yet. Once they climb above the minimums altitude by I think 200ft, the minimums become "armed" and can then trigger. This prints "-------ft" if it's in this "not armed" mode.
       gOled.print("-------ft");
       minimumsStatusDisplayed = true;
     }
@@ -1503,11 +1515,19 @@ void drawRightScreen() {
   }
   
   if (gBatteryLevel <= cBatteryAlertLevel) { //low battery
-    if (!minimumsStatusDisplayed || minimumsStatusDisplayed && millis() % cBatteryMessageInterval <= cBatteryMessageDuration) {
+    if (!minimumsStatusDisplayed || minimumsStatusDisplayed && millis() % cAltMessageInterval <= cAltMessageDuration) {
       gOled.setTextSize(cLabelTextSize);
       gOled.setCursor(1, cLabelTextYpos);
       gOled.clearDisplay();
       gOled.print("LOW BATT");
+    }
+  }
+  else if (gSensorMode == SensorModeSilent) {
+    if (!minimumsStatusDisplayed || minimumsStatusDisplayed && millis() % cAltMessageInterval <= cAltMessageDuration) {
+      gOled.setTextSize(cLabelTextSize);
+      gOled.setCursor(1, cLabelTextYpos);
+      gOled.clearDisplay();
+      gOled.print("SILENT");
     }
   }
 
@@ -1520,7 +1540,7 @@ void drawRightScreen() {
     gOled.setCursor(92, cLabelTextYpos);
     gOled.print(gDisplayTopContent);
   }
-  else if (gSensorMode == SensorModeOnShow) {
+  else if (gSensorMode == SensorModeOnShow || gSensorMode == SensorModeSilent) {
     //show the current altitude top-right
     char* trueAltitudeReadout = displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearestFt), false);
     sprintf(gDisplayTopContent, "%6s", trueAltitudeReadout);
