@@ -10,10 +10,6 @@ selected altitude, or departed from it.
 
 *TODO:
 *add adjustable altitude-deviation alert?
-*In silent mode, maybe display a symbol or "X" or "S" in front of the readout to indicate that you're in silent mode?
-*silence buzzer ~0.5 seconds after rotating right-knob as opposed to silencing it immediately?
-*when high-wattage USB-C plugged in, the LED looks like it's about to burn out
-*add 8Mhz resonator?
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
 *     http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
@@ -36,6 +32,7 @@ selected altitude, or departed from it.
 #define cOneSecond                     1000 //1000 milliseconds = 1 second
 #define cOneSecondBeforeOverflow       (unsigned long)(pow(2, sizeof(unsigned long) * 8) - cOneSecond)
 #define cTenSeconds                    10000
+#define cLeftRotaryTimeoutSeconds      cTenSeconds
 #define cFeetInMeters                  3.28084
 #define cSeaLevelPressureHPa           1013.25 //standard sea level pressure in millibars
 #define cMbInHg                        33.8639
@@ -196,6 +193,7 @@ enum Cursor {
     CursorSelectSensor,
     CursorSelectFlipDevice,
     CursorViewSensorTemp,
+    CursorViewAltitude,
     CursorViewBatteryLevel,
     cNumberOfCursorModes }
     gCursor = CursorSelectHeading;
@@ -491,7 +489,6 @@ void initializePiracyCheck() {
 
 //////////////////////////////////////////////////////////////////////////
 void initializePressureSensor() {
-  Wire.begin(); //TODO: was this really needed?
   SPL_init();
 }
 
@@ -636,10 +633,11 @@ void loop() {
   }
 
   //if the left screen has been inactive for too long on a non-priority screen, go back to the heading screen
-  if (gCursor > CursorSelectTimer && millis() - gLastRotaryActionTs >= cTenSeconds) {
+  /*TODO: debug?
+  if (gCursor > CursorSelectTimer && millis() - gLastRotaryActionTs >= cLeftRotaryTimeoutSeconds) {
     gCursor = CursorSelectHeading;
     gUpdateLeftScreen = true;
-  }
+  }*/
 
   //Update battery level
   if (millis() - gBatteryUpdateTs >= cBatteryUpdateInterval) {
@@ -670,7 +668,7 @@ void handlePressureSensor() {
 
   //get temperature
   gSensorTemperatureDouble = get_temp_f();
-  if (gCursor == CursorViewSensorTemp) {
+  if (gCursor == CursorViewSensorTemp || gCursor == CursorViewAltitude) {
      gUpdateLeftScreen = true;
   }
 
@@ -873,6 +871,7 @@ void handleLeftRotaryMovement(int increment) {
       break;
 
     case CursorViewSensorTemp:
+    case CursorViewAltitude:
     case CursorViewBatteryLevel:
     default:
       break; //do nothing for these modes, display only
@@ -1442,6 +1441,33 @@ void drawLeftScreen() {
       break;
     }
 
+    case CursorViewAltitude:
+    {
+      sprintf(gDisplayTopContent, "%s", "Altitude");
+
+      if (gSensorMode == SensorModeOff) {
+        sprintf(gDisplayBottomContent, "%6s", "OFF");
+        gOled.setTextSize(cReadoutTextSize);
+        gOled.setCursor(0, cReadoutTextYpos);
+        gOled.print(gDisplayBottomContent);
+      }
+      else {
+        //show the current altitude top-right
+        char* trueAltitudeReadout = displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearestFt), false);
+        sprintf(gDisplayBottomContent, "%6s", trueAltitudeReadout);
+        gOled.setTextSize(cReadoutTextSize);
+        gOled.setCursor(0, cReadoutTextYpos);
+        gOled.print(gDisplayBottomContent);
+        delete trueAltitudeReadout;
+
+        //print the "ft" label
+        gOled.setTextSize(2);
+        gOled.setCursor(104, cReadoutTextYpos + 7);
+        gOled.print(cFtLabel);
+      }
+      break;
+    }
+
     case CursorViewBatteryLevel:
       sprintf(gDisplayTopContent, "%s", "Battery");
       sprintf(gDisplayBottomContent, "%d%%", gBatteryLevel);
@@ -1452,7 +1478,7 @@ void drawLeftScreen() {
   gOled.setCursor(1, cLabelTextYpos);
   gOled.print(gDisplayTopContent);
 
-  if (gCursor != CursorSelectMinimumsOn && gCursor != CursorSelectMinimumsAltitude && gCursor != CursorViewSensorTemp) {
+  if (gCursor != CursorSelectMinimumsOn && gCursor != CursorSelectMinimumsAltitude && gCursor != CursorViewSensorTemp && gCursor != CursorViewAltitude) {
     gOled.setTextSize(cReadoutTextSize);
     gOled.setCursor(1, cReadoutTextYpos);
     gOled.print(gDisplayBottomContent);
@@ -1513,22 +1539,27 @@ void drawRightScreen() {
       minimumsStatusDisplayed = true;
     }
   }
-  
-  if (gBatteryLevel <= cBatteryAlertLevel) { //low battery
-    if (!minimumsStatusDisplayed || minimumsStatusDisplayed && millis() % cAltMessageInterval <= cAltMessageDuration) {
-      gOled.setTextSize(cLabelTextSize);
-      gOled.setCursor(1, cLabelTextYpos);
+
+  unsigned long clockTime = millis();
+  gOled.setTextSize(cLabelTextSize);
+  gOled.setCursor(1, cLabelTextYpos);
+  if (cPowerUpSilence > 0) {
+    gOled.clearDisplay();
+    gOled.print("SILENT");
+  }
+  else if (gBatteryLevel <= cBatteryAlertLevel) { //low battery
+    if (!minimumsStatusDisplayed || minimumsStatusDisplayed && (clockTime % cAltMessageInterval <= cAltMessageDuration)) {
       gOled.clearDisplay();
       gOled.print("LOW BATT");
     }
-  }
-  else if (gSensorMode == SensorModeSilent) {
-    if (!minimumsStatusDisplayed || minimumsStatusDisplayed && millis() % cAltMessageInterval <= cAltMessageDuration) {
-      gOled.setTextSize(cLabelTextSize);
-      gOled.setCursor(1, cLabelTextYpos);
+    if (gSensorMode == SensorModeSilent && (clockTime % cAltMessageInterval <= cAltMessageDuration) && (clockTime % cAltMessageInterval > cAltMessageDuration)) {
       gOled.clearDisplay();
       gOled.print("SILENT");
     }
+  }
+  else if (gSensorMode == SensorModeSilent && (!minimumsStatusDisplayed || minimumsStatusDisplayed && (clockTime % cAltMessageInterval <= cAltMessageDuration))) {
+    gOled.clearDisplay();
+    gOled.print("SILENT");
   }
 
   long tempSelectedAltitude = gSelectedAltitudeLong; //doing this here because it's used inside of 2 scopes
@@ -1540,7 +1571,7 @@ void drawRightScreen() {
     gOled.setCursor(92, cLabelTextYpos);
     gOled.print(gDisplayTopContent);
   }
-  else if (gSensorMode == SensorModeOnShow || gSensorMode == SensorModeSilent) {
+  else if (gSensorMode != SensorModeOnHide) {
     //show the current altitude top-right
     char* trueAltitudeReadout = displayNumber(roundNumber(gTrueAltitudeDouble, cTrueAltitudeRoundToNearestFt), false);
     sprintf(gDisplayTopContent, "%6s", trueAltitudeReadout);
