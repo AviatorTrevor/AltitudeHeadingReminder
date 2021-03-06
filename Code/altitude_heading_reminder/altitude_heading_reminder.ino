@@ -1909,8 +1909,17 @@ void updateBatteryLevel() {
 int getBatteryLevel() {
   double voltage = (double)(analogRead(cBatteryVoltagePin)) / 1024 * 3.3 * 1.3333;
   int batteryLevel = 0;
-  gBatteryCharging = voltage > 4.16; //the battery can't be 4.16V, that's only possible when charging
-
+  bool batteryCharging = voltage > 4.16; //the battery can't be 4.16V, that's only possible when charging
+  if (gBatteryCharging != batteryCharging) {
+    gBatteryCharging = batteryCharging;
+    if (gCursor == CursorViewBatteryLevel) {
+      gUpdateLeftScreen = true;
+    }
+    if (gBatteryLevel <= cBatteryAlertLevel) {
+      gUpdateRightScreen = true;
+    }
+  }
+  
   for (int i = 0; i < cBatteryCapacityArrayLength; i++) {
     if (voltage <= cBatteryCapacity[0][i]) {
       if (i == 0) {
