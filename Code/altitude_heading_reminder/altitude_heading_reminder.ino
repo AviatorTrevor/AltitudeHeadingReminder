@@ -9,6 +9,7 @@ provided to the user. It also has buzzer feature to alert the pilot of when he/s
 selected altitude, or departed from it.
 
 *TODO:
+*one day I couldn't select 29.86. Float precision rounding?
 *add adjustable altitude-deviation alert?
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
@@ -21,7 +22,6 @@ selected altitude, or departed from it.
 #include <Custom_GFX.h>
 #include <Custom_SSD1306.h>
 
-#define cAppVersion                    "1.0" //[HardwareConfigOrMajorRedesign].[SoftwareRelease]
 #define cAppCodeNumberOfDigits         6
 #define cAppCodeOne                    8
 #define cAppCodeTwo                    8
@@ -36,7 +36,8 @@ selected altitude, or departed from it.
 #define cFeetInMeters                  3.28084
 #define cSeaLevelPressureHPa           1013.25 //standard sea level pressure in millibars
 #define cMbInHg                        33.8639
-#define cSeaLevelPressureInHg          29.92 //standard sea level pressure in inches of mercury
+#define cSeaLevelPressureInHg          2992 //standard sea level pressure in inches of mercury (x100)
+#define cSeaLevelPressureInHgDouble    29.92
 #define cFtLabel                       "ft"
 #define cInLabel                       "\""
 #define cDegFLabel                     'F'
@@ -50,9 +51,9 @@ selected altitude, or departed from it.
 #define cLowestAltitudeSelect          -1000 //ft
 #define cHighestAltitudeSelect         60000 //ft
 #define cHighestAltitudeAlert          24000 //ft, the pressure sensor will only measure so high. No point in alerting above a certain pressure level
-#define cAltimeterSettingInHgMin       27.50 //inHg
-#define cAltimeterSettingInHgMax       31.50 //inHg
-#define cAltimeterSettingInHgInterval  0.01  //inHg
+#define cAltimeterSettingInHgMin       2750 //inHg * 100
+#define cAltimeterSettingInHgMax       3150 //inHg * 100
+#define cAltimeterSettingInHgInterval  1    //inHg
 #define cCalibrationOffsetMin          -5000 //ft
 #define cCalibrationOffsetMax          5000  //ft
 #define cCalibrationOffsetInterval     10    //ft
@@ -87,7 +88,7 @@ volatile SensorMode gSensorMode;
 //Main program variables
 double          gTrueAltitudeDouble;
 volatile long   gSelectedAltitudeLong;
-volatile double gAltimeterSettingInHgDouble;
+volatile int    gAltimeterSettingInHgInt;
 volatile int    gCalibratedAltitudeOffsetInt;
 volatile int    gPermanentCalibratedAltitudeOffsetInt;
 volatile int    gSelectedHeadingInt; //degrees
@@ -131,9 +132,10 @@ int                cPowerUpSilence = 7000; //wait 7 seconds after start-up befor
 
 //Battery
 #define       cBatteryVoltagePin      A0
-#define       cBatteryUpdateInterval  30000 //once per 30 seconds
+#define       cBatteryUpdateInterval  3000 //once per 3 seconds
 #define       cBatteryAlertLevel      15
 int           gBatteryLevel;
+bool          gBatteryCharging;
 unsigned long gBatteryUpdateTs;
 #define       cBatteryCapacityArrayLength   21
 #define       cBatteryCapacityArrayInterval 5 //this represents the jump in battery capacity per index in the array
@@ -250,7 +252,7 @@ void setup() {
   initializeValuesFromEeprom();
   initializePressureSensor();
   initializeBuzzer();
-  updateBatteryLevel();
+  gBatteryLevel = getBatteryLevel();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -265,12 +267,12 @@ void initializeValuesFromEeprom() {
   //Last Altimeter Setting
   EEPROM.get(cEepromAltimeterAddr, eepromIndex);
   if (eepromIndex >= 0 && eepromIndex < cSizeOfEeprom) {
-    EEPROM.get(eepromIndex, tempDouble);
-    if (isnan(tempDouble) || tempDouble < cAltimeterSettingInHgMin || tempDouble > cAltimeterSettingInHgMax) {
-      gAltimeterSettingInHgDouble = cSeaLevelPressureInHg;
+    EEPROM.get(eepromIndex, tempInt);
+    if (tempInt < cAltimeterSettingInHgMin || tempInt > cAltimeterSettingInHgMax) {
+      gAltimeterSettingInHgInt = cSeaLevelPressureInHg;
     }
     else {
-      gAltimeterSettingInHgDouble = tempDouble;
+      gAltimeterSettingInHgInt = tempInt;
     }
   }
   
@@ -355,44 +357,53 @@ void initializeValuesFromEeprom() {
 }
 
 //////////////////////////////////////////////////////////////////////////
-void initializeDefaultEeprom() {  
-  EEPROM.put(cEepromAltimeterAddr, cEepromLastAddr + 2);
-  EEPROM.put(cEepromLastAddr + 2, (double)cSeaLevelPressureInHg); //default value for altimeter
-  EEPROM.put(cEepromLastAddr + 2 + sizeof(double), 0);
+// because EEPROM memory cells are rated for a maximum of 100,000 writes,
+// and because we aren't using most of the EEPROM, by adding a value to 
+// keep track of the number of writes there have been for that data value,
+// we can *move* where that value is stored in EEPROM and utilize more of
+// the EEPROM's entire 1024 of available storage bytes. Basically, we expanded
+// the life of the device by a factor of like 4. A heavy user should get
+// at least 10 years of use out of this now.
+//////////////////////////////////////////////////////////////////////////
+void initializeDefaultEeprom() {
   
-  EEPROM.put(cEepromAltitudeOffsetAddr, cEepromLastAddr + 8);
-  EEPROM.put(cEepromLastAddr + 8, (int)0); //default value for altitude offset
-  EEPROM.put(cEepromLastAddr + 8 + sizeof(int), 0);
+  EEPROM.put(cEepromAltimeterAddr, cEepromLastAddr + 2); //cEepromLastAddr + 2 is the EEPROM address of where we store the altimeter value
+  EEPROM.put(cEepromLastAddr + 2, (int)cSeaLevelPressureInHg); //default value for altimeter
+  EEPROM.put(cEepromLastAddr + 2 + sizeof(int), 0); //write counter is set to 0
   
-  EEPROM.put(cEepromPermanentAltitutdeOffsetAddr, cEepromLastAddr + 12);
-  EEPROM.put(cEepromLastAddr + 12, (int)0); //default value for permanent altitude offset
-  EEPROM.put(cEepromLastAddr + 12 + sizeof(int), 0);
+  EEPROM.put(cEepromAltitudeOffsetAddr, cEepromLastAddr + 6);
+  EEPROM.put(cEepromLastAddr + 6, (int)0); //default value for altitude offset
+  EEPROM.put(cEepromLastAddr + 6 + sizeof(int), 0);
   
-  EEPROM.put(cEepromSensorModeAddr, cEepromLastAddr + 16);
-  EEPROM.put(cEepromLastAddr + 16, static_cast<byte>(SensorModeOnShow)); //default value for mode
-  EEPROM.put(cEepromLastAddr + 16 + sizeof(byte), 0);
+  EEPROM.put(cEepromPermanentAltitutdeOffsetAddr, cEepromLastAddr + 10);
+  EEPROM.put(cEepromLastAddr + 10, (int)0); //default value for permanent altitude offset
+  EEPROM.put(cEepromLastAddr + 10 + sizeof(int), 0);
   
-  EEPROM.put(cEepromScreenDimAddr, cEepromLastAddr + 19);
-  EEPROM.put(cEepromLastAddr + 19, false); //default value for screen dim
-  EEPROM.put(cEepromLastAddr + 19 + sizeof(bool), 0);
+  EEPROM.put(cEepromSensorModeAddr, cEepromLastAddr + 14);
+  EEPROM.put(cEepromLastAddr + 14, static_cast<byte>(SensorModeOnShow)); //default value for mode
+  EEPROM.put(cEepromLastAddr + 14 + sizeof(byte), 0);
   
-  EEPROM.put(cEepromScreenOrientationAddr, cEepromLastAddr + 22);
-  EEPROM.put(cEepromLastAddr + 22, false); //default value for screen orientation
-  EEPROM.put(cEepromLastAddr + 22 + sizeof(bool), 0);
+  EEPROM.put(cEepromScreenDimAddr, cEepromLastAddr + 17);
+  EEPROM.put(cEepromLastAddr + 17, false); //default value for screen dim
+  EEPROM.put(cEepromLastAddr + 17 + sizeof(bool), 0);
+  
+  EEPROM.put(cEepromScreenOrientationAddr, cEepromLastAddr + 20);
+  EEPROM.put(cEepromLastAddr + 20, false); //default value for screen orientation
+  EEPROM.put(cEepromLastAddr + 20 + sizeof(bool), 0);
 
-  EEPROM.put(cEepromSelectedAltitudeAddr, cEepromLastAddr + 25);
-  EEPROM.put(cEepromLastAddr + 25, cDefaultSelectedAltitude); //default selected altitude
-  EEPROM.put(cEepromLastAddr + 25 + sizeof(long), 0);
+  EEPROM.put(cEepromSelectedAltitudeAddr, cEepromLastAddr + 23);
+  EEPROM.put(cEepromLastAddr + 23, cDefaultSelectedAltitude); //default selected altitude
+  EEPROM.put(cEepromLastAddr + 23 + sizeof(long), 0);
 
-  EEPROM.put(cEepromSelectedHeadingAddr, cEepromLastAddr + 31);
-  EEPROM.put(cEepromLastAddr + 31, cDefaultSelectedHeading); //default selected heading
-  EEPROM.put(cEepromLastAddr + 31 + sizeof(int), 0);
+  EEPROM.put(cEepromSelectedHeadingAddr, cEepromLastAddr + 29);
+  EEPROM.put(cEepromLastAddr + 29, cDefaultSelectedHeading); //default selected heading
+  EEPROM.put(cEepromLastAddr + 29 + sizeof(int), 0);
 
-  EEPROM.put(cEepromSelectedMinimumsAddr, cEepromLastAddr + 35);
-  EEPROM.put(cEepromLastAddr + 35, cDefaultMinimumsAltitude); //default selected minimums
-  EEPROM.put(cEepromLastAddr + 35 + sizeof(int), 0);
+  EEPROM.put(cEepromSelectedMinimumsAddr, cEepromLastAddr + 33);
+  EEPROM.put(cEepromLastAddr + 33, cDefaultMinimumsAltitude); //default selected minimums
+  EEPROM.put(cEepromLastAddr + 33 + sizeof(int), 0);
 
-  EEPROM.put(cEepromNextAvailableSlot, cEepromLastAddr + 41);
+  EEPROM.put(cEepromNextAvailableSlot, cEepromLastAddr + 39);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -506,30 +517,6 @@ void initializeDisplayDevice() {
   gOled.invertDisplay(false);
   gOled.setTextColor(SSD1306_WHITE);
   gOled.setTextSize(2);
-
-  //left screen
-  digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
-  digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
-  gOled.clearDisplay();
-  gOled.setCursor(24, 9);
-  gOled.print("Version");
-  gOled.display();
-
-  //right screen
-  digitalWrite(cPinLeftDisplayControl, CONTROL_OFF);
-  digitalWrite(cPinRightDisplayControl, CONTROL_ON);
-  gOled.clearDisplay();
-  gOled.setCursor(48, 9);
-  gOled.print(cAppVersion);
-  gOled.display();
-
-  delay(750); //delay for splash screen (to see version number)
-  digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
-  digitalWrite(cPinRightDisplayControl, CONTROL_ON);
-  gOled.clearDisplay();
-  gOled.display();
-  digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
-  digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -771,7 +758,7 @@ void handleLeftRotaryMovement(int increment) {
     }
     
     case CursorSelectAltimeter:
-      gAltimeterSettingInHgDouble = constrain(gAltimeterSettingInHgDouble + cAltimeterSettingInHgInterval * increment, cAltimeterSettingInHgMin, cAltimeterSettingInHgMax);
+      gAltimeterSettingInHgInt = constrain(gAltimeterSettingInHgInt + cAltimeterSettingInHgInterval * increment, cAltimeterSettingInHgMin, cAltimeterSettingInHgMax);
       gEepromSaveNeededTs = millis();
       gNeedToWriteToEeprom = true;
       break;
@@ -1275,6 +1262,8 @@ void drawLeftScreen() {
 
   gOled.invertDisplay(gFlashLeftScreen);
 
+  bool overrideBottomContent = false;
+  
   //If timer is running while not on timer screen, show the timer
   if (gCursor != CursorSelectTimer && gTimerStartTs != 0) {
     unsigned long seconds = (millis() - gTimerStartTs) / 1000;
@@ -1302,12 +1291,14 @@ void drawLeftScreen() {
 
     case CursorSelectAltimeter:
       sprintf(gDisplayTopContent, "%s", "Altimeter");
-      sprintf(gDisplayBottomContent, "%d.%02d" cInLabel, (int)gAltimeterSettingInHgDouble, (int)(gAltimeterSettingInHgDouble*100)%100);
+      sprintf(gDisplayBottomContent, "%d.%02d" cInLabel, gAltimeterSettingInHgInt / 100, gAltimeterSettingInHgInt % 100);
       break;
 
     case CursorSelectMinimumsOn:
     {
       sprintf(gDisplayTopContent, "%s", "Minimums");
+
+      overrideBottomContent = true;
       long altitudeDifference = gTrueAltitudeDouble - gSelectedAltitudeLong;
       gOled.setTextSize(2);
       gOled.setCursor(1, cReadoutTextYpos + 4);
@@ -1340,6 +1331,8 @@ void drawLeftScreen() {
     case CursorSelectMinimumsAltitude:
     {
       sprintf(gDisplayTopContent, "%s", "Minimums");
+
+      overrideBottomContent = true;
       long altitudeDifference = gTrueAltitudeDouble - gSelectedAltitudeLong;
       gOled.setTextSize(2);
       gOled.setCursor(1, cReadoutTextYpos + 4);
@@ -1420,6 +1413,8 @@ void drawLeftScreen() {
     case CursorViewSensorTemp:
     {
       sprintf(gDisplayTopContent, "%s", "Temperature");
+
+      overrideBottomContent = true;
       double temperatureFarenheit = gSensorTemperatureDouble;
       sprintf(gDisplayBottomContent, "%d.%d %c", (int)temperatureFarenheit, abs((int)(temperatureFarenheit*10)%10), cDegFLabel);
       gOled.setTextSize(2);
@@ -1444,6 +1439,7 @@ void drawLeftScreen() {
     {
       sprintf(gDisplayTopContent, "%s", "Altitude");
 
+      overrideBottomContent = true;
       if (gSensorMode == SensorModeOff) {
         sprintf(gDisplayBottomContent, "%6s", "OFF");
         gOled.setTextSize(cReadoutTextSize);
@@ -1469,7 +1465,17 @@ void drawLeftScreen() {
 
     case CursorViewBatteryLevel:
       sprintf(gDisplayTopContent, "%s", "Battery");
-      sprintf(gDisplayBottomContent, "%d%%", gBatteryLevel);
+
+      if (gBatteryCharging) {
+        overrideBottomContent = true;
+        gOled.setTextSize(2);
+        gOled.setCursor(1, cReadoutTextYpos + 4);
+        sprintf(gDisplayBottomContent, "%s", "CHARGING");
+        gOled.print(gDisplayBottomContent);
+      }
+      else {
+        sprintf(gDisplayBottomContent, "%d%%", gBatteryLevel);
+      }
       break;
   }
   
@@ -1477,7 +1483,7 @@ void drawLeftScreen() {
   gOled.setCursor(1, cLabelTextYpos);
   gOled.print(gDisplayTopContent);
 
-  if (gCursor != CursorSelectMinimumsOn && gCursor != CursorSelectMinimumsAltitude && gCursor != CursorViewSensorTemp && gCursor != CursorViewAltitude) {
+  if (!overrideBottomContent) {
     gOled.setTextSize(cReadoutTextSize);
     gOled.setCursor(1, cReadoutTextYpos);
     gOled.print(gDisplayBottomContent);
@@ -1546,7 +1552,7 @@ void drawRightScreen() {
     gOled.clearDisplay();
     gOled.print("SILENT");
   }
-  else if (gBatteryLevel <= cBatteryAlertLevel) { //low battery
+  else if (!gBatteryCharging && gBatteryLevel <= cBatteryAlertLevel) { //low battery while not charging
     if (!minimumsStatusDisplayed || minimumsStatusDisplayed && (clockTime % cAltMessageInterval <= cAltMessageDuration)) {
       gOled.clearDisplay();
       gOled.print("LOW BATT");
@@ -1645,24 +1651,24 @@ ISR (PCINT2_vect) {    // handle pin change interrupt for D0 to D7 here
 // byte 26-27         address of selected altitude
 // byte 28-29         address of selected heading
 // byte 30-31         address of minimums
-// byte 32-35         original altimeter value
-// byte 36-37         original altimeter EEPROM-write-counter
-// byte 38-39         original altitude offset value
-// byte 40-41         original altitude offset EEPROM-write-counter
-// byte 42-43         original permanent altitude offset value
-// byte 44-45         original permanent altitude offset EEPROM-write-counter
-// byte 46            original sensor mode value
-// byte 47-48         original sensor mode EEPROM-write-counter
-// byte 49            original screen dim value
-// byte 50-51         original screen dim EEPROM-write-counter
-// byte 52            original screen orientation value
-// byte 53-54         original screen orientation EEPROM-write-counter
-// byte 55-58         original selected altitude value
-// byte 59-60         original selected altitude EEPROM-write-counter
-// byte 61-62         original selected heading value
-// byte 63-64         original selected heading EEPROM-write-counter
-// byte 65-68         original selected minimums altitude value
-// byte 69-70         original selected minimums altitude EEPROM-write-counter
+// byte 32-33         original altimeter value
+// byte 34-35         original altimeter EEPROM-write-counter
+// byte 36-37         original altitude offset value
+// byte 38-39         original altitude offset EEPROM-write-counter
+// byte 40-41         original permanent altitude offset value
+// byte 42-43         original permanent altitude offset EEPROM-write-counter
+// byte 44            original sensor mode value
+// byte 45-46         original sensor mode EEPROM-write-counter
+// byte 47            original screen dim value
+// byte 48-49         original screen dim EEPROM-write-counter
+// byte 50            original screen orientation value
+// byte 51-52         original screen orientation EEPROM-write-counter
+// byte 53-56         original selected altitude value
+// byte 57-58         original selected altitude EEPROM-write-counter
+// byte 59-60         original selected heading value
+// byte 61-62         original selected heading EEPROM-write-counter
+// byte 63-66         original selected minimums altitude value
+// byte 67-68         original selected minimums altitude EEPROM-write-counter
 //////////////////////////////////////////////////////////////////////////
 void writeValuesToEeprom() {
   gNeedToWriteToEeprom = false;
@@ -1672,12 +1678,12 @@ void writeValuesToEeprom() {
   int dataAddr;
   
   //Last Altimeter Setting
-  datatypeSize = sizeof(double);
+  datatypeSize = sizeof(int);
   dataAddr = cEepromAltimeterAddr;
-  double altimeterSetting;
+  int altimeterSetting;
   EEPROM.get(dataAddr, eepromIndex);
   EEPROM.get(eepromIndex, altimeterSetting);
-  if (altimeterSetting != gAltimeterSettingInHgDouble) {
+  if (altimeterSetting != gAltimeterSettingInHgInt) {
     EEPROM.get(eepromIndex + datatypeSize, numOfWrites);
     if (numOfWrites > cEepromMaxWrites) {
       EEPROM.get(cEepromNextAvailableSlot, eepromIndex);
@@ -1685,7 +1691,7 @@ void writeValuesToEeprom() {
       EEPROM.put(dataAddr, eepromIndex); //reset address
       EEPROM.put(cEepromNextAvailableSlot, eepromIndex + datatypeSize + sizeof(int)); //reset next available slot
     }
-    altimeterSetting = gAltimeterSettingInHgDouble; //this silences a compiler warning
+    altimeterSetting = gAltimeterSettingInHgInt; //this silences a compiler warning
     EEPROM.put(eepromIndex, altimeterSetting);
     EEPROM.put(eepromIndex + datatypeSize, numOfWrites + 1);
   }
@@ -1864,42 +1870,69 @@ void writeValuesToEeprom() {
 }
 
 //////////////////////////////////////////////////////////////////////////
-//high level estimate = 977.45
-//low level estimate = 558.54
-//difference = 997 - 558 = 419
-//////////////////////////////////////////////////////////////////////////
 void updateBatteryLevel() {
-  double voltage = (double)(analogRead(cBatteryVoltagePin)) / 1024 * 3.3 * 1.3333;
-
-  for (int i = 0; i < cBatteryCapacityArrayLength; i++) {
-    if (voltage <= cBatteryCapacity[0][i]) {
-      if (i == 0) {
-        gBatteryLevel = cBatteryCapacity[1][0]; //set to 0% min.
-        break;
-      }
-      else {
-        double interpolation = (voltage - cBatteryCapacity[0][i - 1]) / (cBatteryCapacity[0][i] - cBatteryCapacity[0][i - 1]);
-        gBatteryLevel = cBatteryCapacity[1][i - 1] + interpolation * cBatteryCapacityArrayInterval;
-        break;
-      }
-    }
-    else if (i == cBatteryCapacityArrayLength - 1) {
-      gBatteryLevel = cBatteryCapacity[1][cBatteryCapacityArrayLength - 1]; //set to 100% max.
-    }
-  }
-
+  bool updateDisplay = false;
   gBatteryUpdateTs = millis();
-  if (gCursor == CursorViewBatteryLevel) {
-    gUpdateLeftScreen = true;
+  int batteryLevel = getBatteryLevel();
+
+  //if the battery is discharging and the value dropped, time to update. Sometimes the value can jump up by 1% when discharging, so this check eliminates the appearance that the battery level increased while discharging
+  if (!gBatteryCharging) {
+    if (batteryLevel < gBatteryLevel) {
+      updateDisplay = true;
+      gBatteryLevel = batteryLevel; //update the battery level
+    }
+    else if (batteryLevel - gBatteryLevel > 4) { //if it jumped up more than 4% in a not-charging state, it's now charging
+      gBatteryCharging = true;
+      updateDisplay = true;
+      gBatteryLevel = batteryLevel; //update the battery level
+    }
   }
-  if (gBatteryLevel <= cBatteryAlertLevel) {
-    gUpdateRightScreen = true;
+  else if (gBatteryCharging) {
+    if (gBatteryLevel - batteryLevel > 1) { //if it dropped by more than 1% in a charging state, it's now discharging
+      gBatteryCharging = false;
+      updateDisplay = true;
+    }
+    gBatteryLevel = batteryLevel; //update the battery level
+  }
+
+  if (updateDisplay) {
+    if (gCursor == CursorViewBatteryLevel) {
+      gUpdateLeftScreen = true;
+    }
+    if (gBatteryLevel <= cBatteryAlertLevel) {
+      gUpdateRightScreen = true;
+    }
   }
 }
 
 //////////////////////////////////////////////////////////////////////////
+int getBatteryLevel() {
+  double voltage = (double)(analogRead(cBatteryVoltagePin)) / 1024 * 3.3 * 1.3333;
+  int batteryLevel = 0;
+  gBatteryCharging = voltage > 4.16; //the battery can't be 4.16V, that's only possible when charging
+
+  for (int i = 0; i < cBatteryCapacityArrayLength; i++) {
+    if (voltage <= cBatteryCapacity[0][i]) {
+      if (i == 0) {
+        batteryLevel = cBatteryCapacity[1][0]; //set to 0% min.
+        break;
+      }
+      else {
+        double interpolation = (voltage - cBatteryCapacity[0][i - 1]) / (cBatteryCapacity[0][i] - cBatteryCapacity[0][i - 1]);
+        batteryLevel = cBatteryCapacity[1][i - 1] + interpolation * cBatteryCapacityArrayInterval;
+        break;
+      }
+    }
+    else if (i == cBatteryCapacityArrayLength - 1) {
+      batteryLevel = cBatteryCapacity[1][cBatteryCapacityArrayLength - 1]; //set to 100% max.
+    }
+  }
+  return batteryLevel;
+}
+
+//////////////////////////////////////////////////////////////////////////
 double altitudeCorrected(double pressureAltitude) {
-  return (pressureAltitude - (1 - (pow(gAltimeterSettingInHgDouble / cSeaLevelPressureInHg, 0.190284))) * 145366.45) + gCalibratedAltitudeOffsetInt + gPermanentCalibratedAltitudeOffsetInt;
+  return (pressureAltitude - (1 - (pow((gAltimeterSettingInHgInt / cSeaLevelPressureInHgDouble) / 100, 0.190284))) * 145366.45) + gCalibratedAltitudeOffsetInt + gPermanentCalibratedAltitudeOffsetInt;
 }
 
 //////////////////////////////////////////////////////////////////////////
