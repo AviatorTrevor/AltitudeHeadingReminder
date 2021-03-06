@@ -116,7 +116,7 @@ bool            gLegitimate = true;
 #define            cUrgentBuzzNumberOfBeeps              3
 #define            cDisableAlarmKnobMovementTime         1200
 #define            cDisableAlarmAfterAlarmTime           1800
-enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState, PowerUpDisabled};
+enum BuzzAlarmMode {Climbing1000ToGo, Climbing200ToGo, Descending1000ToGo, Descending200ToGo, AltitudeDeviate, UrgentAlarm, MinimumsAlarm, LongAlarm, AlarmDisabled, DetermineAlarmState};
 BuzzAlarmMode      gAlarmModeEnum = AlarmDisabled;
 int                gBuzzCountInt;
 int                cPowerUpSilence = 7000; //wait 7 seconds after start-up before alarm can begin making sounds. this is so you don't scare anyone with a loud alarm as soon as they start it up at home.
@@ -1013,8 +1013,7 @@ void handleRightRotaryLongPress() {
 void handleBuzzer() {
   
   //Handle changing of minimums altitude selection
-  if (gAlarmModeEnum != PowerUpDisabled
-      && gSensorMode != SensorModeOff
+  if (gSensorMode != SensorModeOff
       && gMinimumsOn
       && !gMinimumsSilenced
       && !gMinimumsTriggered
@@ -1543,7 +1542,7 @@ void drawRightScreen() {
   unsigned long clockTime = millis();
   gOled.setTextSize(cLabelTextSize);
   gOled.setCursor(1, cLabelTextYpos);
-  if (cPowerUpSilence > 0) {
+  if (millis() < cPowerUpSilence) {
     gOled.clearDisplay();
     gOled.print("SILENT");
   }
