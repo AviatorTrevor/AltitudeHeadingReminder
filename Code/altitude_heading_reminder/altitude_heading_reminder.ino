@@ -63,7 +63,7 @@ selected altitude, or departed from it.
 
 //EEPROM
 #define         cSizeOfEeprom                       EEPROM.length() //1024
-#define         cEepromWriteDelay                   2000  //milliseconds
+#define         cEepromWriteDelay                   1500  //milliseconds
 #define         cEepromMaxWrites                    100000
 #define         cEepromNextAvailableSlot            12
 #define         cEepromAltimeterAddr                14
