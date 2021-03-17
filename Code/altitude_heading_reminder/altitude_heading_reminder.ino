@@ -46,14 +46,14 @@ selected altitude, or departed from it.
 #define cAltitudeHighSelectIncrement   1000  //ft
 #define cMinimumsSelectIncrement       50    //ft
 #define cHighAltitude                  18000 //ft
-#define cDefaultSelectedAltitude       3000  //ft
+#define cDefaultSelectedAltitude       10000 //ft
 #define cDefaultMinimumsAltitude       1000  //ft
 #define cLowestAltitudeSelect          -1000 //ft
 #define cHighestAltitudeSelect         60000 //ft
 #define cHighestAltitudeAlert          24000 //ft, the pressure sensor will only measure so high. No point in alerting above a certain pressure level
-#define cAltimeterSettingInHgMin       2750 //inHg * 100
-#define cAltimeterSettingInHgMax       3150 //inHg * 100
-#define cAltimeterSettingInHgInterval  1    //inHg
+#define cAltimeterSettingInHgMin       2750  //inHg * 100
+#define cAltimeterSettingInHgMax       3150  //inHg * 100
+#define cAltimeterSettingInHgInterval  1     //inHg
 #define cCalibrationOffsetMin          -5000 //ft
 #define cCalibrationOffsetMax          5000  //ft
 #define cCalibrationOffsetInterval     10    //ft
@@ -63,7 +63,7 @@ selected altitude, or departed from it.
 
 //EEPROM
 #define         cSizeOfEeprom                       EEPROM.length() //1024
-#define         cEepromWriteDelay                   1500  //milliseconds
+#define         cEepromWriteDelay                   1200  //milliseconds
 #define         cEepromMaxWrites                    100000
 #define         cEepromNextAvailableSlot            12
 #define         cEepromAltimeterAddr                14
@@ -204,7 +204,8 @@ enum Cursor {
 #define cRotaryStates              4
 #define cDtLookup                  0 //row 0 in cEncoderValues matrix lookup
 #define cClkLookup                 1 //row 1 in cEncoderValues matrix lookup
-#define cLongButtonPress           1500
+#define cLongRightButtonPress      1500
+#define cLongLeftButtonPress       1000
 #define cRotaryButtonReleaseDelay  60
 #define PRESSED                    LOW
 #define RELEASED                   HIGH
@@ -380,7 +381,7 @@ void initializeDefaultEeprom() {
   EEPROM.put(cEepromLastAddr + 10 + sizeof(int), 0);
   
   EEPROM.put(cEepromSensorModeAddr, cEepromLastAddr + 14);
-  EEPROM.put(cEepromLastAddr + 14, static_cast<byte>(SensorModeOnShow)); //default value for mode
+  EEPROM.put(cEepromLastAddr + 14, static_cast<byte>(SensorModeSilent)); //default value for mode
   EEPROM.put(cEepromLastAddr + 14 + sizeof(byte), 0);
   
   EEPROM.put(cEepromScreenDimAddr, cEepromLastAddr + 17);
@@ -610,12 +611,12 @@ void loop() {
   }
 
   //check & handle long-press of left rotary knob
-  if (gLeftButtonPossibleLongPress && millis() - gLeftButtonPressedTs >= cLongButtonPress) {
+  if (gLeftButtonPossibleLongPress && millis() - gLeftButtonPressedTs >= cLongLeftButtonPress) {
     handleLeftRotaryLongPress();
   }
 
   //check & handle long-press of right rotary knob
-  if (gRightButtonPossibleLongPress && millis() - gRightButtonPressedTs >= cLongButtonPress) {
+  if (gRightButtonPossibleLongPress && millis() - gRightButtonPressedTs >= cLongRightButtonPress) {
     handleRightRotaryLongPress();
   }
 
@@ -691,7 +692,7 @@ void handleLeftRotary(int rotaryButton, int rotaryDt, int rotaryClk) {
         gLeftButtonPossibleLongPress = true;
         gLeftRotaryFineTuningPress = false;
       }
-      else if (millis() - gLeftButtonPressedTs < cLongButtonPress && !gLeftRotaryFineTuningPress) { //released after short press that wasn't a fine-tuning event
+      else if (millis() - gLeftButtonPressedTs < cLongLeftButtonPress && !gLeftRotaryFineTuningPress) { //released after short press that wasn't a fine-tuning event
         gLeftButtonPossibleLongPress = false;
         gLeftRotaryReleaseTs = millis();
         handleLeftRotaryShortPress();
