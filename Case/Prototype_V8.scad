@@ -45,12 +45,12 @@ displayWidth = 22.5 + displayEdgeBuffer*2;
 displayDepth = mainShellThickness;
 displayHeight = 6 + displayEdgeBuffer*2;
 displayYOffset = 8.6;
-displayTopOffset = displayHeight + innerLipHeightAboveOuterLipHeight + 3.3;
+displayTopOffset = displayHeight + innerLipHeightAboveOuterLipHeight + 4;
 displayIndentWidth = 38.5;
 displayIndentHeight = 12.4;
 displayIndentYOffsetFromDisplayY = -5.7 - displayEdgeBuffer;
-displayIndentZOffsetFromDisplayZ = -2.3 - displayEdgeBuffer;
-displayPinsYaxisWidth = 2.5;
+displayIndentZOffsetFromDisplayZ = -1.6 - displayEdgeBuffer;
+displayPinsYaxisWidth = 2.9;
 displayThickness = 3.8; //this is used for the snap-fit mechanism
 displaySnapJointLegThickness = 2;
 displaySnapJointHeadHeight = displayTopOffset - displayHeight - innerLipHeightAboveOuterLipHeight;
@@ -60,7 +60,7 @@ knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - front
 knobAndDisplaySupportWallWidth = 3.5;
 displaySideRetainingPillarThickness = displayThickness - (mainShellThickness - frontFaceThickness);
 knobHoleYoffset = displayYOffset + (displayWidth / 2);
-knobHoleZoffset = mainHeight - displayTopOffset - 11.8;
+knobHoleZoffset = mainHeight - displayTopOffset - 11.1;
 knobHoleRadius = 3.8;
 knobHoleDepth = mainShellThickness + knobAndDisplaySupportWallDepth;
 knobIndentSquareSideLength = 12.4;
@@ -157,7 +157,7 @@ module cutoutLeftDisplayIndent() {
     cube([mainShellThickness - frontFaceThickness, displayIndentWidth, displayIndentHeight]);
   };
   //extra cutout for pins
-  translate([mainDepth - displayDepth, mainWidth/2 - displayWidth - displayYOffset + displayIndentYOffsetFromDisplayY, mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ]) {
+  translate([mainDepth - displayDepth, mainWidth/2 - displayWidth - displayYOffset + displayIndentYOffsetFromDisplayY + 1, mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ]) {
     cube([mainShellThickness - resolution*1.5, displayPinsYaxisWidth, displayIndentHeight]);
   };
 };
