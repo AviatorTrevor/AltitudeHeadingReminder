@@ -93,21 +93,8 @@ mountingHoleX = pcbOffsetX + pcbBoardDepth + pcbWallThickness + 0.5;
 //MODULE snap joint for lid
 module createLeftSideLidSnapJoint()
 {
-  translate([mainDepth/2 - lidSnapJointWidth/2, mainShellThickness - lidSnapJointProtrusionLength, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight]) {
-    polyhedron(
-      points=[[0,lidSnapJointProtrusionLength,0], //0
-              [0,0,lidSnapJointProtrusionHeight], //1
-              [lidSnapJointWidth,0,lidSnapJointProtrusionHeight], //2
-              [lidSnapJointWidth,lidSnapJointProtrusionLength,0], //3
-              [0,lidSnapJointProtrusionLength,lidSnapJointProtrusionHeight], //4
-              [lidSnapJointWidth,lidSnapJointProtrusionLength,lidSnapJointProtrusionHeight]], //5
-      faces=[[0,1,2,3],
-             [1,4,5,2],
-             [4,0,3,5],
-             [4,1,0],
-             [3,2,5]
-             ]
-    );
+  translate([mainDepth/2 - lidSnapJointWidth/2, lidSnapJointProtrusionLength, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight]) {
+    cube([lidSnapJointWidth, mainShellThickness - lidSnapJointProtrusionLength, lidSnapJointProtrusionHeight]);
   };
   
   //gap for removing lid
@@ -348,7 +335,7 @@ union() {
       cube([pcbMountSpacingFromWallToCut, pcbWallThickness, pcbMountHeight + pcbBoardThickness]);
     };
   };
-  //snap joint
+  //PCB snap joint
   translate([pcbOffsetX + pcbMountSpacingFromWallToCut, pcbOffsetY - pcbWallThickness, mainShellThickness + pcbMountHeight + pcbBoardThickness]) {
     polyhedron(
       points=[[0,0,0], //0
@@ -384,7 +371,7 @@ union() {
   translate([pcbOffsetX + pcbBoardDepth - pcbShelfSideLength*2 + pcbWallThickness, mainWidth - mainShellThickness - pcbShelfSideLength/2, mainShellThickness + pcbMountHeight + pcbBoardThickness]) { //0.5 buffer for the board
     cube([pcbShelfSideLength*2, pcbShelfSideLength/2, pcbShelfThickness]);
   };
-  //3D print support
+  //3D print support for shelf
   translate([pcbOffsetX + pcbBoardDepth - pcbShelfSideLength*2 + pcbWallThickness, mainWidth - mainShellThickness - pcbShelfSideLength/2, mainShellThickness + pcbMountHeight]) { //0.5 buffer for the board
     cube([supportBracketThickness, supportBracketThickness, pcbBoardThickness]);
   };
