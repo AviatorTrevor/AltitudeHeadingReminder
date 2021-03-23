@@ -1,5 +1,3 @@
-//TODO: beef up the thickness around the x-axis length of where the snap-fit module exists. Fix the main module too.
-
 //everything is in units of millimeters
 resolution = 0.35;
 
@@ -45,6 +43,7 @@ buzzerScrewHeight = 5;
 buzzerScrewHeightForBaseHolding = 2.5;
 buzzerPlatformOffset = 3.8; //offset from center of cylinder to edge of wall to clear the buzzer
 buzzerPlatformThickness = 6 * resolution;
+buzzerScrewPylonZOffset = -0.8; //distance from the lid to fit the buzzer into the slot
 
 screwHeadCylinderRadius = 1.8;
 screwHeadSinkDepth = lidThickness * 0.6;
@@ -78,8 +77,6 @@ module cutOutLeftSideForHinge() {
   };
 };
 
-
-buzzerScrewPylonZOffset = -0.4; //distance from the lid to fit the buzzer into the slot
 module leftBuzzerPlatform() {
   translate([buzzerX, buzzerY - buzzerScrewOffset, lidThickness + buzzerScrewHeight - buzzerScrewPylonZOffset]) {
     cylinder(buzzerScrewHeightForBaseHolding/2, buzzerScrewRadius * 0.2, buzzerScrewRadius, $fn=cylinderFragments);
