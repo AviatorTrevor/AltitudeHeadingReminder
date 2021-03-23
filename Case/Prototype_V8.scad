@@ -52,11 +52,9 @@ displayIndentYOffsetFromDisplayY = -5.7 - displayEdgeBuffer;
 displayIndentZOffsetFromDisplayZ = -1.6 - displayEdgeBuffer;
 displayPinsYaxisWidth = 2.9;
 displayThickness = 3.8; //this is used for the snap-fit mechanism
-displaySnapJointLegThickness = 2;
-displaySnapJointHeadHeight = displayTopOffset - displayHeight - innerLipHeightAboveOuterLipHeight;
-displaySnapJointHeadProtrusionLength = displayThickness - (mainShellThickness - frontFaceThickness) - resolution;
-displaySnapJointFlapLipLength = displaySnapJointHeadHeight / 8;
-knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displaySnapJointLegThickness;
+displayBackLegThickness 
+displayBackLegThickness = 2;
+knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displayBackLegThickness;
 knobAndDisplaySupportWallWidth = 3.5;
 displaySideRetainingPillarThickness = displayThickness - (mainShellThickness - frontFaceThickness);
 knobHoleYoffset = displayYOffset + (displayWidth / 2);
@@ -174,44 +172,19 @@ module cutoutRightDisplayIndent() {
 };
 
 //yOffset = the center of the rotary knob hole
-module createSnapJointSetForDisplays(yOffset) {
+module createBackLegSetForDisplays(yOffset) {
   translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, yOffset - knobIndentSquareSideLength/2 - knobAndDisplaySupportWallWidth, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout]) {
-    createSnapJointForDisplay();
+    createBackLegForDisplay();
   };
   
   translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, yOffset + knobIndentSquareSideLength/2, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout]) {
-    createSnapJointForDisplay();
+    createBackLegForDisplay();
   };
 };
 
-module createSnapJointForDisplay() {
+module createBackLegForDisplay() {
   //leg
-  cube([displaySnapJointLegThickness, knobAndDisplaySupportWallWidth, displayIndentHeight + displaySnapJointHeadHeight]);
-  
-  //head
-  polyhedron(
-    points=[[displaySnapJointLegThickness, 0, displayIndentHeight + displaySnapJointHeadHeight], //0
-            [displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, 0, displayIndentHeight + displaySnapJointFlapLipLength], //1
-            [displaySnapJointLegThickness, knobAndDisplaySupportWallWidth, displayIndentHeight + displaySnapJointHeadHeight], //2
-            [displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, knobAndDisplaySupportWallWidth, displayIndentHeight + displaySnapJointFlapLipLength], //3
-            [displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, 0, displayIndentHeight], //4
-            [displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, knobAndDisplaySupportWallWidth, displayIndentHeight], //5
-            [displaySnapJointLegThickness, 0, displayIndentHeight], //6
-            [displaySnapJointLegThickness, knobAndDisplaySupportWallWidth, displayIndentHeight]], //7
-    faces=[[0,1,3,2],
-           [1,4,5,3],
-           [4,6,7,5],
-           [6,0,2,7],
-           [1,0,6,4],
-           [7,2,3,5]]
-  );
-  //3D printing support
-  translate([displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, 0, displayIndentHeight]) {
-    cube([resolution, resolution*2, resolution]);
-  };
-  translate([displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, knobAndDisplaySupportWallWidth - resolution*2, displayIndentHeight]) {
-    cube([resolution, resolution*2, resolution]);
-  };
+  cube([displayBackLegThickness, knobAndDisplaySupportWallWidth, displayIndentHeight]);
 };
 
 
