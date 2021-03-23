@@ -372,9 +372,10 @@ union() {
     cube([pcbShelfSideLength*2, pcbShelfSideLength/2, pcbShelfThickness]);
   };
   //3D print support for shelf
+  /*TODO: temporarily removed?:
   translate([pcbOffsetX + pcbBoardDepth - pcbShelfSideLength*2 + pcbWallThickness, mainWidth - mainShellThickness - pcbShelfSideLength/2, mainShellThickness + pcbMountHeight]) { //0.5 buffer for the board
     cube([supportBracketThickness, supportBracketThickness, pcbBoardThickness]);
-  };
+  };*/
 
   //mounting seat for PCB, rear-right side
   translate([pcbOffsetX, mainWidth - mainShellThickness - pcbRearRightWidth, mainShellThickness]) {
