@@ -45,11 +45,11 @@ displayWidth = 22.5 + displayEdgeBuffer*2;
 displayDepth = mainShellThickness;
 displayHeight = 6 + displayEdgeBuffer*2;
 displayYOffset = 8.6;
-displayTopOffset = displayHeight + innerLipHeightAboveOuterLipHeight + 4;
 displayIndentWidth = 38.5;
 displayIndentHeight = 12.4;
 displayIndentYOffsetFromDisplayY = -5.7 - displayEdgeBuffer;
 displayIndentZOffsetFromDisplayZ = -1.6 - displayEdgeBuffer;
+displayTopOffset = displayIndentHeight + innerLipHeightAboveOuterLipHeight;
 displayPinsYaxisWidth = 2.9;
 displayThickness = 3.8; //this is used for the snap-fit mechanism
 displayBackLegThickness 
