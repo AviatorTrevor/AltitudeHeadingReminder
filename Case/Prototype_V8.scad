@@ -24,11 +24,11 @@ lidSnapJointProtrusionLength = mainShellThickness - resolution;
 lidSnapJointOffsetFromTop = 3;
 extensionBeyondOuterLipForSnapJoint = 2;
 
-lidSnapJointGapWidthForRemoval = 10;
+lidSnapJointGapWidthForRemoval = 14;
 lidSnapJointGapHeightForRemoval = 1.5;
 
 //keep in-sync with the mounting plate file
-mountingHoleRadius = 4.32;
+mountingHoleRadius = 4.45;
 mountingPillarRadius = mountingHoleRadius + 1.5;
 mountingHoleHeight = 8.68;
 mountingPillarHeight = mountingHoleHeight + 0.5;
@@ -69,11 +69,11 @@ knobHookZaxisHeight = 2.2;
 gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout = (mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ) - (knobHoleZoffset + knobIndentSquareSideLength/2);
 pcbMountSpacingFromWallToCut = resolution * 2.5;
 pcbMountHeight = mountingPillarHeight - mainShellThickness + 2; //height above mainShellThickness
-pcbBoardThickness = 1.8;
+pcbBoardThickness = 2;
 pcbBoardDepth = 36.8;
-pcbBoardWidth = 75.1;
+pcbBoardWidth = 76.1;
 pcbPadSideLength = 9;
-pcbWallThickness = 2.1;
+pcbWallThickness = 1.8;
 pcbOffsetX = mainShellThickness;
 pcbOffsetY = mainWidth - mainShellThickness - pcbBoardWidth;
 pcbShelfSideLength = 3;
@@ -405,11 +405,11 @@ union() {
 
 
   //jail-bars over display slots
-  translate([mainDepth - frontFaceThickness, mainWidth/2 - displayYOffset - displayWidth/2 - supportBracketThickness/2, mainHeight - displayTopOffset]) {
-    cube([frontFaceThickness, supportBracketThickness, displayHeight]);
+  translate([mainDepth - frontFaceThickness, mainWidth/2 - displayYOffset - displayWidth/2 - supportBracketThickness/4, mainHeight - displayTopOffset]) {
+    cube([frontFaceThickness, supportBracketThickness/2, displayHeight]);
   };
-  translate([mainDepth - frontFaceThickness, mainWidth/2 + displayYOffset + displayWidth/2 - supportBracketThickness/2, mainHeight - displayTopOffset]) {
-    cube([frontFaceThickness, supportBracketThickness, displayHeight]);
+  translate([mainDepth - frontFaceThickness, mainWidth/2 + displayYOffset + displayWidth/2 - supportBracketThickness/4, mainHeight - displayTopOffset]) {
+    cube([frontFaceThickness, supportBracketThickness/2, displayHeight]);
   };
   //jail-bar over USB slot:
   usbJailBarSpacing = 2;
