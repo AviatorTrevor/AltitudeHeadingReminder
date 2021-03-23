@@ -11,14 +11,14 @@ caseCornerRadius = 2.5;
 cylinderFragments = 70;
 
 //keep in-sync with the main case file
-mountingHoleRadius = 4.32;
+mountingHoleRadius = 4.45;
 mountingPillarRadius = mountingHoleRadius + 1.5;
 mountingHoleHeight = 8.68;
 mountingPillarHeight = mountingHoleHeight + 0.5;
 
 plateDepth = mainDepth / 1.5;
 plateWidth = mainWidth / 1.5;
-plateThickness = mainShellThickness + 0.5;
+plateThickness = mountingPillarHeight;
 plateHoleRadius = mountingHoleRadius + resolution / 2;
 plateMountingHoleX = plateDepth - plateThickness - mountingHoleRadius - 3.3; //keep aligned with mountingHoleX variable
 
