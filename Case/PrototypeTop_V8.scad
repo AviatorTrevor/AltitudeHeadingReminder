@@ -1,47 +1,104 @@
+//TODO: beef up the thickness around the x-axis length of where the snap-fit module exists. Fix the main module too.
+
 //everything is in units of millimeters
 resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
 mainShellThickness = 5 * resolution;
-frontFaceThickness = 3 * resolution;
-mainDepth = 57;
-mainWidth = 91;
+mainDepth = 60;
+mainWidth = 92;
 mainHeight = 37 + mainShellThickness;
 caseCornerRadius = 2.5;
 cylinderFragments = 70;
 
-lidThickness = resolution * 3; //z-axis
+lidThickness = resolution * 4; //z-axis
 lidLipWidth = resolution * 2;  //x & y axis thickness of the lip/wall
-outerLipHeight = resolution * 4; //height above lidThickness
-innerLipHeight = outerLipHeight + resolution * 5; //height above lidThickness
-margin = mainShellThickness + lidLipWidth;
+outerLipHeight = resolution * 5; //height above lidThickness
+innerLipHeightAboveOuterLipHeight = resolution * 3;
+innerLipHeight = outerLipHeight + innerLipHeightAboveOuterLipHeight; //height above lidThickness
+spacingForLidLipFromCaseWall = resolution / 2;
+margin = mainShellThickness + lidLipWidth + spacingForLidLipFromCaseWall;
 marginFromSnapJointCutaway = resolution;
 
-lidSnapJointProtrusionHeight = 2;
+lidSnapJointProtrusionHeight = 1.5;
 lidSnapJointWidth = mainDepth / 2;
-lidSnapJointProtrusionLength = mainShellThickness * 3 / 5;
-lidSnapJointOffsetFromTop = 1.2;
-lidSnapJointHingeThickness = outerLipHeight / 3; //has to be quite a bit smaller than outerLipHeight
+lidSnapJointProtrusionLength = mainShellThickness - resolution;
+lidSnapJointOffsetFromTop = 3;
+extensionBeyondOuterLipForSnapJoint = 2;
+
+lidSnapJointHingeThickness = outerLipHeight / 2; //has to be quite a bit smaller than outerLipHeight
+lidSnapJointLegThickness = resolution * 3;
+lidSnapJointCutoutGapFromEdge = resolution * 2;
+
+outerLipWidth = mainShellThickness + spacingForLidLipFromCaseWall;
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 
 buzzerRadius = 30.4 / 2; //30.4 is diameter
 buzzerScrewOffset = 20.5; //20.5 mm from center of buzzer hole to center of screw hole
 buzzerScrewRadius = 1.9;
 buzzerX = mainDepth - buzzerRadius * 1.4;
 buzzerY = mainWidth / 2;
+buzzerScrewHeight = 5;
+buzzerScrewHeightForBaseHolding = 2.5;
+buzzerPlatformOffset = 3.8; //offset from center of cylinder to edge of wall to clear the buzzer
+buzzerPlatformThickness = 6 * resolution;
 
 screwHeadCylinderRadius = 1.8;
 screwHeadSinkDepth = lidThickness * 0.6;
 
+snapHook3dPrintingSupportPillarThickness = resolution * 1.4;
+buzzer3dPrintingSupportPillarThicknessRadius = resolution * 0.9;
+
 module innerCube() {
   translate([margin, margin, lidThickness]) {
-    cube([mainDepth - margin*2, mainWidth - margin*2, outerLipHeight]);
+    cube([mainDepth - margin*2, mainWidth - margin*2, innerLipHeight]);
   };
 };
 
 module cutOutLeftSideForHinge() {
   //subtracting to make room for it to flex along the lip
-  translate([mainDepth/2 - lidSnapJointWidth/2, lidSnapJointHingeThickness, lidThickness + lidSnapJointHingeThickness]) {
-    cube([lidSnapJointWidth, mainShellThickness - lidSnapJointHingeThickness, outerLipHeight - lidSnapJointHingeThickness*2]);
+  translate([mainDepth/2 - lidSnapJointWidth/2, lidSnapJointCutoutGapFromEdge, lidThickness]) {
+    cube([lidSnapJointWidth, outerLipWidth - lidSnapJointCutoutGapFromEdge, outerLipHeight - lidSnapJointHingeThickness]);
+  };
+  
+  //cut away the inner wall for left side snap fit stuff + buffer on either side
+  translate([mainDepth/2 - lidSnapJointWidth/2 - marginFromSnapJointCutaway, outerLipWidth, lidThickness]) {
+    cube([lidSnapJointWidth + marginFromSnapJointCutaway*2, lidLipWidth, innerLipHeight]);
+  };
+  
+  //cut away into the outer lip on the sides of the hinge
+  translate([mainDepth/2 - lidSnapJointWidth/2 - marginFromSnapJointCutaway, lidSnapJointCutoutGapFromEdge, lidThickness]) {
+    cube([marginFromSnapJointCutaway, outerLipWidth - lidSnapJointCutoutGapFromEdge, outerLipHeight]);
+  };
+  translate([mainDepth/2 + lidSnapJointWidth/2, lidSnapJointCutoutGapFromEdge, lidThickness]) {
+    cube([marginFromSnapJointCutaway, outerLipWidth - lidSnapJointCutoutGapFromEdge, outerLipHeight]);
+  };
+};
+
+
+buzzerScrewPylonZOffset = -0.4; //distance from the lid to fit the buzzer into the slot
+module leftBuzzerPlatform() {
+  translate([buzzerX, buzzerY - buzzerScrewOffset, lidThickness + buzzerScrewHeight - buzzerScrewPylonZOffset]) {
+    cylinder(buzzerScrewHeightForBaseHolding/2, buzzerScrewRadius * 0.2, buzzerScrewRadius, $fn=cylinderFragments);
+  };
+  translate([buzzerX, buzzerY - buzzerScrewOffset, lidThickness + buzzerScrewHeight + buzzerScrewHeightForBaseHolding/2 - buzzerScrewPylonZOffset]) {
+    cylinder(buzzerScrewHeightForBaseHolding/2 + buzzerPlatformThickness, buzzerScrewRadius, buzzerScrewRadius, $fn=cylinderFragments);
+  };
+  //3D printed support for screw mount
+  translate([buzzerX, buzzerY - buzzerScrewOffset, lidThickness]) {
+    cylinder(buzzerScrewHeight - buzzerScrewPylonZOffset, buzzer3dPrintingSupportPillarThicknessRadius, buzzer3dPrintingSupportPillarThicknessRadius, $fn=cylinderFragments);
+  };
+  
+  //horizontal platform to hold buzzer
+  translate([buzzerX - buzzerScrewRadius, buzzerY - buzzerScrewOffset - buzzerPlatformOffset - buzzerPlatformThickness, lidThickness + buzzerScrewHeight + buzzerScrewHeightForBaseHolding - buzzerScrewPylonZOffset]) {
+    cube([2*buzzerScrewRadius, buzzerPlatformOffset + buzzerPlatformThickness,buzzerPlatformThickness]);
+  };
+  //vertical platform to mount the horizontal platform
+  translate([buzzerX - buzzerScrewRadius, buzzerY - buzzerScrewOffset - buzzerPlatformOffset - buzzerPlatformThickness, lidThickness]) {
+    cube([2*buzzerScrewRadius, buzzerPlatformThickness, buzzerScrewHeight + buzzerScrewHeightForBaseHolding - buzzerScrewPylonZOffset]);
   };
 };
 
@@ -55,34 +112,22 @@ difference() {
       translate([0, 0, lidThickness]) {
         cube([mainDepth, mainWidth, outerLipHeight]);
       };
-      translate([mainShellThickness, mainShellThickness, lidThickness]) {
-        cube([mainDepth - mainShellThickness*2, mainWidth - mainShellThickness*2, outerLipHeight]);
+      translate([outerLipWidth, outerLipWidth, lidThickness]) {
+        cube([mainDepth - outerLipWidth*2, mainWidth - outerLipWidth*2, outerLipHeight]);
       };
     };
     
     //add rails for better seating
     difference() {
-      translate([mainShellThickness, mainShellThickness, 0]) {
-        cube([mainDepth - mainShellThickness*2, mainWidth - mainShellThickness*2, innerLipHeight]);
+      translate([margin - lidLipWidth, margin - lidLipWidth, lidThickness]) {
+        cube([mainDepth - margin*2 + lidLipWidth*2, mainWidth - margin*2 + lidLipWidth*2, innerLipHeight]);
       };
-      translate([mainShellThickness + lidLipWidth, mainShellThickness + lidLipWidth, lidThickness]) {
-        cube([mainDepth - mainShellThickness*2 - lidLipWidth*2, mainWidth - mainShellThickness*2 - lidLipWidth*2, innerLipHeight - lidThickness]);
-      };
-      
-      //cut away slots for left side snap fit stuff
-      translate([mainDepth/2 - lidSnapJointWidth/2 - marginFromSnapJointCutaway, mainShellThickness, 0]) {
-        cube([lidSnapJointWidth + marginFromSnapJointCutaway*2, lidLipWidth, innerLipHeight]);
-      };
-      //cut away slots for right side snap fit stuff
-      translate([mainDepth/2 - lidSnapJointWidth/2 - marginFromSnapJointCutaway, mainWidth - mainShellThickness - lidLipWidth, 0]) {
-        cube([lidSnapJointWidth + marginFromSnapJointCutaway*2, lidLipWidth, innerLipHeight]);
-      };
+      innerCube();
     };
   };
-  
+
   //cutting out the inside to save on plastic used
   innerCube();
-  
   
   //cutting away room at the corner of the lip to make room for the cylinders where screws go.
   //rear-left
@@ -110,29 +155,11 @@ difference() {
   
   //buzzer alarm hole
   translate([buzzerX, buzzerY, 0]) {
-    cylinder(lidThickness, buzzerRadius, buzzerRadius, $fn=cylinderFragments);
+    cylinder(lidThickness, buzzerRadius, buzzerRadius, $fn=cylinderFragments*2);
   };
-  
-  
-  /*TODO later for non-3D-printed version:
-  linear_extrude(resolution) {
-    translate([11, mainWidth / 2, resolution]) {
-      rotate([180, 0, 90]){
-        text("Altitude/Heading Reminder", size = 4, halign = "center", valign = "center", font="Impact:style=Regular");
-      }
-    };
-  };
-  
-  linear_extrude(resolution) {
-    translate([5, mainWidth / 2, resolution]) {
-      rotate([180, 0, 90]){
-        text("Made by: Trevor Bartlett", size = 3, halign = "center", valign = "center", font="Impact:style=Regular");
-      }
-    };
-  };*/
   
   cutOutLeftSideForHinge();
-  translate([0,mainWidth,0]) {
+  translate([0,mainWidth - 0.001,0]) {
     mirror([0,1,0]) {
       cutOutLeftSideForHinge();
     };
@@ -140,25 +167,69 @@ difference() {
 };
 
 //adding the hook on the left side for the snap fit
+module snapHook3dPrintingSupportPillar() {
+  cube([snapHook3dPrintingSupportPillarThickness, snapHook3dPrintingSupportPillarThickness, outerLipHeight - lidSnapJointHingeThickness]);
+};
+
+module snapHook3dPrintingSupportPillarBeneathProtrusion() {
+  cube([snapHook3dPrintingSupportPillarThickness, snapHook3dPrintingSupportPillarThickness, lidSnapJointOffsetFromTop]);
+};
+
 module leftSideSnapHook() {
   union() {
-    translate([mainDepth/2 - lidSnapJointWidth/2, mainShellThickness, lidThickness + outerLipHeight - lidSnapJointHingeThickness]) {
-      cube([lidSnapJointWidth, lidSnapJointHingeThickness, lidSnapJointHingeThickness + lidSnapJointOffsetFromTop + lidSnapJointProtrusionHeight]);
+    //legs of the snap hook
+    translate([mainDepth/2 - lidSnapJointWidth/2, outerLipWidth, lidThickness + outerLipHeight - lidSnapJointHingeThickness]) {
+      cube([lidSnapJointWidth, lidSnapJointLegThickness, lidSnapJointHingeThickness + lidSnapJointOffsetFromTop + lidSnapJointProtrusionHeight]);
     };
     
+    //snap hook 3D triangle
     polyhedron(
-      points=[[mainDepth/2 - lidSnapJointWidth/2,mainShellThickness,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop], //0
-              [mainDepth/2 - lidSnapJointWidth/2,mainShellThickness,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop + lidSnapJointProtrusionHeight], //1
-              [mainDepth/2 - lidSnapJointWidth/2,mainShellThickness - lidSnapJointProtrusionLength,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop], //2
-              [mainDepth/2 + lidSnapJointWidth/2,mainShellThickness,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop], //3
-              [mainDepth/2 + lidSnapJointWidth/2,mainShellThickness,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop + lidSnapJointProtrusionHeight], //4
-              [mainDepth/2 + lidSnapJointWidth/2,mainShellThickness - lidSnapJointProtrusionLength,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop]], //5
+      points=[[mainDepth/2 - lidSnapJointWidth/2,outerLipWidth,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop], //0
+              [mainDepth/2 - lidSnapJointWidth/2,outerLipWidth,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop + lidSnapJointProtrusionHeight], //1
+              [mainDepth/2 - lidSnapJointWidth/2,outerLipWidth - lidSnapJointProtrusionLength,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop], //2
+              [mainDepth/2 + lidSnapJointWidth/2,outerLipWidth,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop], //3
+              [mainDepth/2 + lidSnapJointWidth/2,outerLipWidth,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop + lidSnapJointProtrusionHeight], //4
+              [mainDepth/2 + lidSnapJointWidth/2,outerLipWidth - lidSnapJointProtrusionLength,lidThickness + outerLipHeight + lidSnapJointOffsetFromTop]], //5
       faces=[[1,2,5,4],
              [2,0,3,5],
              [0,1,4,3],
              [2,1,0],
              [5,3,4]]
     );
+    
+    //3D printing support pillars on the inside
+    translate([mainDepth/2 - lidSnapJointWidth/2, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
+      snapHook3dPrintingSupportPillar();
+    };
+    translate([mainDepth/2 - lidSnapJointWidth/4, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
+      snapHook3dPrintingSupportPillar();
+    };
+    translate([mainDepth/2, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
+      snapHook3dPrintingSupportPillar();
+    };
+    translate([mainDepth/2 + lidSnapJointWidth/4, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
+      snapHook3dPrintingSupportPillar();
+    };
+    translate([mainDepth/2 + lidSnapJointWidth/2 - snapHook3dPrintingSupportPillarThickness, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
+      snapHook3dPrintingSupportPillar();
+    };
+    
+    //3D printing support pillars on the outside under the head
+    translate([mainDepth/2 - lidSnapJointWidth/2, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
+      snapHook3dPrintingSupportPillarBeneathProtrusion();
+    };
+    translate([mainDepth/2 - lidSnapJointWidth/4, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
+      snapHook3dPrintingSupportPillarBeneathProtrusion();
+    };
+    translate([mainDepth/2, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
+      snapHook3dPrintingSupportPillarBeneathProtrusion();
+    };
+    translate([mainDepth/2 + lidSnapJointWidth/4, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
+      snapHook3dPrintingSupportPillarBeneathProtrusion();
+    };
+    translate([mainDepth/2 + lidSnapJointWidth/2 - snapHook3dPrintingSupportPillarThickness, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
+      snapHook3dPrintingSupportPillarBeneathProtrusion();
+    };
   };
 };
 
@@ -168,6 +239,14 @@ leftSideSnapHook();
 translate([0,mainWidth,0]) {
   mirror([0,1,0]) {
     leftSideSnapHook();
+  };
+};
+
+
+leftBuzzerPlatform();
+translate([0,mainWidth,0]) {
+  mirror([0,1,0]) {
+    leftBuzzerPlatform();
   };
 };
 
@@ -205,4 +284,3 @@ difference() {
   };
   innerCube();
 };
-

@@ -3,27 +3,24 @@ resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
 mainShellThickness = 5 * resolution;
-mainDepth = 60;
-mainWidth = 92;
+mainDepth = 57;
+mainWidth = 91;
 mainHeight = 37 + mainShellThickness;
 caseCornerRadius = 2.5;
 cylinderFragments = 70;
 
-lidThickness = resolution * 4; //z-axis
+lidThickness = resolution * 3; //z-axis
 lidLipWidth = resolution * 2;  //x & y axis thickness of the lip/wall
 outerLipHeight = resolution * 4; //height above lidThickness
 innerLipHeightAboveOuterLipHeight = resolution * 5;
 innerLipHeight = outerLipHeight + innerLipHeightAboveOuterLipHeight; //height above lidThickness
-spacingForLidLipFromCaseWall = resolution / 2;
-margin = mainShellThickness + lidLipWidth + spacingForLidLipFromCaseWall;
+margin = mainShellThickness + lidLipWidth;
 marginFromSnapJointCutaway = resolution;
 
-lidSnapJointProtrusionHeight = 1.5;
+lidSnapJointProtrusionHeight = 2;
 lidSnapJointWidth = mainDepth / 2;
-lidSnapJointProtrusionLength = mainShellThickness - resolution;
-lidSnapJointOffsetFromTop = 3;
-extensionBeyondOuterLipForSnapJoint = 2;
-
+lidSnapJointProtrusionLength = mainShellThickness * 3 / 5;
+lidSnapJointOffsetFromTop = 1.2;
 lidSnapJointGapWidthForRemoval = 10;
 lidSnapJointGapHeightForRemoval = 1.5;
 
@@ -33,7 +30,7 @@ mountingPillarRadius = mountingHoleRadius + 1.5;
 mountingHoleHeight = 8.68;
 mountingPillarHeight = mountingHoleHeight + 0.5;
 
-supportBracketThickness = 0.45;
+supportBracketThickness = 0.39;
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -50,15 +47,16 @@ displayIndentWidth = 38.5;
 displayIndentHeight = 12.4;
 displayIndentYOffsetFromDisplayY = -5.7 - displayEdgeBuffer;
 displayIndentZOffsetFromDisplayZ = -2.3 - displayEdgeBuffer;
-displayPinsYaxisWidth = 2.5;
-displayThickness = 3.8; //this is used for the snap-fit mechanism
-displaySnapJointLegThickness = 2;
-displaySnapJointHeadHeight = displayTopOffset - displayHeight - innerLipHeightAboveOuterLipHeight;
+displayPinsYaxisWidth = 2.2;
+displayThickness = 3.4; //this is used for the snap-fit mechanism
+displaySnapJointLegThickness = 0.8;
+displaySnapJointHeadHeight = mainHeight - displayTopOffset - displayIndentZOffsetFromDisplayZ + displayIndentHeight;
 displaySnapJointHeadProtrusionLength = displayThickness - (mainShellThickness - frontFaceThickness) - resolution;
 displaySnapJointFlapLipLength = displaySnapJointHeadHeight / 8;
-knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displaySnapJointLegThickness;
-knobAndDisplaySupportWallWidth = 3.5;
-displaySideRetainingPillarThickness = displayThickness - (mainShellThickness - frontFaceThickness);
+displaySnapJointWidth = 3;
+knobAndDisplaySupportWallDepth = displayThickness + displaySnapJointLegThickness;
+knobAndDisplaySupportWallThickness = 5.2;
+displaySideRetainingPillarThickness = displayThickness - mainShellThickness + frontFaceThickness;
 knobHoleYoffset = displayYOffset + (displayWidth / 2);
 knobHoleZoffset = mainHeight - displayTopOffset - 11.8;
 knobHoleRadius = 3.8;
@@ -69,13 +67,13 @@ knobHookYaxisWidth = 0.7;
 knobHookXaxisDepth = knobHoleDepth - resolution;
 knobHookZaxisHeight = 2.2;
 gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout = (mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ) - (knobHoleZoffset + knobIndentSquareSideLength/2);
-pcbMountSpacingFromWallToCut = resolution * 2.5;
+pcbMountSpacingFromWallToCut = resolution;
 pcbMountHeight = mountingPillarHeight - mainShellThickness + 2; //height above mainShellThickness
-pcbBoardThickness = 1.8;
-pcbBoardDepth = 36.8;
-pcbBoardWidth = 75.1;
+pcbBoardThickness = 1.6;
+pcbBoardDepth = 36;
+pcbBoardWidth = 74.9;
 pcbPadSideLength = 9;
-pcbWallThickness = 2.1;
+pcbWallThickness = 0.9;
 pcbOffsetX = mainShellThickness;
 pcbOffsetY = mainWidth - mainShellThickness - pcbBoardWidth;
 pcbShelfSideLength = 3;
@@ -83,13 +81,13 @@ pcbShelfThickness = 1;
 pcbRearRightWidth = 14.5;
 pcbRearRightDepth = 3.5;
 pcbSnapJointHeadHeight = 4;
-pcbSnapJointHeadProtrusionLength = pcbMountSpacingFromWallToCut + 1.3;
+pcbSnapJointHeadProtrusionLength = pcbMountSpacingFromWallToCut + 0.8;
 pcbSnapJointFlatLipLength = pcbSnapJointHeadHeight / 8;
 usbSlotHeight = 7;
-usbSlotWidth = 26.5 - usbSlotHeight;
-usbSlotXoffset = pcbOffsetX + 2 + usbSlotHeight / 2;
+usbSlotWidth = 26 - usbSlotHeight;
+usbSlotXoffset = pcbOffsetX + 3 + usbSlotHeight / 2;
 usbSlotYoffset = pcbMountHeight; //offset above mainShellThickness
-mountingHoleX = pcbOffsetX + pcbBoardDepth + pcbWallThickness + 0.5;
+mountingHoleX = pcbOffsetX + pcbBoardDepth + pcbWallThickness + mountingHoleRadius - 2;
 
 
 //MODULE snap joint for lid
@@ -158,7 +156,7 @@ module cutoutLeftDisplayIndent() {
   };
   //extra cutout for pins
   translate([mainDepth - displayDepth, mainWidth/2 - displayWidth - displayYOffset + displayIndentYOffsetFromDisplayY, mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ]) {
-    cube([mainShellThickness - resolution*1.5, displayPinsYaxisWidth, displayIndentHeight]);
+    cube([mainShellThickness - resolution, displayPinsYaxisWidth, displayIndentHeight]);
   };
 };
 
@@ -169,52 +167,12 @@ module cutoutRightDisplayIndent() {
   };
   //extra cutout for pins
   translate([mainDepth - displayDepth, mainWidth/2 + displayYOffset + displayIndentYOffsetFromDisplayY, mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ]) {
-    cube([mainShellThickness - resolution*1.5, displayPinsYaxisWidth, displayIndentHeight]);
+    cube([mainShellThickness - resolution, displayPinsYaxisWidth, displayIndentHeight]);
   };
 };
 
-//yOffset = the center of the rotary knob hole
-module createSnapJointSetForDisplays(yOffset) {
-  translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, yOffset - knobIndentSquareSideLength/2 - knobAndDisplaySupportWallWidth, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout]) {
-    createSnapJointForDisplay();
-  };
-  
-  translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, yOffset + knobIndentSquareSideLength/2, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout]) {
-    createSnapJointForDisplay();
-  };
-};
-
-module createSnapJointForDisplay() {
-  //leg
-  cube([displaySnapJointLegThickness, knobAndDisplaySupportWallWidth, displayIndentHeight + displaySnapJointHeadHeight]);
-  
-  //head
-  polyhedron(
-    points=[[displaySnapJointLegThickness, 0, displayIndentHeight + displaySnapJointHeadHeight], //0
-            [displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, 0, displayIndentHeight + displaySnapJointFlapLipLength], //1
-            [displaySnapJointLegThickness, knobAndDisplaySupportWallWidth, displayIndentHeight + displaySnapJointHeadHeight], //2
-            [displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, knobAndDisplaySupportWallWidth, displayIndentHeight + displaySnapJointFlapLipLength], //3
-            [displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, 0, displayIndentHeight], //4
-            [displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, knobAndDisplaySupportWallWidth, displayIndentHeight], //5
-            [displaySnapJointLegThickness, 0, displayIndentHeight], //6
-            [displaySnapJointLegThickness, knobAndDisplaySupportWallWidth, displayIndentHeight]], //7
-    faces=[[0,1,3,2],
-           [1,4,5,3],
-           [4,6,7,5],
-           [6,0,2,7],
-           [1,0,6,4],
-           [7,2,3,5]]
-  );
-  //3D printing support
-  translate([displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, 0, displayIndentHeight]) {
-    cube([resolution, resolution*2, resolution]);
-  };
-  translate([displaySnapJointLegThickness + displaySnapJointHeadProtrusionLength, knobAndDisplaySupportWallWidth - resolution*2, displayIndentHeight]) {
-    cube([resolution, resolution*2, resolution]);
-  };
-};
-
-
+rotate([0,90,0]) {
+difference() {
 union() {
   difference() {
     //main shell
@@ -260,6 +218,13 @@ union() {
     translate([mountingHoleX, mainWidth/2, 0]) {
       cylinder(mainShellThickness, mountingHoleRadius, mountingHoleRadius, $fn=cylinderFragments);
     };
+    //back mounting hole
+    /*TODO: I've removed for now
+    translate([0, mainWidth/2, mainHeight - mountingHoleRadius - 10]) {
+      rotate([0,90,0]) {
+        cylinder(mainShellThickness, mountingHoleRadius, mountingHoleRadius, $fn=cylinderFragments);
+      };
+    };*/
     
     //cut out for case lid screw mounts and rounded edges, rear-left
     translate([0, 0, 0]) {
@@ -361,14 +326,14 @@ union() {
   //mounting seat for PCB, rear-left side
   difference() {
     translate([pcbOffsetX, pcbOffsetY - pcbWallThickness, mainShellThickness]) {
-      cube([2.5*pcbPadSideLength - pcbWallThickness, pcbPadSideLength, pcbMountHeight + pcbBoardThickness]);
+      cube([pcbPadSideLength - pcbWallThickness, pcbPadSideLength, pcbMountHeight + pcbBoardThickness]);
     };
     translate([pcbOffsetX, pcbOffsetY, mainShellThickness + pcbMountHeight]) {
-      cube([2.5*pcbPadSideLength - pcbWallThickness, pcbPadSideLength - pcbWallThickness, pcbBoardThickness]);
+      cube([pcbPadSideLength - pcbWallThickness, pcbPadSideLength - pcbWallThickness, pcbBoardThickness]);
     };
     //cut a slot so the side has flex
     translate([pcbOffsetX, pcbOffsetY, mainShellThickness]) {
-      cube([2.5*pcbPadSideLength - pcbWallThickness, pcbMountSpacingFromWallToCut, pcbMountHeight]);
+      cube([pcbPadSideLength - pcbWallThickness, pcbMountSpacingFromWallToCut, pcbMountHeight]);
     };
     //cut a slot away from the side wall so it can flex
     translate([mainShellThickness, pcbOffsetY - pcbWallThickness, mainShellThickness]) {
@@ -380,14 +345,54 @@ union() {
     polyhedron(
       points=[[0,0,0], //0
               [0, pcbWallThickness + pcbSnapJointHeadProtrusionLength, 0], //1
-              [2.5*pcbPadSideLength - pcbMountSpacingFromWallToCut - pcbWallThickness, pcbWallThickness + pcbSnapJointHeadProtrusionLength, 0], //2
-              [2.5*pcbPadSideLength - pcbMountSpacingFromWallToCut - pcbWallThickness, 0, 0], //3
+              [pcbPadSideLength - pcbMountSpacingFromWallToCut - pcbWallThickness, pcbWallThickness + pcbSnapJointHeadProtrusionLength, 0], //2
+              [pcbPadSideLength - pcbMountSpacingFromWallToCut - pcbWallThickness, 0, 0], //3
               [0, pcbWallThickness + pcbSnapJointHeadProtrusionLength, pcbSnapJointFlatLipLength], //4
-              [2.5*pcbPadSideLength - pcbMountSpacingFromWallToCut - pcbWallThickness, pcbWallThickness + pcbSnapJointHeadProtrusionLength, pcbSnapJointFlatLipLength], //5
+              [pcbPadSideLength - pcbMountSpacingFromWallToCut - pcbWallThickness, pcbWallThickness + pcbSnapJointHeadProtrusionLength, pcbSnapJointFlatLipLength], //5
               [0, pcbWallThickness, pcbSnapJointHeadHeight], //6
-              [2.5*pcbPadSideLength - pcbMountSpacingFromWallToCut - pcbWallThickness, pcbWallThickness, pcbSnapJointHeadHeight], //7
+              [pcbPadSideLength - pcbMountSpacingFromWallToCut - pcbWallThickness, pcbWallThickness, pcbSnapJointHeadHeight], //7
               [0, 0, pcbSnapJointHeadHeight], //8
-              [2.5*pcbPadSideLength - pcbMountSpacingFromWallToCut - pcbWallThickness, 0, pcbSnapJointHeadHeight]], //9
+              [pcbPadSideLength - pcbMountSpacingFromWallToCut - pcbWallThickness, 0, pcbSnapJointHeadHeight]], //9
+      faces=[[0,1,2,3],
+             [1,4,5,2],
+             [4,6,7,5],
+             [6,8,9,7],
+             [9,8,0,3],
+             [1,0,8,6,4],
+             [5,7,9,3,2]]
+    );
+  };
+  
+  //mounting seat for PCB, front-left side
+  difference() {
+    translate([pcbOffsetX + pcbBoardDepth - pcbPadSideLength + pcbWallThickness, pcbOffsetY - pcbWallThickness, mainShellThickness]) {
+      cube([pcbPadSideLength, pcbPadSideLength, pcbMountHeight + pcbBoardThickness]);
+    };
+    translate([pcbOffsetX + pcbBoardDepth - pcbPadSideLength + pcbWallThickness, pcbOffsetY, mainShellThickness + pcbMountHeight]) {
+      cube([pcbPadSideLength - pcbWallThickness, pcbPadSideLength - pcbWallThickness, pcbBoardThickness]);
+    };
+    //cut a slot so the side has flex
+    translate([pcbOffsetX + pcbBoardDepth - pcbPadSideLength + pcbWallThickness, pcbOffsetY, mainShellThickness]) {
+      cube([pcbPadSideLength, pcbMountSpacingFromWallToCut, pcbMountHeight + pcbBoardThickness]);
+    };
+    //another cut for flexing consistency
+    translate([pcbOffsetX + pcbBoardDepth - pcbMountSpacingFromWallToCut, pcbOffsetY - pcbWallThickness, mainShellThickness]) {
+      cube([pcbWallThickness + pcbMountSpacingFromWallToCut, pcbWallThickness, pcbMountHeight + pcbBoardThickness]);
+    };
+  };
+  //snap joint
+  translate([pcbOffsetX + pcbBoardDepth - pcbPadSideLength + pcbWallThickness, pcbOffsetY - pcbWallThickness, mainShellThickness + pcbMountHeight + pcbBoardThickness]) {
+    polyhedron(
+      points=[[0,0,0], //0
+              [0, pcbWallThickness + pcbSnapJointHeadProtrusionLength, 0], //1
+              [pcbPadSideLength - pcbWallThickness - pcbMountSpacingFromWallToCut, pcbWallThickness + pcbSnapJointHeadProtrusionLength, 0], //2
+              [pcbPadSideLength - pcbWallThickness - pcbMountSpacingFromWallToCut, 0, 0], //3
+              [0, pcbWallThickness + pcbSnapJointHeadProtrusionLength, pcbSnapJointFlatLipLength], //4
+              [pcbPadSideLength - pcbWallThickness - pcbMountSpacingFromWallToCut, pcbWallThickness + pcbSnapJointHeadProtrusionLength, pcbSnapJointFlatLipLength], //5
+              [0, pcbWallThickness, pcbSnapJointHeadHeight], //6
+              [pcbPadSideLength - pcbWallThickness - pcbMountSpacingFromWallToCut, pcbWallThickness, pcbSnapJointHeadHeight], //7
+              [0, 0, pcbSnapJointHeadHeight], //8
+              [pcbPadSideLength - pcbWallThickness - pcbMountSpacingFromWallToCut, 0, pcbSnapJointHeadHeight]], //9
       faces=[[0,1,2,3],
              [1,4,5,2],
              [4,6,7,5],
@@ -401,25 +406,31 @@ union() {
   //mounting seat for PCB, front-right side
   difference() {
     translate([pcbOffsetX + pcbBoardDepth - pcbPadSideLength + pcbWallThickness, mainWidth - pcbPadSideLength, mainShellThickness]) {
-      cube([pcbPadSideLength, pcbPadSideLength, pcbMountHeight + pcbBoardThickness + pcbShelfThickness]);
+      cube([pcbPadSideLength, pcbPadSideLength, pcbMountHeight + pcbBoardThickness]);
     };
     translate([pcbOffsetX + pcbBoardDepth - pcbPadSideLength + pcbWallThickness, mainWidth - pcbPadSideLength, mainShellThickness + pcbMountHeight]) {
-      cube([pcbPadSideLength - pcbWallThickness, pcbPadSideLength, pcbBoardThickness + pcbShelfThickness]);
+      cube([pcbPadSideLength - pcbWallThickness, pcbPadSideLength, pcbBoardThickness]);
     };
   };
   //shelf, front-right
-  translate([pcbOffsetX + pcbBoardDepth - pcbShelfSideLength*2 + pcbWallThickness, mainWidth - mainShellThickness - pcbShelfSideLength/2, mainShellThickness + pcbMountHeight + pcbBoardThickness]) { //0.5 buffer for the board
-    cube([pcbShelfSideLength*2, pcbShelfSideLength/2, pcbShelfThickness]);
+  translate([pcbOffsetX + pcbBoardDepth - pcbShelfSideLength*1.5 + pcbWallThickness, mainWidth - mainShellThickness - pcbShelfSideLength/2, mainShellThickness + pcbMountHeight + pcbBoardThickness]) { //0.5 buffer for the board
+    cube([pcbShelfSideLength*1.5, pcbShelfSideLength/2, pcbShelfThickness]);
   };
   //3D print support
-  translate([pcbOffsetX + pcbBoardDepth - pcbShelfSideLength*2 + pcbWallThickness, mainWidth - mainShellThickness - pcbShelfSideLength/2, mainShellThickness + pcbMountHeight]) { //0.5 buffer for the board
-    cube([supportBracketThickness, supportBracketThickness, pcbBoardThickness]);
+  translate([pcbOffsetX + pcbBoardDepth - pcbShelfSideLength*1.5 + pcbWallThickness, mainWidth - mainShellThickness - pcbShelfSideLength/2, mainShellThickness + pcbMountHeight]) { //0.5 buffer for the board
+    cube([resolution, resolution, pcbBoardThickness]);
   };
 
   //mounting seat for PCB, rear-right side
   translate([pcbOffsetX, mainWidth - mainShellThickness - pcbRearRightWidth, mainShellThickness]) {
     cube([pcbRearRightDepth, pcbRearRightWidth, pcbMountHeight]); //measurements taken from PCB board
   };
+  
+  //600mAh battery
+  /*translate([mainShellThickness + 2, 25, mainShellThickness]) {
+    cube([30, 44, 5]) {
+    };
+  };*/
   
   createLeftLidSnapJoint3dPrintedSupports(); //left side
   translate([0, mainWidth, 0]) {
@@ -432,15 +443,27 @@ union() {
 
 
   //jail-bars over display slots
-  translate([mainDepth - frontFaceThickness, mainWidth/2 - displayYOffset - displayWidth/2 - supportBracketThickness/2, mainHeight - displayTopOffset]) {
+  translate([mainDepth - frontFaceThickness, mainWidth/2 - displayYOffset - displayWidth/3, mainHeight - displayTopOffset]) {
     cube([frontFaceThickness, supportBracketThickness, displayHeight]);
   };
-  translate([mainDepth - frontFaceThickness, mainWidth/2 + displayYOffset + displayWidth/2 - supportBracketThickness/2, mainHeight - displayTopOffset]) {
+  translate([mainDepth - frontFaceThickness, mainWidth/2 - displayYOffset - displayWidth/3 * 2 - supportBracketThickness, mainHeight - displayTopOffset]) {
+    cube([frontFaceThickness, supportBracketThickness, displayHeight]);
+  };
+  translate([mainDepth - frontFaceThickness, mainWidth/2 + displayYOffset + displayWidth/3, mainHeight - displayTopOffset]) {
+    cube([frontFaceThickness, supportBracketThickness, displayHeight]);
+  };
+  translate([mainDepth - frontFaceThickness, mainWidth/2 + displayYOffset + displayWidth/3 * 2 + supportBracketThickness, mainHeight - displayTopOffset]) {
     cube([frontFaceThickness, supportBracketThickness, displayHeight]);
   };
   //jail-bar over USB slot:
   usbJailBarSpacing = 2;
-  translate([usbSlotXoffset + usbSlotWidth/2 - supportBracketThickness/2, mainWidth - mainShellThickness, mainShellThickness + usbSlotYoffset]) {
+  translate([usbSlotXoffset + usbSlotWidth/4 - usbJailBarSpacing, mainWidth - mainShellThickness, mainShellThickness + usbSlotYoffset]) {
+    cube([supportBracketThickness, mainShellThickness, usbSlotHeight]);
+  };
+  translate([usbSlotXoffset + usbSlotWidth/4 * 2, mainWidth - mainShellThickness, mainShellThickness + usbSlotYoffset]) {
+    cube([supportBracketThickness, mainShellThickness, usbSlotHeight]);
+  };
+  translate([usbSlotXoffset + usbSlotWidth/4 * 3 + usbJailBarSpacing, mainWidth - mainShellThickness, mainShellThickness + usbSlotYoffset]) {
     cube([supportBracketThickness, mainShellThickness, usbSlotHeight]);
   };
   
@@ -448,11 +471,11 @@ union() {
   //left knob supporting walls
   difference() {
     union() {
-      translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, mainWidth/2 - knobHoleYoffset - knobIndentSquareSideLength/2 - knobAndDisplaySupportWallWidth, mainShellThickness]) {
-        cube([knobAndDisplaySupportWallDepth, knobAndDisplaySupportWallWidth, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout - mainShellThickness]);
+      translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, mainWidth/2 - knobHoleYoffset - knobIndentSquareSideLength/2 - knobAndDisplaySupportWallThickness, mainShellThickness]) {
+        cube([knobAndDisplaySupportWallDepth, knobAndDisplaySupportWallThickness, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout - mainShellThickness]);
       };
       translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, mainWidth/2 - knobHoleYoffset + knobIndentSquareSideLength/2, mainShellThickness]) {
-        cube([knobAndDisplaySupportWallDepth, knobAndDisplaySupportWallWidth, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout - mainShellThickness]);
+        cube([knobAndDisplaySupportWallDepth, knobAndDisplaySupportWallThickness, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout - mainShellThickness]);
       };
     };
     cutoutLeftKnobStuff();
@@ -460,32 +483,35 @@ union() {
   //right knob supporting walls
   difference() {
     union() {
-      translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, mainWidth/2 + knobHoleYoffset - knobIndentSquareSideLength/2 - knobAndDisplaySupportWallWidth, mainShellThickness]) {
-        cube([knobAndDisplaySupportWallDepth, knobAndDisplaySupportWallWidth, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout - mainShellThickness]);
+      translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, mainWidth/2 + knobHoleYoffset - knobIndentSquareSideLength/2 - knobAndDisplaySupportWallThickness, mainShellThickness]) {
+        cube([knobAndDisplaySupportWallDepth, knobAndDisplaySupportWallThickness, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout - mainShellThickness]);
       };
       translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, mainWidth/2 + knobHoleYoffset + knobIndentSquareSideLength/2, mainShellThickness]) {
-        cube([knobAndDisplaySupportWallDepth, knobAndDisplaySupportWallWidth, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout - mainShellThickness]);
+        cube([knobAndDisplaySupportWallDepth, knobAndDisplaySupportWallThickness, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout - mainShellThickness]);
       };
     };
     cutoutRightKnobStuff();
   };
- 
-  //support snap joins for left & right displays
-  createSnapJointSetForDisplays(mainWidth/2 - knobHoleYoffset);
-  createSnapJointSetForDisplays(mainWidth/2 + knobHoleYoffset);
   
   //left display, left support bracket
   translate([mainDepth - frontFaceThickness - displayThickness, mainWidth/2 - displayWidth - displayYOffset + displayIndentYOffsetFromDisplayY - displaySideRetainingPillarThickness, mainShellThickness]) {
     cube([displayThickness - (mainShellThickness - frontFaceThickness), displaySideRetainingPillarThickness, mainHeight - mainShellThickness - displayTopOffset + displayIndentZOffsetFromDisplayZ + displayIndentHeight]);
   };
-  //center support bracket
+  //left display, right support bracket
   translate([mainDepth - frontFaceThickness - displayThickness, mainWidth/2 - displayWidth - displayYOffset + displayIndentYOffsetFromDisplayY + displayIndentWidth, mainShellThickness]) {
-    cube([displayThickness - (mainShellThickness - frontFaceThickness), displayYOffset*2 + displayWidth - displayIndentWidth, mainHeight - mainShellThickness - displayTopOffset + displayIndentZOffsetFromDisplayZ + displayIndentHeight]);
+    cube([displayThickness - (mainShellThickness - frontFaceThickness), displaySideRetainingPillarThickness, mainHeight - mainShellThickness - displayTopOffset + displayIndentZOffsetFromDisplayZ + displayIndentHeight]);
+  };
+  //right display, left support bracket
+  translate([mainDepth - frontFaceThickness - displayThickness, mainWidth/2 + displayYOffset + displayIndentYOffsetFromDisplayY - displaySideRetainingPillarThickness, mainShellThickness]) {
+    cube([displayThickness - (mainShellThickness - frontFaceThickness), displaySideRetainingPillarThickness, mainHeight - mainShellThickness - displayTopOffset + displayIndentZOffsetFromDisplayZ + displayIndentHeight]);
   };
   //right display, right support bracket
   translate([mainDepth - frontFaceThickness - displayThickness, mainWidth/2 + displayYOffset + displayIndentYOffsetFromDisplayY + displayIndentWidth, mainShellThickness]) {
     cube([displayThickness - (mainShellThickness - frontFaceThickness), displaySideRetainingPillarThickness, mainHeight - mainShellThickness - displayTopOffset + displayIndentZOffsetFromDisplayZ + displayIndentHeight]);
   };
+};
+cube([mainDepth - 9, mainWidth, mainHeight]);
+};
 };
 
 //3D printing supports for left-side lid snap-fit indent
