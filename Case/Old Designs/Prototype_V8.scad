@@ -11,8 +11,8 @@ cylinderFragments = 70;
 
 lidThickness = resolution * 4; //z-axis
 lidLipWidth = resolution * 2;  //x & y axis thickness of the lip/wall
-outerLipHeight = resolution * 4; //height above lidThickness
-innerLipHeightAboveOuterLipHeight = resolution * 5;
+outerLipHeight = resolution * 5; //height above lidThickness
+innerLipHeightAboveOuterLipHeight = resolution * 3;
 innerLipHeight = outerLipHeight + innerLipHeightAboveOuterLipHeight; //height above lidThickness
 spacingForLidLipFromCaseWall = resolution / 2;
 margin = mainShellThickness + lidLipWidth + spacingForLidLipFromCaseWall;
@@ -24,8 +24,9 @@ lidSnapJointProtrusionLength = mainShellThickness - resolution;
 lidSnapJointOffsetFromTop = 3;
 extensionBeyondOuterLipForSnapJoint = 2;
 
+/*TODO: remove?
 lidSnapJointGapWidthForRemoval = 14;
-lidSnapJointGapHeightForRemoval = 1.5;
+lidSnapJointGapHeightForRemoval = 1.5;*/
 
 //keep in-sync with the mounting plate file
 mountingHoleRadius = 4.45;
@@ -51,8 +52,7 @@ displayIndentYOffsetFromDisplayY = -5.7 - displayEdgeBuffer;
 displayIndentZOffsetFromDisplayZ = -1.6 - displayEdgeBuffer;
 displayTopOffset = displayIndentHeight + innerLipHeightAboveOuterLipHeight;
 displayPinsYaxisWidth = 2.9;
-displayThickness = 3.8; //this is used for the snap-fit mechanism
-displayBackLegThickness 
+displayThickness = 3.8; //this is used for the snap-fit mechanism 
 displayBackLegThickness = 2;
 knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displayBackLegThickness;
 knobAndDisplaySupportWallWidth = 3.5;
@@ -84,8 +84,8 @@ pcbSnapJointHeadHeight = 4;
 pcbSnapJointHeadProtrusionLength = pcbMountSpacingFromWallToCut + 1.3;
 pcbSnapJointFlatLipLength = pcbSnapJointHeadHeight / 8;
 usbSlotHeight = 7;
-usbSlotWidth = 26.5 - usbSlotHeight;
-usbSlotXoffset = pcbOffsetX + 2 + usbSlotHeight / 2;
+usbSlotWidth = 27 - usbSlotHeight;
+usbSlotXoffset = pcbOffsetX + 1 + usbSlotHeight / 2;
 usbSlotYoffset = pcbMountHeight; //offset above mainShellThickness
 mountingHoleX = pcbOffsetX + pcbBoardDepth + pcbWallThickness + 0.5;
 
@@ -93,14 +93,15 @@ mountingHoleX = pcbOffsetX + pcbBoardDepth + pcbWallThickness + 0.5;
 //MODULE snap joint for lid
 module createLeftSideLidSnapJoint()
 {
-  translate([mainDepth/2 - lidSnapJointWidth/2, lidSnapJointProtrusionLength, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight]) {
-    cube([lidSnapJointWidth, mainShellThickness - lidSnapJointProtrusionLength, lidSnapJointProtrusionHeight]);
+  translate([mainDepth/2 - lidSnapJointWidth/2, mainShellThickness - lidSnapJointProtrusionLength, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight]) {
+    cube([lidSnapJointWidth, lidSnapJointProtrusionLength, lidSnapJointProtrusionHeight]);
   };
   
   //gap for removing lid
+  /*TODO: remove?
   translate([mainDepth/2 - lidSnapJointGapWidthForRemoval/2, 0, mainHeight - lidSnapJointGapHeightForRemoval]) {
     cube([lidSnapJointGapWidthForRemoval, mainShellThickness, lidSnapJointGapHeightForRemoval]);
-  };
+  };*/
 };
 
 module cutoutLeftKnobStuff() {
@@ -335,7 +336,7 @@ union() {
       cube([pcbMountSpacingFromWallToCut, pcbWallThickness, pcbMountHeight + pcbBoardThickness]);
     };
   };
-  //PCB snap joint
+  //PCB snap joint rear-left
   translate([pcbOffsetX + pcbMountSpacingFromWallToCut, pcbOffsetY - pcbWallThickness, mainShellThickness + pcbMountHeight + pcbBoardThickness]) {
     polyhedron(
       points=[[0,0,0], //0
@@ -356,6 +357,13 @@ union() {
              [1,0,8,6,4],
              [5,7,9,3,2]]
     );
+  };
+  //3D printing supports for PCB snap joint in rear-left
+  translate([pcbOffsetX + pcbMountSpacingFromWallToCut*3, pcbOffsetY + pcbSnapJointHeadProtrusionLength - supportBracketThickness, pcbMountHeight + mainShellThickness]) {
+    cube([supportBracketThickness, supportBracketThickness - 0.15, pcbBoardThickness]);
+  };
+  translate([pcbOffsetX + pcbPadSideLength*2.5 - pcbMountSpacingFromWallToCut*5, pcbOffsetY + pcbSnapJointHeadProtrusionLength - supportBracketThickness, pcbMountHeight + mainShellThickness]) {
+    cube([supportBracketThickness, supportBracketThickness - 0.15, pcbBoardThickness]);
   };
   
   //mounting seat for PCB, front-right side
@@ -432,8 +440,8 @@ union() {
   };
  
   //support snap joins for left & right displays
-  createSnapJointSetForDisplays(mainWidth/2 - knobHoleYoffset);
-  createSnapJointSetForDisplays(mainWidth/2 + knobHoleYoffset);
+  createBackLegSetForDisplays(mainWidth/2 - knobHoleYoffset);
+  createBackLegSetForDisplays(mainWidth/2 + knobHoleYoffset);
   
   //left display, left support bracket
   translate([mainDepth - frontFaceThickness - displayThickness, mainWidth/2 - displayWidth - displayYOffset + displayIndentYOffsetFromDisplayY - displaySideRetainingPillarThickness, mainShellThickness]) {
@@ -449,20 +457,9 @@ union() {
   };
 };
 
-//3D printing supports for left-side lid snap-fit indent
 module createLeftLidSnapJoint3dPrintedSupports() {
   snapJoint3dPrintedSupportRadius = supportBracketThickness/2;
-  translate([mainDepth/2 + lidSnapJointGapWidthForRemoval/2 + (lidSnapJointWidth - lidSnapJointGapWidthForRemoval)/4, mainShellThickness - snapJoint3dPrintedSupportRadius, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight]) {
-    cylinder(lidSnapJointProtrusionHeight,snapJoint3dPrintedSupportRadius,snapJoint3dPrintedSupportRadius,$fn=8);
-  };
-  translate([mainDepth/2 + lidSnapJointGapWidthForRemoval/2 + snapJoint3dPrintedSupportRadius, mainShellThickness - snapJoint3dPrintedSupportRadius, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight]) {
-    cylinder(lidSnapJointProtrusionHeight,snapJoint3dPrintedSupportRadius,snapJoint3dPrintedSupportRadius,$fn=8);
-  };
-  //3D printing supports for right-side lid snap-fit indent
-  translate([mainDepth/2 - lidSnapJointGapWidthForRemoval/2 - (lidSnapJointWidth - lidSnapJointGapWidthForRemoval)/4, mainShellThickness - snapJoint3dPrintedSupportRadius, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight]) {
-    cylinder(lidSnapJointProtrusionHeight,snapJoint3dPrintedSupportRadius,snapJoint3dPrintedSupportRadius,$fn=8);
-  };
-  translate([mainDepth/2 - lidSnapJointGapWidthForRemoval/2 - snapJoint3dPrintedSupportRadius, mainShellThickness - snapJoint3dPrintedSupportRadius, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight]) {
+  translate([mainDepth/2 - snapJoint3dPrintedSupportRadius, mainShellThickness - snapJoint3dPrintedSupportRadius, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight]) {
     cylinder(lidSnapJointProtrusionHeight,snapJoint3dPrintedSupportRadius,snapJoint3dPrintedSupportRadius,$fn=8);
   };
 };

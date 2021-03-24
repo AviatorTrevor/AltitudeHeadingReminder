@@ -4,16 +4,16 @@ resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
 mainShellThickness = 5 * resolution;
-mainDepth = 57;
+mainDepth = 60;
 mainWidth = 91;
 mainHeight = 37 + mainShellThickness;
 caseCornerRadius = 2.5;
 cylinderFragments = 70;
 
 //keep in-sync with the main case file
-mountingHoleRadius = 4.45;
+mountingHoleRadius = 4.5;
 mountingPillarRadius = mountingHoleRadius + 1.5;
-mountingHoleHeight = 8.68;
+mountingHoleHeight = 8.7;
 mountingPillarHeight = mountingHoleHeight + 0.5;
 
 plateDepth = mainDepth / 1.5;

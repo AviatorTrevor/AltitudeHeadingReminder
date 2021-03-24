@@ -12,7 +12,7 @@ cylinderFragments = 70;
 lidThickness = resolution * 4; //z-axis
 lidLipWidth = resolution * 2;  //x & y axis thickness of the lip/wall
 outerLipHeight = resolution * 5; //height above lidThickness
-innerLipHeightAboveOuterLipHeight = resolution * 3;
+innerLipHeightAboveOuterLipHeight = resolution * 5;
 innerLipHeight = outerLipHeight + innerLipHeightAboveOuterLipHeight; //height above lidThickness
 spacingForLidLipFromCaseWall = resolution / 2;
 margin = mainShellThickness + lidLipWidth + spacingForLidLipFromCaseWall;
@@ -24,7 +24,7 @@ lidSnapJointProtrusionLength = mainShellThickness - resolution;
 lidSnapJointOffsetFromTop = 3;
 extensionBeyondOuterLipForSnapJoint = 2;
 
-lidSnapJointHingeThickness = outerLipHeight / 2; //has to be quite a bit smaller than outerLipHeight
+lidSnapJointHingeThickness = outerLipHeight * 0.4; //has to be quite a bit smaller than outerLipHeight
 lidSnapJointLegThickness = resolution * 3;
 lidSnapJointCutoutGapFromEdge = resolution * 2;
 
@@ -195,19 +195,13 @@ module leftSideSnapHook() {
     );
     
     //3D printing support pillars on the inside
-    translate([mainDepth/2 - lidSnapJointWidth/2, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
-      snapHook3dPrintingSupportPillar();
-    };
-    translate([mainDepth/2 - lidSnapJointWidth/4, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
+    translate([mainDepth/2 - lidSnapJointWidth/2 + snapHook3dPrintingSupportPillarThickness*3, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
       snapHook3dPrintingSupportPillar();
     };
     translate([mainDepth/2, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
       snapHook3dPrintingSupportPillar();
     };
-    translate([mainDepth/2 + lidSnapJointWidth/4, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
-      snapHook3dPrintingSupportPillar();
-    };
-    translate([mainDepth/2 + lidSnapJointWidth/2 - snapHook3dPrintingSupportPillarThickness, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
+    translate([mainDepth/2 + lidSnapJointWidth/2 - snapHook3dPrintingSupportPillarThickness*4, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
       snapHook3dPrintingSupportPillar();
     };
     
@@ -215,13 +209,10 @@ module leftSideSnapHook() {
     translate([mainDepth/2 - lidSnapJointWidth/2, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
       snapHook3dPrintingSupportPillarBeneathProtrusion();
     };
-    translate([mainDepth/2 - lidSnapJointWidth/4, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
+    translate([mainDepth/2 - lidSnapJointWidth/2 + lidSnapJointWidth/3, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
       snapHook3dPrintingSupportPillarBeneathProtrusion();
     };
-    translate([mainDepth/2, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
-      snapHook3dPrintingSupportPillarBeneathProtrusion();
-    };
-    translate([mainDepth/2 + lidSnapJointWidth/4, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
+    translate([mainDepth/2 + lidSnapJointWidth/2 - lidSnapJointWidth/3, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
       snapHook3dPrintingSupportPillarBeneathProtrusion();
     };
     translate([mainDepth/2 + lidSnapJointWidth/2 - snapHook3dPrintingSupportPillarThickness, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
