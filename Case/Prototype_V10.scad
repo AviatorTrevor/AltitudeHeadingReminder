@@ -6,7 +6,7 @@ pcbBoardHeight = 36.8;
 pcbBoardWidth = 76.1;
 innerLipHeightAboveOuterLipHeight = resolution * 5;
 mainShellThickness = 5 * resolution;
-mainDepth = 52;
+mainDepth = 55;
 mainWidth = 92;
 mainHeight = pcbBoardHeight + mainShellThickness + innerLipHeightAboveOuterLipHeight;
 caseCornerRadius = 2.5;
@@ -26,6 +26,11 @@ lidSnapJointProtrusionLength = mainShellThickness - resolution;
 lidSnapJointOffsetFromTop = 3;
 extensionBeyondOuterLipForSnapJoint = 2;
 
+frontFaceThickness = 3 * resolution;
+displayThickness = 3.8; //this is used for the snap-fit mechanism 
+displayBackLegThickness = 2;
+knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displayBackLegThickness;
+
 //keep in-sync with the mounting plate file
 mountingHoleRadius = 4.5;
 mountingPillarRadius = mountingHoleRadius + 1.5;
@@ -39,7 +44,6 @@ supportBracketThickness = 0.45;
 //////////////////////////////////////////////////////////////////////
 
 batteryThicknessAndSpacing = 8;
-frontFaceThickness = 3 * resolution;
 displayEdgeBuffer = 0.8;
 displayWidth = 22.5 + displayEdgeBuffer*2;
 displayDepth = mainShellThickness;
@@ -51,9 +55,6 @@ displayIndentYOffsetFromDisplayY = -5.7 - displayEdgeBuffer;
 displayIndentZOffsetFromDisplayZ = -2.7 - displayEdgeBuffer;
 displayTopOffset = displayIndentHeight + displayIndentZOffsetFromDisplayZ + innerLipHeightAboveOuterLipHeight;
 displayPinsYaxisWidth = 2.9;
-displayThickness = 3.8; //this is used for the snap-fit mechanism 
-displayBackLegThickness = 2;
-knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displayBackLegThickness;
 knobAndDisplaySupportWallWidth = 3.5;
 displaySideRetainingPillarThickness = displayThickness - (mainShellThickness - frontFaceThickness);
 knobHoleYoffset = displayYOffset + (displayWidth / 2);
