@@ -2,24 +2,26 @@
 resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
+pcbBoardHeight = 36.8;
+pcbBoardWidth = 76.1;
+innerLipHeightAboveOuterLipHeight = resolution * 5;
 mainShellThickness = 5 * resolution;
-mainDepth = 60;
+mainDepth = 50;
 mainWidth = 92;
-mainHeight = 37 + mainShellThickness;
+mainHeight = pcbBoardHeight + mainShellThickness + innerLipHeightAboveOuterLipHeight;
 caseCornerRadius = 2.5;
 cylinderFragments = 70;
 
 lidThickness = resolution * 4; //z-axis
 lidLipWidth = resolution * 2;  //x & y axis thickness of the lip/wall
 outerLipHeight = resolution * 5; //height above lidThickness
-innerLipHeightAboveOuterLipHeight = resolution * 5;
 innerLipHeight = outerLipHeight + innerLipHeightAboveOuterLipHeight; //height above lidThickness
 spacingForLidLipFromCaseWall = resolution / 2;
 margin = mainShellThickness + lidLipWidth + spacingForLidLipFromCaseWall;
 marginFromSnapJointCutaway = resolution;
 
 lidSnapJointProtrusionHeight = 1.5;
-lidSnapJointWidth = mainDepth / 2;
+lidSnapJointWidth = mainDepth / 3;
 lidSnapJointProtrusionLength = mainShellThickness - resolution;
 lidSnapJointOffsetFromTop = 3;
 extensionBeyondOuterLipForSnapJoint = 2;
@@ -50,6 +52,13 @@ screwHeadSinkDepth = lidThickness * 0.6;
 
 snapHook3dPrintingSupportPillarThickness = resolution * 1.4;
 buzzer3dPrintingSupportPillarThicknessRadius = resolution * 0.9;
+
+module rotate_about_pt(z, y, pt) {
+    translate(pt)
+        rotate([0, y, z])
+            translate(-pt)
+                children();   
+}
 
 module innerCube() {
   translate([margin, margin, lidThickness]) {
@@ -231,10 +240,15 @@ translate([0,mainWidth,0]) {
 };
 
 
-leftBuzzerPlatform();
-translate([0,mainWidth,0]) {
-  mirror([0,1,0]) {
-    leftBuzzerPlatform();
+rotate_about_pt(35, 0, [buzzerX, buzzerY, 0]) {
+  leftBuzzerPlatform();
+};
+
+rotate_about_pt(35, 0, [buzzerX, buzzerY, 0]) {
+  translate([0,mainWidth,0]) {
+    mirror([0,1,0]) {
+      leftBuzzerPlatform();
+    };
   };
 };
 
