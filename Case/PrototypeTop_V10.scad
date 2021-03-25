@@ -6,7 +6,7 @@ pcbBoardHeight = 36.8;
 pcbBoardWidth = 76.1;
 innerLipHeightAboveOuterLipHeight = resolution * 5;
 mainShellThickness = 5 * resolution;
-mainDepth = 52;
+mainDepth = 55;
 mainWidth = 92;
 mainHeight = pcbBoardHeight + mainShellThickness + innerLipHeightAboveOuterLipHeight;
 caseCornerRadius = 2.5;
@@ -26,6 +26,11 @@ lidSnapJointProtrusionLength = mainShellThickness - resolution;
 lidSnapJointOffsetFromTop = 3;
 extensionBeyondOuterLipForSnapJoint = 2;
 
+frontFaceThickness = 3 * resolution;
+displayThickness = 3.8; //this is used for the snap-fit mechanism 
+displayBackLegThickness = 2;
+knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displayBackLegThickness;
+
 lidSnapJointHingeThickness = outerLipHeight * 0.4; //has to be quite a bit smaller than outerLipHeight
 lidSnapJointLegThickness = resolution * 3;
 lidSnapJointCutoutGapFromEdge = resolution * 2;
@@ -39,12 +44,12 @@ outerLipWidth = mainShellThickness + spacingForLidLipFromCaseWall;
 buzzerRadius = 30.4 / 2; //30.4 is diameter
 buzzerScrewOffset = 20.5; //20.5 mm from center of buzzer hole to center of screw hole
 buzzerScrewRadius = 1.9;
-buzzerX = mainDepth - buzzerRadius * 1.4;
+buzzerX = mainDepth - buzzerRadius - mainShellThickness - knobAndDisplaySupportWallDepth;
 buzzerY = mainWidth / 2;
 buzzerScrewHeight = 5;
 buzzerScrewHeightForBaseHolding = 2.5;
 buzzerPlatformOffset = 3.8; //offset from center of cylinder to edge of wall to clear the buzzer
-buzzerPlatformThickness = 6 * resolution;
+buzzerPlatformThickness = 7 * resolution;
 buzzerScrewPylonZOffset = -0.8; //distance from the lid to fit the buzzer into the slot
 
 screwHeadCylinderRadius = 1.8;
@@ -204,6 +209,7 @@ module leftSideSnapHook() {
     );
     
     //3D printing support pillars on the inside
+    /*TODO: remove?
     translate([mainDepth/2 - lidSnapJointWidth/2 + snapHook3dPrintingSupportPillarThickness*3, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
       snapHook3dPrintingSupportPillar();
     };
@@ -212,7 +218,7 @@ module leftSideSnapHook() {
     };
     translate([mainDepth/2 + lidSnapJointWidth/2 - snapHook3dPrintingSupportPillarThickness*4, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
       snapHook3dPrintingSupportPillar();
-    };
+    };*/
     
     //3D printing support pillars on the outside under the head
     translate([mainDepth/2 - lidSnapJointWidth/2, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
@@ -240,11 +246,11 @@ translate([0,mainWidth,0]) {
 };
 
 
-rotate_about_pt(35, 0, [buzzerX, buzzerY, 0]) {
+rotate_about_pt(-15, 0, [buzzerX, buzzerY, 0]) {
   leftBuzzerPlatform();
 };
 
-rotate_about_pt(35, 0, [buzzerX, buzzerY, 0]) {
+rotate_about_pt(-15, 0, [buzzerX, buzzerY, 0]) {
   translate([0,mainWidth,0]) {
     mirror([0,1,0]) {
       leftBuzzerPlatform();

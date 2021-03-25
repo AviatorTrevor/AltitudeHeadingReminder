@@ -67,7 +67,7 @@ knobHookXaxisDepth = knobHoleDepth - resolution;
 knobHookZaxisHeight = 2.2;
 gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout = (mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ) - (knobHoleZoffset + knobIndentSquareSideLength/2);
 pcbBoardThickness = 2;
-pcbMountingWallThickness = 1.5;
+pcbMountingWallThickness = 2;
 pcbOffsetX = mainShellThickness + batteryThicknessAndSpacing;
 pcbOffsetY = mainWidth - mainShellThickness - pcbBoardWidth;
 pcbBottomRightWidth = 5.6;
@@ -320,8 +320,8 @@ union() {
 
 
   //PCB bottom right back-side support
-  translate([pcbOffsetX - pcbMountingWallThickness, mainWidth - mainShellThickness - pcbBottomRightWidth, mainShellThickness]) {
-    cube([pcbMountingWallThickness, pcbBottomRightWidth, pcbBottomRightHeight]);
+  translate([mainShellThickness, mainWidth - mainShellThickness - pcbBottomRightWidth, mainShellThickness]) {
+    cube([pcbOffsetX - mainShellThickness, pcbBottomRightWidth, pcbBottomRightHeight]);
   };
   //PCB bottom right front-side support
   translate([pcbOffsetX + pcbBoardThickness, mainWidth - mainShellThickness - pcbBottomRightWidth, mainShellThickness]) {
@@ -329,8 +329,8 @@ union() {
   };
   
   //PCB left side back-side support
-  translate([pcbOffsetX - pcbMountingWallThickness, pcbOffsetY - pcbMountingWallThickness, mainShellThickness]) {
-    cube([pcbMountingWallThickness, pcbLeftWidth + pcbMountingWallThickness, pcbBoardHeight + pcbMountingWallThickness]);
+  translate([mainShellThickness, pcbOffsetY - pcbMountingWallThickness, mainShellThickness]) {
+    cube([pcbOffsetX - mainShellThickness, pcbLeftWidth + pcbMountingWallThickness, pcbBoardHeight + pcbMountingWallThickness]);
   };
   //PCB left side front-side support
   translate([pcbOffsetX + pcbBoardThickness, pcbOffsetY - pcbMountingWallThickness, mainShellThickness]) {
