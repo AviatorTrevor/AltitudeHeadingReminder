@@ -3,7 +3,7 @@ resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
 pcbBoardHeight = 36.8;
-pcbBoardWidth = 76.1;
+pcbBoardWidth = 76;
 innerLipHeightAboveOuterLipHeight = resolution * 5;
 mainShellThickness = 5 * resolution;
 mainDepth = 55;
@@ -11,6 +11,16 @@ mainWidth = 92;
 mainHeight = pcbBoardHeight + mainShellThickness + innerLipHeightAboveOuterLipHeight;
 caseCornerRadius = 2.5;
 cylinderFragments = 70;
+
+batteryThicknessAndSpacing = 8;
+pcbBoardThickness = 2;
+pcbMountingWallThickness = 2;
+pcbBottomRightWidth = 5.6;
+pcbLidTopRightZAxisHeight = 1.2;
+pcbOffsetX = mainShellThickness + batteryThicknessAndSpacing;
+pcbOffsetY = mainWidth - mainShellThickness - pcbBoardWidth;
+pcbBottomRightHeight = 8;
+pcbLeftWidth = 3.1;
 
 lidThickness = resolution * 4; //z-axis
 lidLipWidth = resolution * 2;  //x & y axis thickness of the lip/wall
@@ -72,11 +82,6 @@ module innerCube() {
 };
 
 module cutOutLeftSideForHinge() {
-  //subtracting to make room for it to flex along the lip
-  translate([mainDepth/2 - lidSnapJointWidth/2, lidSnapJointCutoutGapFromEdge, lidThickness]) {
-    cube([lidSnapJointWidth, outerLipWidth - lidSnapJointCutoutGapFromEdge, outerLipHeight - lidSnapJointHingeThickness]);
-  };
-  
   //cut away the inner wall for left side snap fit stuff + buffer on either side
   translate([mainDepth/2 - lidSnapJointWidth/2 - marginFromSnapJointCutaway, outerLipWidth, lidThickness]) {
     cube([lidSnapJointWidth + marginFromSnapJointCutaway*2, lidLipWidth, innerLipHeight]);
@@ -177,11 +182,6 @@ difference() {
   };
 };
 
-//adding the hook on the left side for the snap fit
-module snapHook3dPrintingSupportPillar() {
-  cube([snapHook3dPrintingSupportPillarThickness, snapHook3dPrintingSupportPillarThickness, outerLipHeight - lidSnapJointHingeThickness]);
-};
-
 module snapHook3dPrintingSupportPillarBeneathProtrusion() {
   cube([snapHook3dPrintingSupportPillarThickness, snapHook3dPrintingSupportPillarThickness, lidSnapJointOffsetFromTop]);
 };
@@ -207,18 +207,6 @@ module leftSideSnapHook() {
              [2,1,0],
              [5,3,4]]
     );
-    
-    //3D printing support pillars on the inside
-    /*TODO: remove?
-    translate([mainDepth/2 - lidSnapJointWidth/2 + snapHook3dPrintingSupportPillarThickness*3, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
-      snapHook3dPrintingSupportPillar();
-    };
-    translate([mainDepth/2, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
-      snapHook3dPrintingSupportPillar();
-    };
-    translate([mainDepth/2 + lidSnapJointWidth/2 - snapHook3dPrintingSupportPillarThickness*4, outerLipWidth + lidSnapJointLegThickness - snapHook3dPrintingSupportPillarThickness, lidThickness]) {
-      snapHook3dPrintingSupportPillar();
-    };*/
     
     //3D printing support pillars on the outside under the head
     translate([mainDepth/2 - lidSnapJointWidth/2, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
@@ -259,6 +247,23 @@ rotate_about_pt(-15, 0, [buzzerX, buzzerY, 0]) {
 };
 
 
+//rear-right PCB board mounting
+translate([margin, margin, lidThickness]) {
+  cube([pcbOffsetX - margin, pcbBottomRightWidth - (lidLipWidth + spacingForLidLipFromCaseWall), pcbLidTopRightZAxisHeight + innerLipHeight]);
+};
+//front-right PCB board mounting
+translate([pcbOffsetX + pcbBoardThickness, margin, lidThickness]) {
+  cube([pcbMountingWallThickness, pcbBottomRightWidth - (lidLipWidth + spacingForLidLipFromCaseWall), pcbLidTopRightZAxisHeight + innerLipHeight]);
+};
+//front right PCB board top
+translate([pcbOffsetX, margin, lidThickness]) {
+  cube([pcbMountingWallThickness, pcbBottomRightWidth - (lidLipWidth + spacingForLidLipFromCaseWall),innerLipHeight]);
+};
+
+//left-side PCB board mounting
+translate([pcbOffsetX, mainWidth - pcbOffsetY - pcbLeftWidth, lidThickness]) {
+  cube([pcbBoardThickness, pcbLeftWidth, innerLipHeight]);
+};
 
 //add the curve to the rear-left
 difference() {
