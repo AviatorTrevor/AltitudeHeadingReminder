@@ -43,7 +43,7 @@ knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - front
 //keep in-sync with the mounting plate file
 mountingHoleRadius = 4.5;
 mountingPillarRadius = mountingHoleRadius + 1.5;
-mountingHoleHeight = 8.7;
+mountingHoleHeight = 9.6;
 mountingPillarHeight = mountingHoleHeight + 0.5;
 
 supportBracketThickness = 0.45;
@@ -78,7 +78,7 @@ usbSlotWidth = 7;
 usbSlotHeight = 27;
 usbSlotXoffset = pcbOffsetX; //offset above mainShellThickness
 usbSlotZoffset = 8.5 + usbSlotWidth / 2;
-mountingHoleX = mainDepth - mountingPillarRadius - 7;
+mountingHoleX = mainDepth - mountingPillarRadius - 7.25;
 
 
 //MODULE snap joint for lid
