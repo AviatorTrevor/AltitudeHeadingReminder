@@ -36,7 +36,7 @@ lidSnapJointOffsetFromTop = 3;
 extensionBeyondOuterLipForSnapJoint = 2;
 
 frontFaceThickness = 3 * resolution;
-displayThickness = 3.8; //this is used for the snap-fit mechanism 
+displayThickness = 3.2; //this is used for the snap-fit mechanism 
 displayBackLegThickness = 2;
 knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displayBackLegThickness;
 
@@ -341,7 +341,7 @@ union() {
   createBackLegSetForDisplays(mainWidth/2 + knobHoleYoffset);
   
   //left display, left support bracket
-  translate([mainDepth - frontFaceThickness - displayThickness, mainWidth/2 - displayWidth - displayYOffset + displayIndentYOffsetFromDisplayY - displaySideRetainingPillarThickness, mainShellThickness]) {
+  translate([mainDepth - frontFaceThickness - displayThickness, mainWidth/2 - displayWidth - displayYOffset + displayIndentYOffsetFromDisplayY - displaySideRetainingPillarThickness + 0.15, mainShellThickness]) {
     cube([displayThickness - (mainShellThickness - frontFaceThickness), displaySideRetainingPillarThickness, mainHeight - mainShellThickness - displayTopOffset + displayIndentZOffsetFromDisplayZ + displayIndentHeight]);
   };
   //center support bracket
