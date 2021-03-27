@@ -75,12 +75,12 @@ knobHoleZoffset = mainShellThickness + 13.3;
 knobHoleRadius = 3.8;
 knobHoleDepth = mainShellThickness + knobAndDisplaySupportWallDepth;
 knobIndentSquareSideLength = 12.4;
-knobHookYaxisOffset = 5.1;
-knobHookYaxisWidth = 1.7;
+knobHookZaxisOffset = 5.1;
+knobHookYaxisWidth = 2.2;
 knobHookXaxisDepth = knobHoleDepth - resolution;
-knobHookZaxisHeight = 2.2;
+knobHookZaxisHeight = 1.7;
 gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout = (mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ) - (knobHoleZoffset + knobIndentSquareSideLength/2);
-mountingHoleX = mainDepth - mountingPillarRadius - 7.5;
+mountingHoleX = mainDepth - mountingPillarRadius - 6.2;
 
 
 //MODULE snap joint for lid
@@ -99,28 +99,16 @@ module cutoutLeftKnobStuff() {
     };
   };
   //left knob hook slot
-  translate([mainDepth - knobHoleDepth, mainWidth/2 - knobHoleYoffset - knobHookYaxisOffset - knobHookYaxisWidth, knobHoleZoffset - knobHookZaxisHeight / 2]) {
+  translate([mainDepth - knobHoleDepth, mainWidth/2 - knobHoleYoffset - knobHookYaxisWidth / 2, knobHoleZoffset - knobHookZaxisOffset - knobHookZaxisHeight]) {
     cube([knobHookXaxisDepth, knobHookYaxisWidth, knobHookZaxisHeight]);
-  };
-  //left knob indent
-  translate([mainDepth - knobHoleDepth, mainWidth/2 - knobHoleYoffset - knobIndentSquareSideLength/2, knobHoleZoffset - knobIndentSquareSideLength/2]) {
-    cube([knobHoleDepth - mainShellThickness, knobIndentSquareSideLength, knobIndentSquareSideLength + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout]);
   };
 };
 module cutoutRightKnobStuff() {
   //right knob
-  translate([mainDepth - knobHoleDepth, mainWidth/2 + knobHoleYoffset, knobHoleZoffset]) {
-    rotate([0,90,0]) {
-      cylinder(knobHoleDepth,knobHoleRadius,knobHoleRadius,$fn=cylinderFragments);
+  translate([0,mainWidth,0]) {
+    mirror([0,1,0]) {
+      cutoutLeftKnobStuff();
     };
-  };
-  //right knob hook slot
-  translate([mainDepth - knobHoleDepth, mainWidth/2 + knobHoleYoffset + knobHookYaxisOffset, knobHoleZoffset - knobHookZaxisHeight / 2]) {
-    cube([knobHookXaxisDepth, knobHookYaxisWidth, knobHookZaxisHeight]);
-  };
-  //right knob indent
-  translate([mainDepth - knobHoleDepth, mainWidth/2 + knobHoleYoffset - knobIndentSquareSideLength/2, knobHoleZoffset - knobIndentSquareSideLength/2]) {
-    cube([knobHoleDepth - mainShellThickness, knobIndentSquareSideLength, knobIndentSquareSideLength + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout]);
   };
 };
 
