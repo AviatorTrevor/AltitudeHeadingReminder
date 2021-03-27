@@ -3,7 +3,7 @@ resolution = 0.35;
 
 //variables to keep in-sync with the other scad file.
 pcbBoardHeight = 36.8;
-pcbBoardWidth = 76;
+pcbBoardWidth = 75.8;
 innerLipHeightAboveOuterLipHeight = resolution * 5;
 mainShellThickness = 5 * resolution;
 mainDepth = 55;
@@ -84,8 +84,8 @@ mountingHoleX = mainDepth - mountingPillarRadius - 7.25;
 //MODULE snap joint for lid
 module createLeftSideLidSnapJoint()
 {
-  translate([mainDepth/2 - lidSnapJointWidth/2, 0, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight - 0.8]) {
-    cube([lidSnapJointWidth, mainShellThickness, lidSnapJointProtrusionHeight + 1.2]);
+  translate([mainDepth/2 - lidSnapJointWidth/2, 0, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight + 0.2]) {
+    cube([lidSnapJointWidth, mainShellThickness, lidSnapJointProtrusionHeight + 0.5]);
   };
 };
 
@@ -325,15 +325,15 @@ union() {
   
   //PCB left side back-side support
   translate([mainShellThickness, pcbOffsetY - pcbMountingWallThickness, mainShellThickness]) {
-    cube([pcbOffsetX - mainShellThickness, pcbLeftWidth + pcbMountingWallThickness, pcbBoardHeight - innerLipHeightAboveOuterLipHeight]);
+    cube([pcbOffsetX - mainShellThickness, pcbLeftWidth + pcbMountingWallThickness, pcbBoardHeight]);
   };
   //PCB left side front-side support
   translate([pcbOffsetX + pcbBoardThickness, pcbOffsetY - pcbMountingWallThickness, mainShellThickness]) {
-    cube([pcbMountingWallThickness, pcbLeftWidth + pcbMountingWallThickness, pcbBoardHeight - innerLipHeightAboveOuterLipHeight]);
+    cube([pcbMountingWallThickness, pcbLeftWidth + pcbMountingWallThickness, pcbBoardHeight]);
   };
   //PCB left side, left containing wall
   translate([pcbOffsetX, pcbOffsetY - pcbMountingWallThickness, mainShellThickness]) {
-    cube([pcbBoardThickness, pcbMountingWallThickness, pcbBoardHeight - innerLipHeightAboveOuterLipHeight]);
+    cube([pcbBoardThickness, pcbMountingWallThickness, pcbBoardHeight]);
   };
  
   //support snap joins for left & right displays
