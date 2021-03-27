@@ -16,10 +16,16 @@ batteryThicknessAndSpacing = 8;
 pcbBoardThickness = 2;
 pcbMountingWallThickness = 2;
 pcbBottomRightWidth = 5.6;
+pcbLidTopRightZAxisHeight = 1.2;
 pcbOffsetX = mainShellThickness + batteryThicknessAndSpacing;
 pcbOffsetY = mainWidth - mainShellThickness - pcbBoardWidth;
 pcbBottomRightHeight = 8;
 pcbLeftWidth = 3.1;
+
+usbSlotWidth = 7;
+usbSlotHeight = 27;
+usbSlotXoffset = pcbOffsetX; //offset above mainShellThickness
+usbSlotZoffset = 8.5 + usbSlotWidth / 2;
 
 lidThickness = resolution * 4; //z-axis
 lidLipWidth = resolution * 2;  //x & y axis thickness of the lip/wall
@@ -74,11 +80,7 @@ knobHookYaxisWidth = 1.7;
 knobHookXaxisDepth = knobHoleDepth - resolution;
 knobHookZaxisHeight = 2.2;
 gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout = (mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ) - (knobHoleZoffset + knobIndentSquareSideLength/2);
-usbSlotWidth = 7;
-usbSlotHeight = 27;
-usbSlotXoffset = pcbOffsetX; //offset above mainShellThickness
-usbSlotZoffset = 8.5 + usbSlotWidth / 2;
-mountingHoleX = mainDepth - mountingPillarRadius - 7.25;
+mountingHoleX = mainDepth - mountingPillarRadius - 7.5;
 
 
 //MODULE snap joint for lid
@@ -142,18 +144,6 @@ module cutoutRightDisplayIndent() {
   translate([mainDepth - displayDepth, mainWidth/2 + displayYOffset + displayIndentYOffsetFromDisplayY, mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ]) {
     cube([mainShellThickness - resolution*1.5, displayPinsYaxisWidth, displayIndentHeight]);
   };
-};
-
-//yOffset = the center of the rotary knob hole
-module createBackLegSetForDisplays(yOffset) {
-  translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, yOffset + knobIndentSquareSideLength/2, knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout]) {
-    createBackLegForDisplay();
-  };
-};
-
-module createBackLegForDisplay() {
-  //leg
-  cube([displayBackLegThickness, knobAndDisplaySupportWallWidth, displayIndentHeight]);
 };
 
 
@@ -336,9 +326,15 @@ union() {
     cube([pcbBoardThickness, pcbMountingWallThickness, pcbBoardHeight]);
   };
  
-  //support snap joins for left & right displays
-  createBackLegSetForDisplays(mainWidth/2 - knobHoleYoffset);
-  createBackLegSetForDisplays(mainWidth/2 + knobHoleYoffset);
+  //supporting back leg for right display
+  translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, mainWidth/2 + knobHoleYoffset + knobIndentSquareSideLength/2 + 1, mainShellThickness]) {
+    cube([displayBackLegThickness, knobAndDisplaySupportWallWidth + 11.75, displayIndentHeight + knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout - innerLipHeightAboveOuterLipHeight]);
+  };
+  
+  //supporting back leg for left display
+  translate([mainDepth - mainShellThickness - knobAndDisplaySupportWallDepth, mainWidth/2 - knobHoleYoffset + knobIndentSquareSideLength/2 + 1, mainShellThickness]) {
+    cube([displayBackLegThickness, knobAndDisplaySupportWallWidth + 12.05, displayIndentHeight + knobHoleZoffset + knobIndentSquareSideLength/2 + gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout - innerLipHeightAboveOuterLipHeight]);
+  };
   
   //left display, left support bracket
   translate([mainDepth - frontFaceThickness - displayThickness, mainWidth/2 - displayWidth - displayYOffset + displayIndentYOffsetFromDisplayY - displaySideRetainingPillarThickness + 0.15, mainShellThickness]) {

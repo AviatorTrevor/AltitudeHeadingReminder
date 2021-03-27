@@ -3,7 +3,7 @@ resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
 pcbBoardHeight = 36.8;
-pcbBoardWidth = 76;
+pcbBoardWidth = 75.8;
 innerLipHeightAboveOuterLipHeight = resolution * 5;
 mainShellThickness = 5 * resolution;
 mainDepth = 55;
@@ -22,6 +22,11 @@ pcbOffsetY = mainWidth - mainShellThickness - pcbBoardWidth;
 pcbBottomRightHeight = 8;
 pcbLeftWidth = 3.1;
 
+usbSlotWidth = 7;
+usbSlotHeight = 27;
+usbSlotXoffset = pcbOffsetX; //offset above mainShellThickness
+usbSlotZoffset = 8.5 + usbSlotWidth / 2;
+
 lidThickness = resolution * 4; //z-axis
 lidLipWidth = resolution * 2;  //x & y axis thickness of the lip/wall
 outerLipHeight = resolution * 5; //height above lidThickness
@@ -37,7 +42,7 @@ lidSnapJointOffsetFromTop = 3;
 extensionBeyondOuterLipForSnapJoint = 2;
 
 frontFaceThickness = 3 * resolution;
-displayThickness = 3.8; //this is used for the snap-fit mechanism 
+displayThickness = 3.2; //this is used for the snap-fit mechanism 
 displayBackLegThickness = 2;
 knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displayBackLegThickness;
 
@@ -85,14 +90,6 @@ module cutOutLeftSideForHinge() {
   //cut away the inner wall for left side snap fit stuff + buffer on either side
   translate([mainDepth/2 - lidSnapJointWidth/2 - marginFromSnapJointCutaway, outerLipWidth, lidThickness]) {
     cube([lidSnapJointWidth + marginFromSnapJointCutaway*2, lidLipWidth, innerLipHeight]);
-  };
-  
-  //cut away into the outer lip on the sides of the hinge
-  translate([mainDepth/2 - lidSnapJointWidth/2 - marginFromSnapJointCutaway, lidSnapJointCutoutGapFromEdge, lidThickness]) {
-    cube([marginFromSnapJointCutaway, outerLipWidth - lidSnapJointCutoutGapFromEdge, outerLipHeight]);
-  };
-  translate([mainDepth/2 + lidSnapJointWidth/2, lidSnapJointCutoutGapFromEdge, lidThickness]) {
-    cube([marginFromSnapJointCutaway, outerLipWidth - lidSnapJointCutoutGapFromEdge, outerLipHeight]);
   };
 };
 
@@ -189,8 +186,8 @@ module snapHook3dPrintingSupportPillarBeneathProtrusion() {
 module leftSideSnapHook() {
   union() {
     //legs of the snap hook
-    translate([mainDepth/2 - lidSnapJointWidth/2, outerLipWidth, lidThickness + outerLipHeight - lidSnapJointHingeThickness]) {
-      cube([lidSnapJointWidth, lidSnapJointLegThickness, lidSnapJointHingeThickness + lidSnapJointOffsetFromTop + lidSnapJointProtrusionHeight]);
+    translate([mainDepth/2 - lidSnapJointWidth/2, outerLipWidth, lidThickness]) {
+      cube([lidSnapJointWidth, lidSnapJointLegThickness, outerLipHeight + lidSnapJointOffsetFromTop + lidSnapJointProtrusionHeight]);
     };
     
     //snap hook 3D triangle
@@ -212,10 +209,7 @@ module leftSideSnapHook() {
     translate([mainDepth/2 - lidSnapJointWidth/2, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
       snapHook3dPrintingSupportPillarBeneathProtrusion();
     };
-    translate([mainDepth/2 - lidSnapJointWidth/2 + lidSnapJointWidth/3, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
-      snapHook3dPrintingSupportPillarBeneathProtrusion();
-    };
-    translate([mainDepth/2 + lidSnapJointWidth/2 - lidSnapJointWidth/3, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
+    translate([mainDepth/2 - snapHook3dPrintingSupportPillarThickness/2, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
       snapHook3dPrintingSupportPillarBeneathProtrusion();
     };
     translate([mainDepth/2 + lidSnapJointWidth/2 - snapHook3dPrintingSupportPillarThickness, outerLipWidth - lidSnapJointProtrusionLength, lidThickness + outerLipHeight]) {
@@ -296,4 +290,17 @@ difference() {
   cylinder(lidThickness + outerLipHeight, caseCornerRadius, caseCornerRadius, $fn=cylinderFragments);
   };
   innerCube();
+};
+
+//USB slot curved end
+difference() {
+  translate([usbSlotXoffset, 0, outerLipHeight + lidThickness]) {
+    cube([usbSlotWidth, outerLipWidth ,usbSlotWidth/2]);
+  };
+  
+  translate([usbSlotXoffset + usbSlotWidth/2, 0, outerLipHeight + lidThickness + usbSlotWidth/2]) {
+    rotate([270,90,0]) {
+      cylinder(outerLipWidth, usbSlotWidth/2, usbSlotWidth/2, $fn=cylinderFragments);
+    };
+  };
 };
