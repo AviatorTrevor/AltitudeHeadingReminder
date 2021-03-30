@@ -42,15 +42,18 @@ lidSnapJointOffsetFromTop = 3;
 extensionBeyondOuterLipForSnapJoint = 2;
 
 frontFaceThickness = 3 * resolution;
-displayThickness = 3.35; //this is used for the snap-fit mechanism 
+displayThickness = 3.45; //this is used for the snap-fit mechanism 
 displayBackLegThickness = 2;
 knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displayBackLegThickness;
 
 //keep in-sync with the mounting plate file
 mountingHoleRadius = 4.5;
+mountingQuarterInchRadius = 3.5;
 mountingPillarRadius = mountingHoleRadius + 2.5;
-mountingHoleHeight = 9.7;
-mountingPillarHeight = mountingHoleHeight + 1;
+mountingHoleHeight = 9.8;
+mountingTransitionHeight = 4;
+mountingQuarterInchCylinderHeight = mainHeight - mountingHoleHeight - mountingTransitionHeight - 16;
+mountingPillarHeight = mainHeight - 14.5;
 
 supportBracketThickness = 0.45;
 
@@ -67,11 +70,11 @@ displayIndentHeight = 12.4;
 displayIndentYOffsetFromDisplayY = -5.7 - displayEdgeBuffer;
 displayIndentZOffsetFromDisplayZ = -2.7 - displayEdgeBuffer;
 displayTopOffset = displayIndentHeight + displayIndentZOffsetFromDisplayZ + innerLipHeightAboveOuterLipHeight;
-displayPinsYaxisWidth = 2.9;
+displayPinsYaxisWidth = 2.7;
 knobAndDisplaySupportWallWidth = 3.5;
 displaySideRetainingPillarThickness = displayThickness - (mainShellThickness - frontFaceThickness);
 knobHoleYoffset = displayYOffset + (displayWidth / 2);
-knobHoleZoffset = mainShellThickness + 12.3;
+knobHoleZoffset = mainShellThickness + 11.9;
 knobHoleRadius = 3.8;
 knobHoleDepth = mainShellThickness + knobAndDisplaySupportWallDepth;
 knobIndentSquareSideLength = 12.4;
@@ -80,13 +83,13 @@ knobHookYaxisWidth = 2.2;
 knobHookXaxisDepth = knobHoleDepth - resolution*1.5;
 knobHookZaxisHeight = 1.7;
 gapBetweenTopOfKnobCutoutAndBottomOfDisplayCutout = (mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ) - (knobHoleZoffset + knobIndentSquareSideLength/2);
-mountingHoleX = mainDepth - mountingPillarRadius - 6.2;
+mountingHoleX = mainDepth - mountingPillarRadius - 4.5;
 
 
 //MODULE snap joint for lid
 module createLeftSideLidSnapJoint()
 {
-  translate([mainDepth/2 - lidSnapJointWidth/2, 0, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight + 0.2]) {
+  translate([mainDepth/2 - lidSnapJointWidth/2, 0, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight + 0.2]) { //NOTE: keep 0.2 in sync
     cube([lidSnapJointWidth, mainShellThickness, lidSnapJointProtrusionHeight + 0.5]);
   };
 };
@@ -118,7 +121,7 @@ module cutoutLeftDisplayIndent() {
     cube([mainShellThickness - frontFaceThickness, displayIndentWidth, displayIndentHeight]);
   };
   //extra cutout for pins
-  translate([mainDepth - displayDepth, mainWidth/2 - displayWidth - displayYOffset + displayIndentYOffsetFromDisplayY + 1, mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ]) {
+  translate([mainDepth - displayDepth, mainWidth/2 - displayWidth - displayYOffset + displayIndentYOffsetFromDisplayY, mainHeight - displayTopOffset + displayIndentZOffsetFromDisplayZ]) {
     cube([mainShellThickness - resolution*1.5, displayPinsYaxisWidth, displayIndentHeight]);
   };
 };
@@ -212,10 +215,26 @@ union() {
   //////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
   
+  //3D print supports for lid snap joint, left side
+  translate([mainDepth/2 - supportBracketThickness/2, 0, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight + 0.2]) { //NOTE: keep 0.2 in sync
+    cube([supportBracketThickness, mainShellThickness, lidSnapJointProtrusionHeight + 0.5]);
+  };
+  
+  //3D print supports for lid snap joint, right side
+  translate([mainDepth/2 - supportBracketThickness/2, mainWidth - mainShellThickness, mainHeight - lidSnapJointOffsetFromTop - lidSnapJointProtrusionHeight + 0.2]) { //NOTE: keep 0.2 in sync
+    cube([supportBracketThickness, mainShellThickness, lidSnapJointProtrusionHeight + 0.5]);
+  };
+  
   //bottom mounting hole
   difference() {
     translate([mountingHoleX, mainWidth/2, 0]) {
       cylinder(mountingPillarHeight, mountingPillarRadius, mountingPillarRadius, $fn=cylinderFragments);
+    };
+    translate([mountingHoleX, mainWidth/2, mountingHoleHeight]) {
+      cylinder(mountingTransitionHeight, mountingHoleRadius, mountingQuarterInchRadius, $fn=cylinderFragments);
+    };
+    translate([mountingHoleX, mainWidth/2, mountingHoleHeight + mountingTransitionHeight]) {
+      cylinder(mountingQuarterInchCylinderHeight, mountingQuarterInchRadius, mountingQuarterInchRadius, $fn=cylinderFragments);
     };
     translate([mountingHoleX, mainWidth/2, 0]) {
       cylinder(mountingHoleHeight, mountingHoleRadius, mountingHoleRadius, $fn=cylinderFragments);
@@ -240,6 +259,8 @@ union() {
     translate([mainDepth - caseCornerRadius*2, mainShellThickness, mainShellThickness]) {
       cube([caseCornerRadius*2 - mainShellThickness, caseCornerRadius*2 - mainShellThickness, mainHeight - mainShellThickness]);
     };
+    //special-case, remove the stuff for indented-display again
+    cutoutLeftDisplayIndent();
   };
 
   //adding cylinder for case rounded edge, front-right
@@ -334,12 +355,12 @@ union() {
   };
   
   //3D support pillar jail-bars for left display
-  translate([mainDepth - frontFaceThickness, mainWidth/2 - displayYOffset - displayWidth/2 - supportBracketThickness*0.35, mainHeight - displayTopOffset]) {
-    cube([frontFaceThickness, supportBracketThickness*0.7, displayHeight]);
+  translate([mainDepth - frontFaceThickness, mainWidth/2 - displayYOffset - displayWidth/2 - supportBracketThickness*0.45, mainHeight - displayTopOffset]) {
+    cube([frontFaceThickness, supportBracketThickness*0.9, displayHeight]);
   };
   //3D support pillar jail-bars for right display
-  translate([mainDepth - frontFaceThickness, mainWidth/2 + displayYOffset + displayWidth/2 - supportBracketThickness*0.35, mainHeight - displayTopOffset]) {
-    cube([frontFaceThickness, supportBracketThickness*0.7, displayHeight]);
+  translate([mainDepth - frontFaceThickness, mainWidth/2 + displayYOffset + displayWidth/2 - supportBracketThickness*0.45, mainHeight - displayTopOffset]) {
+    cube([frontFaceThickness, supportBracketThickness*0.9, displayHeight]);
   };
 };
   
