@@ -6,7 +6,7 @@ pcbBoardHeight = 36.9;
 pcbBoardWidth = 75.7;
 innerLipHeightAboveOuterLipHeight = resolution * 5;
 mainShellThickness = 5 * resolution;
-mainDepth = 60;
+mainDepth = 64;
 mainWidth = 84.7;
 mainHeight = pcbBoardHeight + mainShellThickness + innerLipHeightAboveOuterLipHeight;
 caseCornerRadius = 2.5;
@@ -42,7 +42,7 @@ lidSnapJointOffsetFromTop = 3;
 extensionBeyondOuterLipForSnapJoint = 2;
 
 frontFaceThickness = 3 * resolution;
-displayThickness = 3.45; //this is used for the snap-fit mechanism 
+displayThickness = 3.5; //this is used for the snap-fit mechanism 
 displayBackLegThickness = 2;
 knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displayBackLegThickness;
 

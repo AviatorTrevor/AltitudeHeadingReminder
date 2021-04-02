@@ -6,7 +6,7 @@ pcbBoardHeight = 36.9;
 pcbBoardWidth = 75.7;
 innerLipHeightAboveOuterLipHeight = resolution * 5;
 mainShellThickness = 5 * resolution;
-mainDepth = 60;
+mainDepth = 64;
 mainWidth = 84.7;
 mainHeight = pcbBoardHeight + mainShellThickness + innerLipHeightAboveOuterLipHeight;
 caseCornerRadius = 2.5;
@@ -37,13 +37,13 @@ marginFromSnapJointCutaway = resolution;
 
 lidSnapJointProtrusionHeight = 1.5;
 lidSnapJointWidth = mainDepth / 3;
-lidSnapJointProtrusionLength = mainShellThickness - resolution;
+lidSnapJointProtrusionLength = mainShellThickness;
 lidSnapJointOffsetFromTop = 3;
 extensionBeyondOuterLipForSnapJoint = 2;
 
 frontFaceThickness = 3 * resolution;
-displayThickness = 3.45; //this is used for the snap-fit mechanism 
-displayBackLegThickness = 2;
+displayThickness = 3.5; //this is used for the snap-fit mechanism 
+displayBackLegThickness = 1.2;
 knobAndDisplaySupportWallDepth = displayThickness  - (mainShellThickness - frontFaceThickness) + displayBackLegThickness;
 
 lidSnapJointHingeThickness = outerLipHeight * 0.4; //has to be quite a bit smaller than outerLipHeight
@@ -59,12 +59,12 @@ outerLipWidth = mainShellThickness + spacingForLidLipFromCaseWall;
 buzzerRadius = 30.4 / 2; //30.4 is diameter
 buzzerScrewOffset = 20.5; //20.5 mm from center of buzzer hole to center of screw hole
 buzzerScrewRadius = 1.9;
-buzzerX = pcbOffsetX + pcbBoardThickness + buzzerRadius + 0.8;
+buzzerX = pcbOffsetX + pcbBoardThickness + buzzerRadius + 0.1;
 buzzerY = mainWidth / 2;
 buzzerScrewHeight = 5;
 buzzerScrewHeightForBaseHolding = 2.5;
 buzzerPlatformOffset = 3.8; //offset from center of cylinder to edge of wall to clear the buzzer
-buzzerPlatformThickness = 7 * resolution;
+buzzerPlatformThickness = 9 * resolution;
 buzzerScrewPylonZOffset = -0.8; //distance from the lid to fit the buzzer into the slot
 
 screwHeadCylinderRadius = 1.8;
