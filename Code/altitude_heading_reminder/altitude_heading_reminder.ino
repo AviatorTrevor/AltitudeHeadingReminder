@@ -9,7 +9,6 @@ provided to the user. It also has buzzer feature to alert the pilot of when he/s
 selected altitude, or departed from it.
 
 *TODO:
-*one day I couldn't select 29.86. Float precision rounding?
 *add adjustable altitude-deviation alert?
 *create software license - credit for libraries used
 *     https://forum.arduino.cc/index.php?topic=175511.0
@@ -21,10 +20,6 @@ selected altitude, or departed from it.
 #include <Wire.h>
 #include <Custom_GFX.h>
 #include <Custom_SSD1306.h>
-
-volatile bool selectRightDisplay = false;
-
-#define DEBUG
 
 #define cAppCodeNumberOfDigits         6
 #define cAppCodeOne                    8
@@ -522,8 +517,7 @@ void initializeDisplayDevice() {
   pinMode(cPinRightDisplayControl, OUTPUT);
 
   digitalWrite(cPinLeftDisplayControl, CONTROL_ON);
-  //TODO: add back in digitalWrite(cPinRightDisplayControl, CONTROL_ON);
-  digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
+  digitalWrite(cPinRightDisplayControl, CONTROL_ON);
 
   gOled.begin(SSD1306_SWITCHCAPVCC, cOledAddr);
 
@@ -685,7 +679,6 @@ void handlePressureSensor() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleLeftRotary(int rotaryButton, int rotaryDt, int rotaryClk) {
-  selectRightDisplay = false; //TODO: temporary, remove
   //The button being pressed can lead to 1 of 3 outcomes: {Short Press, Long Press, a rotation occuring before the long press time is reached}
   gLeftRotaryButton = digitalRead(rotaryButton); //read button state
   int leftRotaryDt = digitalRead(rotaryDt);
@@ -910,7 +903,6 @@ void handleLeftRotaryLongPress() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleRightRotary(int rotaryButton, int rotaryDt, int rotaryClk) {
-  selectRightDisplay = true; //TODO: temporary, remove
   //The button being pressed on the right knob can only be used for fine-tuning mode or altitude-sync (long press). A released state indicates normal altitude selection mode.
   gRightRotaryButton = digitalRead(rotaryButton); //read button state
   int rightRotaryDt = digitalRead(rotaryDt);
@@ -1223,8 +1215,8 @@ void handleBuzzer() {
 
 //////////////////////////////////////////////////////////////////////////
 void handleDisplay() {
-  /*if (gDeviceFlipped) {
-    if (gUpdateLeftScreen && false) { //TODO: remove the "false" statement
+  if (gDeviceFlipped) {
+    if (gUpdateLeftScreen) {
       gUpdateLeftScreen = false;
       digitalWrite(cPinLeftDisplayControl, CONTROL_OFF);
       digitalWrite(cPinRightDisplayControl, CONTROL_ON);
@@ -1244,19 +1236,12 @@ void handleDisplay() {
       digitalWrite(cPinRightDisplayControl, CONTROL_OFF);
       drawLeftScreen();
     }
-    if (gUpdateRightScreen && false) { //TODO: remove the "false" statement
+    if (gUpdateRightScreen) {
       gUpdateRightScreen = false;
       digitalWrite(cPinLeftDisplayControl, CONTROL_OFF);
       digitalWrite(cPinRightDisplayControl, CONTROL_ON);
       drawRightScreen();
     }
-  }*/
-  //TODO: temporary, remove
-  if (!selectRightDisplay) {
-    drawLeftScreen();
-  }
-  else {
-    drawRightScreen();
   }
 
   //always update the left screen once a second when timer is running. I am giving it a 100 millisecond window at the beginning of each second to allow updates
