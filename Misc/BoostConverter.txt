@@ -1,0 +1,12 @@
+20 = 0.6 x (1 + R1 / R2)
+32.3333 = R1 / R2
+
+or for 22V, 35.5 = R1 / R2
+
+
+1.61V
+96kOhms for 5V buzzer
+
+3.92V
+
+amazon claims the big buzzer is rated 15mA at 12V, which would be 800 ohms resistance.

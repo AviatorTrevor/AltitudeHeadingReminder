@@ -3,7 +3,7 @@ resolution = 0.35;
 
 //variables to keep in-sync with the other scad file
 pcbBoardHeight = 36.9;
-pcbBoardWidth = 75.7;
+pcbBoardWidth = 69.35;
 innerLipHeightAboveOuterLipHeight = resolution * 5;
 mainShellThickness = 5 * resolution;
 mainDepth = 64;
